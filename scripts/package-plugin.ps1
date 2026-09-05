@@ -4,12 +4,16 @@ param(
     [ValidateNotNullOrEmpty()]
     [string]$PluginId,
 
-    [string]$OutputDir = (Join-Path $PSScriptRoot '..\dist')
+    [string]$OutputDir
 )
 
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+
+if ([string]::IsNullOrWhiteSpace($OutputDir)) {
+    $OutputDir = Join-Path $repositoryRoot 'dist'
+}
 $pluginDirectory = Join-Path $repositoryRoot (Join-Path 'plugins' $PluginId)
 $pluginManifest = Join-Path $pluginDirectory 'plugin.json'
 

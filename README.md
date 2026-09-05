@@ -24,8 +24,10 @@ Each plugin must be packaged into an independent ZIP file and uploaded to a GitH
 
 The package script creates `dist/<PluginId>-<version>.zip`. Each archive has exactly one top-level directory named after its plugin ID and prints its SHA-256 hash.
 
+Pushes to `main` that touch `plugins/**` or `scripts/**` trigger the `Release Plugins` workflow: it packages only plugins with changes since their per-plugin release tag (`<pluginId>-v<version>`), publishes the ZIP to GitHub Releases with its SHA-256 in the release notes, and regenerates `registry.json` automatically.
+
 ## Marketplace
 
-Marketplace index repository: https://github.com/wdsj2066/artificer-plugin-market
+Marketplace registry: https://raw.githubusercontent.com/wdsj2066/artificer-plugins/main/registry.json
 
-Marketplace registry: https://raw.githubusercontent.com/wdsj2066/artificer-plugin-market/main/registry.json
+`registry.json` is generated automatically by the `Release Plugins` workflow (`.github/workflows/release-plugins.yml`) after each release is published. Each entry carries the plugin metadata from `plugin.json`, the release ZIP download URL and the ZIP SHA-256. Releases are tagged per plugin as `<pluginId>-v<version>`.

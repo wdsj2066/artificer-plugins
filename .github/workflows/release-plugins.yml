@@ -1,0 +1,112 @@
+name: Release Plugins
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/**'
+      - 'scripts/**'
+      - 'registry.json'
+      - '.github/workflows/release-plugins.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-plugins
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes, package and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: wdsj2066/artificer-plugins
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          published=0
+
+          for id in browser-automation channel-feishu channel-wecom token-usage; do
+            version=$(jq -r .version "plugins/$id/plugin.json")
+            tag="$id-v$version"
+            zip="dist/$id-$version.zip"
+
+            changed=true
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
+              if git diff --quiet "$tag..HEAD" -- "plugins/$id" "scripts/package-plugin.ps1"; then
+                changed=false
+              fi
+            fi
+
+            if [ "$changed" = "false" ]; then
+              echo "::notice::$id unchanged since $tag, skipping"
+              continue
+            fi
+
+            echo "Packaging $id v$version"
+            pwsh -NoProfile -File scripts/package-plugin.ps1 -PluginId "$id" -OutputDir dist
+
+            sha=$(sha256sum "$zip" | cut -d' ' -f1)
+            echo "${id}_sha=$sha" >> "$GITHUB_ENV"
+
+            notes="## $id v$version"
+            notes="$notes"$'\n\n'"- File: \`$id-$version.zip\`"
+            notes="$notes"$'\n'"- SHA-256: \`$sha\`"
+
+            if gh release view "$tag" >/dev/null 2>&1; then
+              gh release upload "$tag" "$zip" --clobber
+              gh release edit "$tag" --title "$id v$version" --notes "$notes"
+            else
+              gh release create "$tag" "$zip" --title "$id v$version" --notes "$notes"
+            fi
+            published=1
+          done
+
+          echo "published=$published" >> "$GITHUB_ENV"
+
+      - name: Regenerate registry.json
+        if: env.published == '1'
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const ids = ['browser-automation', 'channel-feishu', 'channel-wecom', 'token-usage'];
+          const plugins = ids.map((id) => {
+            const manifest = JSON.parse(fs.readFileSync(`plugins/${id}/plugin.json`, 'utf8'));
+            const version = manifest.version;
+            const tag = `${id}-v${version}`;
+            return {
+              id,
+              name: manifest.name,
+              description: manifest.description,
+              version,
+              author: manifest.author,
+              hasBackend: fs.existsSync(`plugins/${id}/server.js`),
+              permissions: manifest.permissions || [],
+              repositoryUrl: `https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/${id}`,
+              downloadUrl: `https://github.com/wdsj2066/artificer-plugins/releases/download/${tag}/${id}-${version}.zip`,
+              sha256: process.env[`${id}_sha`] || null
+            };
+          });
+          fs.writeFileSync('registry.json', JSON.stringify({ plugins }, null, 2) + '\n');
+          EOF
+
+      - name: Commit registry.json
+        if: env.published == '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add registry.json
+          if git diff --cached --quiet; then
+            echo "registry.json unchanged"
+          else
+            git commit -m "chore: sync registry.json [skip ci]"
+            git push
+          fi
