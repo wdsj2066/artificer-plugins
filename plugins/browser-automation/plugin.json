@@ -1,0 +1,11 @@
+{
+  "id": "browser-automation",
+  "name": "浏览器自动化",
+  "version": "1.0.0",
+  "description": "基于 Chrome DevTools Protocol 的本机网页导航、检查、交互与截图工具",
+  "author": "Artificer",
+  "icon": "globe-2",
+  "permissions": ["filesystem", "network", "subprocess"],
+  "hasBackend": true,
+  "panelOrder": 35
+}
