@@ -1,0 +1,56 @@
+{
+  "plugins": [
+    {
+      "id": "browser-automation",
+      "name": "浏览器自动化",
+      "description": "基于 Chrome DevTools Protocol 的本机网页导航、检查、交互与截图工具",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "hasBackend": true,
+      "permissions": [
+        "filesystem",
+        "network",
+        "subprocess"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v1.0.0/browser-automation-1.0.0.zip",
+      "sha256": "4f6d8ed831fe23f0c6610136dd55e4aff7584b3a359154777b6320f6d51e1581"
+    },
+    {
+      "id": "channel-feishu",
+      "name": "飞书频道",
+      "description": "飞书机器人频道集成：接收/发送消息，支持独立频道会话与主会话挂载",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "hasBackend": true,
+      "permissions": [],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.0.0/channel-feishu-1.0.0.zip",
+      "sha256": "432de0aac91a435805162d8edc1205e81b21ebd68a8dbae911fe5dbedc6648e1"
+    },
+    {
+      "id": "channel-wecom",
+      "name": "企业微信频道",
+      "description": "企业微信智能机器人频道集成：长连接收发消息，支持独立频道会话与主会话挂载",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "hasBackend": true,
+      "permissions": [],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.0.0/channel-wecom-1.0.0.zip",
+      "sha256": "797c483b7a237d452becc46ce9227820e8f2b0040ca48879190e3aa935cd7252"
+    },
+    {
+      "id": "token-usage",
+      "name": "Token 用量",
+      "description": "在聊天输入框下方显示本会话的模型 token 用量和缓存命中情况",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "hasBackend": false,
+      "permissions": [],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.0.0/token-usage-1.0.0.zip",
+      "sha256": "af1f8e466d9ad8f2578bf948dec47f654846526d6767cddedde00daa3f41e1db"
+    }
+  ]
+}
