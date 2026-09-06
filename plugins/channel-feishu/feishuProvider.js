@@ -1,14 +1,13 @@
-import { ChannelProvider } from '../../providers/channelProvider.js'
-import { runtimeLogger } from '../../core/logger.js'
 import crypto from 'crypto'
 
 /**
  * 飞书频道提供者
  * 支持飞书机器人 Webhook 和自定义机器人
  */
-export class FeishuProvider extends ChannelProvider {
-  constructor(config) {
-    super(config)
+export class FeishuProvider {
+  constructor(config, { logger = console } = {}) {
+    this.config = config
+    this.logger = logger
     this.name = 'feishu'
     this.webhookUrl = config.config?.webhookUrl || config.webhook || ''
     this.secret = config.config?.secret || config.secret || config.token || ''
@@ -148,14 +147,14 @@ export class FeishuProvider extends ChannelProvider {
       const result = await response.json()
 
       if (result.code === 0 || result.StatusCode === 0) {
-        runtimeLogger.info(`Feishu message sent successfully`)
+        this.logger.info?.('飞书消息发送成功')
         return { success: true, messageId: result.msg_id || 'feishu_' + Date.now() }
       } else {
-        runtimeLogger.error(`Feishu send failed: ${JSON.stringify(result)}`)
+        this.logger.error?.(`飞书消息发送失败: ${JSON.stringify(result)}`)
         return { success: false, error: result.msg || '发送失败' }
       }
     } catch (error) {
-      runtimeLogger.error('Feishu send error:', error)
+      this.logger.error?.('飞书消息发送失败:', error)
       return { success: false, error: error.message }
     }
   }
@@ -192,7 +191,7 @@ export class FeishuProvider extends ChannelProvider {
         return { success: false, error: result.msg || '发送失败' }
       }
     } catch (error) {
-      runtimeLogger.error('Feishu rich message error:', error)
+      this.logger.error?.('飞书富文本消息发送失败:', error)
       return { success: false, error: error.message }
     }
   }

@@ -5,8 +5,21 @@
 import { WecomProvider } from './wecomProvider.js'
 
 export function register(ctx) {
-  const { registerChannel, logger } = ctx
+  const { registerChannel, logger, getStore, importModule, processChannelInbound } = ctx
 
-  registerChannel('wecom', WecomProvider)
+  const services = {
+    logger,
+    store: getStore(),
+    importModule,
+    processInbound: processChannelInbound
+  }
+
+  class RuntimeWecomProvider extends WecomProvider {
+    constructor(config) {
+      super(config, services)
+    }
+  }
+
+  registerChannel('wecom', RuntimeWecomProvider)
   logger?.info?.('[channel-wecom] WecomProvider 已注册')
 }

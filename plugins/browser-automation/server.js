@@ -1,4 +1,4 @@
-import { browserService } from './browserService.js'
+import { BrowserService } from './browserService.js'
 
 const browserOptions = {
   type: 'object', properties: {
@@ -9,6 +9,7 @@ const browserOptions = {
 }
 
 export function register(ctx) {
+  const browserService = new BrowserService({ importModule: ctx.importModule })
   const sessionIdOf = executionContext => executionContext?.runContext?.state?.storage?.sessionId || 'default'
   ctx.registerTool({ id: 'browserNavigate', name: '浏览器导航', description: '在隔离的本机 Chrome 调试页面中打开一个 HTTP(S) 地址。后续使用 browserInspect 检查页面。', parameters: { type: 'object', properties: { url: { type: 'string' }, ...browserOptions.properties }, required: ['url'] }, tags: ['browser', 'sensitive'], handler: async (args, executionContext) => ({ success: true, ...(await browserService.navigate(sessionIdOf(executionContext), args.url, args)) }) })
   ctx.registerTool({ id: 'browserInspect', name: '检查网页', description: '读取当前页面的标题、地址、文本、链接、表单和可交互元素目录，便于确定后续 CSS 选择器。文本最多返回 24000 个字符。', parameters: browserOptions, tags: ['browser', 'readonly'], handler: async (args, executionContext) => ({ success: true, ...(await browserService.inspect(sessionIdOf(executionContext), { ...args, launch: false })) }) })

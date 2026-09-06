@@ -1,10 +1,11 @@
 {
   "id": "channel-feishu",
   "name": "飞书频道",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "飞书机器人频道集成：接收/发送消息，支持独立频道会话与主会话挂载",
   "author": "Artificer",
-  "icon": "activity",
+  "icon": "message-circle",
+  "permissions": ["network", "channels"],
   "ui": { "view": "view.vue" },
   "hasBackend": true,
   "panelOrder": 40

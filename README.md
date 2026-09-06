@@ -8,6 +8,8 @@ A single repository can maintain multiple plugins, but each plugin is published,
 - `channel-feishu`
 - `channel-wecom`
 - `token-usage`
+- `office`
+- `plugin-builder`
 
 Backend plugins must be manually reviewed to confirm that their declared `permissions` match their actual capabilities before installation or release.
 
@@ -20,11 +22,17 @@ Each plugin must be packaged into an independent ZIP file and uploaded to a GitH
 .\scripts\package-plugin.ps1 -PluginId channel-feishu
 .\scripts\package-plugin.ps1 -PluginId channel-wecom
 .\scripts\package-plugin.ps1 -PluginId token-usage
+.\scripts\package-plugin.ps1 -PluginId office
+.\scripts\package-plugin.ps1 -PluginId plugin-builder
 ```
 
 The package script creates `dist/<PluginId>-<version>.zip`. Each archive has exactly one top-level directory named after its plugin ID and prints its SHA-256 hash.
 
 Pushes to `main` that touch `plugins/**` or `scripts/**` trigger the `Release Plugins` workflow: it packages only plugins with changes since their per-plugin release tag (`<pluginId>-v<version>`), publishes the ZIP to GitHub Releases with its SHA-256 in the release notes, and regenerates `registry.json` automatically.
+
+## Plugin SDK
+
+Plugins must not import Artificer source files by relative path. The host injects a stable `ctx` API at registration time. Use `ctx.getStore()` for plugin-owned state, `ctx.processChannelInbound()` for channel events, and `ctx.importModule(name)` for audited packages declared in `plugin.json.runtimeDependencies`. Development plugins use `ctx.runtimePlugins.readSourceFile()`, `writeSourceFiles()`, and `build()` to manage user-created runtime plugins.
 
 ## Marketplace
 

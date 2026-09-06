@@ -2,8 +2,6 @@ import { existsSync } from 'fs'
 import fs from 'fs/promises'
 import path from 'path'
 import { spawn } from 'child_process'
-import WebSocket from 'ws'
-
 const DEFAULT_PORT = 9222
 const MAX_TEXT_LENGTH = 24000
 const DEFAULT_WAIT_TIMEOUT = 10000
@@ -41,7 +39,7 @@ async function ensureBrowser(port, launch = true) {
   }
 }
 
-async function cdp(wsUrl, method, params = {}) {
+async function cdp(WebSocket, wsUrl, method, params = {}) {
   return new Promise((resolve, reject) => {
     const socket = new WebSocket(wsUrl)
     const timer = setTimeout(() => { socket.terminate(); reject(new Error(`浏览器操作超时: ${method}`)) }, 15000)
@@ -61,7 +59,19 @@ async function cdp(wsUrl, method, params = {}) {
 }
 
 export class BrowserService {
-  constructor() { this.targets = new Map() }
+  constructor({ importModule }) {
+    this.importModule = importModule
+    this.targets = new Map()
+    this.WebSocket = null
+  }
+
+  async _getWebSocket() {
+    if (!this.WebSocket) {
+      const module = await this.importModule('ws')
+      this.WebSocket = module.default || module.WebSocket || module
+    }
+    return this.WebSocket
+  }
 
   async _target(sessionId, { port = DEFAULT_PORT, launch = true, newPage = false } = {}) {
     await ensureBrowser(port, launch)
@@ -80,7 +90,7 @@ export class BrowserService {
   async navigate(sessionId, url, options = {}) {
     if (!/^https?:\/\//i.test(url)) throw new Error('仅允许导航至 http 或 https 地址。')
     const target = await this._target(sessionId, options)
-    const result = await cdp(target.wsUrl, 'Page.navigate', { url })
+    const result = await cdp(await this._getWebSocket(), target.wsUrl, 'Page.navigate', { url })
     const wait = await this.waitFor(sessionId, { ...options, condition: 'load', launch: false, timeoutMs: options.timeoutMs || DEFAULT_WAIT_TIMEOUT })
     return { url, frameId: result.frameId, ...wait }
   }
@@ -88,7 +98,7 @@ export class BrowserService {
   async inspect(sessionId, options = {}) {
     const target = await this._target(sessionId, options)
     const expression = `(() => { const visible = el => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length); const describe = el => ({ tag: el.tagName.toLowerCase(), id: el.id || undefined, name: el.getAttribute('name') || undefined, type: el.getAttribute('type') || undefined, text: (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || el.value || '').trim().slice(0, 160), selector: el.id ? '#' + CSS.escape(el.id) : el.getAttribute('name') ? el.tagName.toLowerCase() + '[name="' + CSS.escape(el.getAttribute('name')) + '"]' : undefined, disabled: !!el.disabled }); return { title: document.title, url: location.href, readyState: document.readyState, text: (document.body?.innerText || '').slice(0, ${MAX_TEXT_LENGTH}), links: [...document.querySelectorAll('a[href]')].filter(visible).slice(0, 100).map(a => ({ text: (a.innerText || a.textContent || '').trim().slice(0, 160), href: a.href })).filter(a => a.text || a.href), forms: [...document.forms].map(f => ({ action: f.action, method: f.method, fields: [...f.elements].slice(0, 30).map(describe) })), elements: [...document.querySelectorAll('button, input, select, textarea, [role="button"], [contenteditable="true"]')].filter(visible).slice(0, 100).map(describe) } })()`
-    const result = await cdp(target.wsUrl, 'Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
+    const result = await cdp(await this._getWebSocket(), target.wsUrl, 'Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
     return result.result?.value || {}
   }
 
@@ -106,7 +116,7 @@ export class BrowserService {
       scroll: `(() => { const el = ${selector ? `document.querySelector(${selectorLiteral})` : 'window'}; if (!el) throw new Error('未找到元素: ' + ${selectorLiteral}); const top = Number(${valueLiteral}) || 600; if (el === window) window.scrollBy({ top, behavior: 'instant' }); else el.scrollBy({ top, behavior: 'instant' }); return { scrollTop: el === window ? window.scrollY : el.scrollTop } })()`
     }
     if (!expressions[action]) throw new Error('action 仅支持 click、type、select、hover、press 或 scroll。')
-    const result = await cdp(target.wsUrl, 'Runtime.evaluate', { expression: expressions[action], returnByValue: true, awaitPromise: true })
+    const result = await cdp(await this._getWebSocket(), target.wsUrl, 'Runtime.evaluate', { expression: expressions[action], returnByValue: true, awaitPromise: true })
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.text || '页面脚本执行失败')
     return result.result?.value || { action, selector }
   }
@@ -127,7 +137,7 @@ export class BrowserService {
         ? `!!document.querySelector(${selectorLiteral})`
         : `(document.body?.innerText || '').includes(${textLiteral})`
     do {
-      const result = await cdp(target.wsUrl, 'Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
+      const result = await cdp(await this._getWebSocket(), target.wsUrl, 'Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
       if (result.result?.value) return { condition, waitedMs: timeoutMs - Math.max(0, deadline - Date.now()) }
       await new Promise(resolve => setTimeout(resolve, 150))
     } while (Date.now() < deadline)
@@ -136,7 +146,7 @@ export class BrowserService {
 
   async screenshot(sessionId, options = {}) {
     const target = await this._target(sessionId, options)
-    const result = await cdp(target.wsUrl, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: !!options.fullPage })
+    const result = await cdp(await this._getWebSocket(), target.wsUrl, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: !!options.fullPage })
     const root = path.resolve(options.workspaceRoot || process.cwd())
     const outputPath = path.resolve(root, options.outputPath || `.artificer/browser-${Date.now()}.png`)
     const relative = path.relative(root, outputPath)
@@ -146,5 +156,3 @@ export class BrowserService {
     return { filePath: outputPath, mimeType: 'image/png' }
   }
 }
-
-export const browserService = new BrowserService()

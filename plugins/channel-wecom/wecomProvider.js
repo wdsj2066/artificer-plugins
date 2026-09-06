@@ -1,7 +1,3 @@
-import { ChannelProvider } from '../../providers/channelProvider.js'
-import { runtimeLogger } from '../../core/logger.js'
-import { channelStorage } from '../../storage/channelStorage.js'
-
 const WS_URL = 'wss://openws.work.weixin.qq.com'
 const PING_INTERVAL = 30000
 const RECONNECT_DELAY = 5000
@@ -10,9 +6,11 @@ const RECONNECT_DELAY = 5000
  * 企业微信智能机器人长连接提供者
  * 基于 WebSocket 协议，无需公网回调地址
  */
-export class WecomProvider extends ChannelProvider {
-  constructor(config) {
-    super(config)
+export class WecomProvider {
+  constructor(config, services) {
+    this.config = config
+    this.services = services
+    this.logger = services.logger || console
     this.name = 'wecom'
     this.botId = config.botId || config.config?.botId || ''
     this.botSecret = config.botSecret || config.config?.botSecret || ''
@@ -126,19 +124,20 @@ export class WecomProvider extends ChannelProvider {
     if (this.connected || this._connecting) return
     const validation = this.validateConfig()
     if (!validation.valid) {
-      runtimeLogger.warn(`[Wecom/${this.channelId}] 配置无效，跳过长连接: ${validation.errors.join(', ')}`)
+      this.logger.warn?.(`[Wecom/${this.channelId}] 配置无效，跳过长连接: ${validation.errors.join(', ')}`)
       return
     }
 
     try {
-      const { default: WebSocket } = await import('ws')
+      const module = await this.services.importModule('ws')
+      const WebSocket = module.default || module.WebSocket || module
       this._connecting = true
       const ws = new WebSocket(WS_URL)
       this.ws = ws
 
       ws.on('open', () => {
         if (this.ws !== ws) return // 旧 socket 的残留事件，忽略
-        runtimeLogger.info(`[Wecom/${this.channelId}] WebSocket 已连接，正在订阅...`)
+        this.logger.info?.(`[Wecom/${this.channelId}] WebSocket 已连接，正在订阅...`)
         this._subscribe()
       })
 
@@ -148,14 +147,14 @@ export class WecomProvider extends ChannelProvider {
           const msg = JSON.parse(raw.toString())
           this._dispatch(msg, ws)
         } catch (e) {
-          runtimeLogger.error(`[Wecom/${this.channelId}] 消息解析失败:`, e.message)
+          this.logger.error?.(`[Wecom/${this.channelId}] 消息解析失败:`, e.message)
         }
       })
 
       ws.on('close', (code, reason) => {
         if (this.ws !== ws) return // 旧 socket 的残留事件，忽略
         this._connecting = false
-        runtimeLogger.warn(`[Wecom/${this.channelId}] 连接关闭 code=${code}${reason ? ` reason=${reason}` : ''}`)
+        this.logger.warn?.(`[Wecom/${this.channelId}] 连接关闭 code=${code}${reason ? ` reason=${reason}` : ''}`)
         this.connected = false
         this._clearTimers()
         this._scheduleReconnect()
@@ -164,11 +163,11 @@ export class WecomProvider extends ChannelProvider {
       ws.on('error', (err) => {
         if (this.ws !== ws) return // 旧 socket 的残留事件，忽略
         this._connecting = false
-        runtimeLogger.error(`[Wecom/${this.channelId}] WebSocket 错误:`, err.message)
+        this.logger.error?.(`[Wecom/${this.channelId}] WebSocket 错误:`, err.message)
       })
     } catch (e) {
       this._connecting = false
-      runtimeLogger.error(`[Wecom/${this.channelId}] 创建 WebSocket 失败:`, e.message)
+      this.logger.error?.(`[Wecom/${this.channelId}] 创建 WebSocket 失败:`, e.message)
       this._scheduleReconnect()
     }
   }
@@ -181,7 +180,7 @@ export class WecomProvider extends ChannelProvider {
       this.ws = null
     }
     this.connected = false
-    runtimeLogger.info(`[Wecom/${this.channelId}] 已断开连接`)
+    this.logger.info?.(`[Wecom/${this.channelId}] 已断开连接`)
   }
 
   isConnected() {
@@ -259,29 +258,29 @@ export class WecomProvider extends ChannelProvider {
 
   async _subscribe() {
     try {
-      const storedSeq = channelStorage.getWecomSeq(this.channelId)
+      const storedSeq = this.services.store.get(`sequence:${this.channelId}`)
       const body = { bot_id: this.botId, secret: this.botSecret }
       if (storedSeq != null) {
         body.seq = storedSeq
-        runtimeLogger.info(`[Wecom/${this.channelId}] 携带 seq=${storedSeq} 订阅（断线补推）`)
+        this.logger.info?.(`[Wecom/${this.channelId}] 携带 seq=${storedSeq} 订阅（断线补推）`)
       }
       const res = await this._sendCommandWait('aibot_subscribe', body)
       if (res.errcode === 0) {
         this.connected = true
         this._connecting = false
         this._startPing()
-        runtimeLogger.info(`[Wecom/${this.channelId}] 订阅成功`)
+        this.logger.info?.(`[Wecom/${this.channelId}] 订阅成功`)
         if (res.last_seq != null) {
-          channelStorage.setWecomSeq(this.channelId, res.last_seq)
+          this.services.store.set(`sequence:${this.channelId}`, res.last_seq)
         }
       } else {
         this._connecting = false
-        runtimeLogger.error(`[Wecom/${this.channelId}] 订阅失败: errcode=${res.errcode} ${res.errmsg || ''}`)
+        this.logger.error?.(`[Wecom/${this.channelId}] 订阅失败: errcode=${res.errcode} ${res.errmsg || ''}`)
         this._scheduleReconnect()
       }
     } catch (e) {
       this._connecting = false
-      runtimeLogger.error(`[Wecom/${this.channelId}] 订阅异常:`, e.message)
+      this.logger.error?.(`[Wecom/${this.channelId}] 订阅异常:`, e.message)
       this._scheduleReconnect()
     }
   }
@@ -291,7 +290,7 @@ export class WecomProvider extends ChannelProvider {
 
     // 事件回调：收到即保存 seq，断线重连时避免重放事件
     if (cmd === 'aibot_event_callback' && body?.seq != null) {
-      channelStorage.setWecomSeq(this.channelId, body.seq)
+      this.services.store.set(`sequence:${this.channelId}`, body.seq)
     }
 
     if (cmd === 'aibot_msg_callback') {
@@ -322,7 +321,7 @@ export class WecomProvider extends ChannelProvider {
     this._busy = true
     while (this._queue.length > 0) {
       const fn = this._queue.shift()
-      try { await fn() } catch (e) { runtimeLogger.error(`[Wecom/${this.channelId}] 处理回调异常:`, e.message) }
+      try { await fn() } catch (e) { this.logger.error?.(`[Wecom/${this.channelId}] 处理回调异常:`, e.message) }
     }
     this._busy = false
   }
@@ -336,17 +335,16 @@ export class WecomProvider extends ChannelProvider {
     if (!inbound) return
 
     try {
-      const { channelConversationService } = await import('../../providers/channelConversationService.js')
-      const result = await channelConversationService.processInboundEvent(this.channelId, inbound, { reqId })
+      const result = await this.services.processInbound(this.channelId, inbound, { reqId })
       // 处理成功后保存 seq，下次重连时从该位置之后继续补推
       if (result?.success && body?.seq != null) {
-        channelStorage.setWecomSeq(this.channelId, body.seq)
+        this.services.store.set(`sequence:${this.channelId}`, body.seq)
       }
       if (!result.success) {
-        runtimeLogger.error(`[Wecom/${this.channelId}] 消息处理失败:`, result.body?.error)
+        this.logger.error?.(`[Wecom/${this.channelId}] 消息处理失败:`, result.body?.error)
       }
     } catch (e) {
-      runtimeLogger.error(`[Wecom/${this.channelId}] 消息回调异常:`, e.message)
+      this.logger.error?.(`[Wecom/${this.channelId}] 消息回调异常:`, e.message)
     }
   }
 
@@ -357,7 +355,7 @@ export class WecomProvider extends ChannelProvider {
     const event = body?.event || {}
     const eventType = event.eventtype
 
-    runtimeLogger.info(`[Wecom/${this.channelId}] 事件回调: ${eventType}`)
+    this.logger.info?.(`[Wecom/${this.channelId}] 事件回调: ${eventType}`)
 
     if (eventType === 'enter_chat') {
       if (this.welcomeMessage) {
@@ -372,7 +370,7 @@ export class WecomProvider extends ChannelProvider {
 
     if (eventType === 'disconnected_event') {
       if (ws && this.ws !== ws) return // 排队期间连接已被替换，忽略过期事件
-      runtimeLogger.warn(`[Wecom/${this.channelId}] 收到断开连接事件`)
+      this.logger.warn?.(`[Wecom/${this.channelId}] 收到断开连接事件`)
       this.connected = false
       this._connecting = false
       this._clearTimers()
@@ -388,16 +386,15 @@ export class WecomProvider extends ChannelProvider {
       const inbound = this._parseEventToInbound(body)
       if (inbound) {
         try {
-          const { channelConversationService } = await import('../../providers/channelConversationService.js')
-          await channelConversationService.processInboundEvent(this.channelId, inbound, { reqId })
+          await this.services.processInbound(this.channelId, inbound, { reqId })
         } catch (e) {
-          runtimeLogger.error(`[Wecom/${this.channelId}] 卡片事件处理失败:`, e.message)
+          this.logger.error?.(`[Wecom/${this.channelId}] 卡片事件处理失败:`, e.message)
         }
       }
       return
     }
 
-    runtimeLogger.debug(`[Wecom/${this.channelId}] 未处理的事件类型: ${eventType}`)
+    this.logger.debug?.(`[Wecom/${this.channelId}] 未处理的事件类型: ${eventType}`)
   }
 
   /* ========== 入站数据转换 ========== */
@@ -537,7 +534,7 @@ export class WecomProvider extends ChannelProvider {
 
   _scheduleReconnect() {
     if (this.reconnectTimer) return
-    runtimeLogger.info(`[Wecom/${this.channelId}] ${RECONNECT_DELAY / 1000}s 后重连...`)
+    this.logger.info?.(`[Wecom/${this.channelId}] ${RECONNECT_DELAY / 1000}s 后重连...`)
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
       this.connect()

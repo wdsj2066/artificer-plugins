@@ -1,0 +1,59 @@
+{
+  "id": "office",
+  "name": "Office 办公",
+  "version": "1.0.0",
+  "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
+  "author": "Artificer",
+  "icon": "document",
+  "permissions": ["filesystem"],
+  "runtimeDependencies": ["jszip", "officeparser", "pptxgenjs", "docx"],
+  "hasBackend": true,
+  "ui": {
+    "toolRenderers": {
+      "createPptx": "renderers/PptxResult.vue",
+      "createDocx": "renderers/DocxResult.vue"
+    }
+  },
+  "scenario": [
+    {
+      "id": "ppt-assistant",
+      "name": "PPT 助手",
+      "description": "根据需求生成专业 PowerPoint 演示文稿（.pptx）",
+      "capabilities": ["document_generation", "presentation"],
+      "promptFile": "prompts/ppt-assistant.md",
+      "access": {
+        "tools": ["createPptx", "readOffice", "editOfficeText", "readFile", "writeFile", "searchWeb", "fetchUrl"],
+        "skills": ["office-guide"]
+      },
+      "config": {
+        "temperature": 0.7,
+        "maxOutputTokens": 16384,
+        "enableHistory": true
+      }
+    },
+    {
+      "id": "word-assistant",
+      "name": "Word 助手",
+      "description": "根据需求生成结构化的 Word 文档（.docx）",
+      "capabilities": ["document_generation", "writing"],
+      "promptFile": "prompts/word-assistant.md",
+      "access": {
+        "tools": ["createDocx", "readOffice", "editOfficeText", "readFile", "writeFile", "searchWeb", "fetchUrl"],
+        "skills": ["office-guide"]
+      },
+      "config": {
+        "temperature": 0.7,
+        "maxOutputTokens": 16384,
+        "enableHistory": true
+      }
+    }
+  ],
+  "skills": [
+    {
+      "id": "office-guide",
+      "name": "Office 文档生成指南",
+      "description": "createPptx / createDocx 工具的使用规范与最佳实践",
+      "content": "# Office 文档生成指南\n\n先用 readOffice 读取已有 .docx/.pptx，再根据用户要求使用 editOfficeText 原地修改或另存为；原文替换会保留原文件的版式、图片和主题。\n\ncreatePptx 支持 title/subtitle/theme/footer/author，以及 slides 的 layout（title-body、two-column、quote、blank）、body、left/right、table、image、notes。createDocx 支持 sections 的 headingLevel、富文本 paragraphs（text/bold/italic/bullet/level/pageBreakBefore）、table，以及 author/header/footer。旧版字符串数组参数兼容。"
+    }
+  ]
+}

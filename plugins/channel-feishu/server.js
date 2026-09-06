@@ -7,6 +7,12 @@ import { FeishuProvider } from './feishuProvider.js'
 export function register(ctx) {
   const { registerChannel, logger } = ctx
 
-  registerChannel('feishu', FeishuProvider)
+  class RuntimeFeishuProvider extends FeishuProvider {
+    constructor(config) {
+      super(config, { logger })
+    }
+  }
+
+  registerChannel('feishu', RuntimeFeishuProvider)
   logger?.info?.('[channel-feishu] FeishuProvider 已注册')
 }

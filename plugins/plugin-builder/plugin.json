@@ -1,0 +1,39 @@
+{
+  "id": "plugin-builder",
+  "name": "插件工坊",
+  "version": "1.0.0",
+  "description": "评估需求可行性，设计并构建受信任运行时插件：支持 Vue UI（状态栏/停靠面板/完整页面）与 Node.js 后端（工具、命令、API 路由、WebSocket、频道、hooks、持久化存储与设置）",
+  "author": "Artificer",
+  "icon": "puzzle",
+  "hasBackend": true,
+  "permissions": ["filesystem", "settings"],
+  "scenario": {
+    "id": "plugin-builder-assistant",
+    "name": "插件工坊",
+    "description": "评估需求可行性，创建可含 Vue UI 与 server.js 后端（工具、命令、路由、hooks、存储、设置）的受信任运行时插件",
+    "capabilities": [
+      "plugin_feasibility",
+      "plugin_design",
+      "runtime_ui_plugin_development",
+      "ui_implementation"
+    ],
+    "promptFile": "prompts/plugin-builder.md",
+    "access": {
+      "tools": [
+        "askUser",
+        "readRuntimeUiPluginFile",
+        "writeRuntimeUiPluginFiles",
+        "buildRuntimeUiPlugin",
+        "searchWeb",
+        "fetchUrl",
+        "calculate"
+      ],
+      "skills": []
+    },
+    "config": {
+      "temperature": 0.3,
+      "maxOutputTokens": 16384,
+      "enableHistory": true
+    }
+  }
+}
