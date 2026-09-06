@@ -14,13 +14,13 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v1.1.0/browser-automation-1.1.0.zip",
-      "sha256": "32d11c93defd455474f962cd2fb89a7c0e18436f7252abe145ce956f9bd5048f"
+      "sha256": null
     },
     {
       "id": "channel-feishu",
       "name": "飞书频道",
       "description": "飞书机器人频道集成：接收/发送消息，支持独立频道会话与主会话挂载",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": "Artificer",
       "hasBackend": true,
       "permissions": [
@@ -28,14 +28,14 @@
         "channels"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.1.0/channel-feishu-1.1.0.zip",
-      "sha256": "a806be735e6aafe94e64905cfa94c7c953c005f178c2e8ec8c576521d5dfc5a6"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.0/channel-feishu-1.2.0.zip",
+      "sha256": "bfed4952b6749321bc82306ec4d83586ce1634cc0f896e20218c6b206bfde135"
     },
     {
       "id": "channel-wecom",
       "name": "企业微信频道",
       "description": "企业微信智能机器人频道集成：长连接收发消息，支持独立频道会话与主会话挂载",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": "Artificer",
       "hasBackend": true,
       "permissions": [
@@ -44,8 +44,8 @@
         "settings"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.1.0/channel-wecom-1.1.0.zip",
-      "sha256": "97aa89c4387532d463960e70ea51128a5a37bd1f14d0b3d8e0a36ef2fe36ae72"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.0/channel-wecom-1.2.0.zip",
+      "sha256": "b257a63372bbf81065b1dfe0db0e87c7cf05e408172d3a24c02e238b85e916e4"
     },
     {
       "id": "token-usage",
@@ -57,7 +57,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "3726be3cf027534991c5cc88711f896c7ed25d3a3ead239608a9d06af1533285"
+      "sha256": null
     },
     {
       "id": "office",
@@ -71,7 +71,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.0/office-1.0.0.zip",
-      "sha256": "e34f6e388c9d9b545418fd6632179e121d701d9f9773d67be6c96f241134c65e"
+      "sha256": null
     },
     {
       "id": "plugin-builder",
@@ -86,7 +86,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.0/plugin-builder-1.0.0.zip",
-      "sha256": "ed8c0c5308a239da998e36a84cf051e644272b85f1d049575a3a732adbfad368"
+      "sha256": null
     }
   ]
 }
