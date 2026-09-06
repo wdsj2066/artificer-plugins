@@ -4,7 +4,7 @@
       "id": "browser-automation",
       "name": "浏览器自动化",
       "description": "基于 Chrome DevTools Protocol 的本机网页导航、检查、交互与截图工具",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": "Artificer",
       "hasBackend": true,
       "permissions": [
@@ -13,44 +13,80 @@
         "subprocess"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v1.0.0/browser-automation-1.0.0.zip",
-      "sha256": "4f6d8ed831fe23f0c6610136dd55e4aff7584b3a359154777b6320f6d51e1581"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v1.1.0/browser-automation-1.1.0.zip",
+      "sha256": "32d11c93defd455474f962cd2fb89a7c0e18436f7252abe145ce956f9bd5048f"
     },
     {
       "id": "channel-feishu",
       "name": "飞书频道",
       "description": "飞书机器人频道集成：接收/发送消息，支持独立频道会话与主会话挂载",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": "Artificer",
       "hasBackend": true,
-      "permissions": [],
+      "permissions": [
+        "network",
+        "channels"
+      ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.0.0/channel-feishu-1.0.0.zip",
-      "sha256": "432de0aac91a435805162d8edc1205e81b21ebd68a8dbae911fe5dbedc6648e1"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.1.0/channel-feishu-1.1.0.zip",
+      "sha256": "a806be735e6aafe94e64905cfa94c7c953c005f178c2e8ec8c576521d5dfc5a6"
     },
     {
       "id": "channel-wecom",
       "name": "企业微信频道",
       "description": "企业微信智能机器人频道集成：长连接收发消息，支持独立频道会话与主会话挂载",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": "Artificer",
       "hasBackend": true,
-      "permissions": [],
+      "permissions": [
+        "network",
+        "channels",
+        "settings"
+      ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.0.0/channel-wecom-1.0.0.zip",
-      "sha256": "797c483b7a237d452becc46ce9227820e8f2b0040ca48879190e3aa935cd7252"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.1.0/channel-wecom-1.1.0.zip",
+      "sha256": "97aa89c4387532d463960e70ea51128a5a37bd1f14d0b3d8e0a36ef2fe36ae72"
     },
     {
       "id": "token-usage",
       "name": "Token 用量",
       "description": "在聊天输入框下方显示本会话的模型 token 用量和缓存命中情况",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": "Artificer",
       "hasBackend": false,
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.0.0/token-usage-1.0.0.zip",
-      "sha256": "af1f8e466d9ad8f2578bf948dec47f654846526d6767cddedde00daa3f41e1db"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
+      "sha256": "3726be3cf027534991c5cc88711f896c7ed25d3a3ead239608a9d06af1533285"
+    },
+    {
+      "id": "office",
+      "name": "Office 办公",
+      "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "hasBackend": true,
+      "permissions": [
+        "filesystem"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.0/office-1.0.0.zip",
+      "sha256": "e34f6e388c9d9b545418fd6632179e121d701d9f9773d67be6c96f241134c65e"
+    },
+    {
+      "id": "plugin-builder",
+      "name": "插件工坊",
+      "description": "评估需求可行性，设计并构建受信任运行时插件：支持 Vue UI（状态栏/停靠面板/完整页面）与 Node.js 后端（工具、命令、API 路由、WebSocket、频道、hooks、持久化存储与设置）",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "hasBackend": true,
+      "permissions": [
+        "filesystem",
+        "settings"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.0/plugin-builder-1.0.0.zip",
+      "sha256": "ed8c0c5308a239da998e36a84cf051e644272b85f1d049575a3a732adbfad368"
     }
   ]
 }
