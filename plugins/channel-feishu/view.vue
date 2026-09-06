@@ -198,8 +198,8 @@ import {
 import {
   getChannels, createChannel, updateChannel, deleteChannel, testChannel, toggleChannel,
   getChannelConversations, getChannelConversationMessages
-} from '../../web/src/api/channels.js'
-import { getAgents } from '../../web/src/api/agents.js'
+} from './channelApi.js'
+import { getAgents } from './channelApi.js'
 
 const TYPE = 'feishu'
 
