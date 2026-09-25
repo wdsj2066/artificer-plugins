@@ -1,0 +1,12 @@
+{
+  "name": "artificer-office-plugin-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "docx": "^9.7.1",
+    "jszip": "^3.10.1",
+    "officeparser": "^7.8.0",
+    "pptxgenjs": "^4.0.1"
+  }
+}

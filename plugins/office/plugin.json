@@ -1,12 +1,11 @@
 {
   "id": "office",
   "name": "Office 办公",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
   "author": "Artificer",
   "icon": "document",
   "permissions": ["filesystem"],
-  "runtimeDependencies": ["jszip", "officeparser", "pptxgenjs", "docx"],
   "hasBackend": true,
   "ui": {
     "toolRenderers": {

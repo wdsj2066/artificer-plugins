@@ -9,9 +9,9 @@ function resolveOfficePath(filePath, workspaceDir) {
   return absolute
 }
 
-export async function readOfficeFile(filePath, workspaceDir, importModule) {
+export async function readOfficeFile(filePath, workspaceDir) {
   const absolute = resolveOfficePath(filePath, workspaceDir)
-  const { parseOffice } = await importModule('officeparser')
+  const { parseOffice } = await import('officeparser')
   const ast = await parseOffice(absolute, { ignoreNotes: false, includeFormatting: true })
   return {
     filePath: absolute,
@@ -54,11 +54,11 @@ function replaceAcrossRuns(xml, from, to, tag) {
   return { xml: result, changed }
 }
 
-export async function replaceOfficeText(filePath, replacements, outputPath, workspaceDir, importModule) {
+export async function replaceOfficeText(filePath, replacements, outputPath, workspaceDir) {
   const source = resolveOfficePath(filePath, workspaceDir)
   const target = outputPath ? resolveOfficePath(outputPath, workspaceDir) : source
   if (!replacements || typeof replacements !== 'object' || Array.isArray(replacements)) throw new Error('replacements 必须是“原文:新文”的对象')
-  const JSZip = (await importModule('jszip')).default
+  const JSZip = (await import('jszip')).default
   const zip = await JSZip.loadAsync(await fs.readFile(source))
   const entries = Object.entries(replacements).filter(([from]) => from.length > 0)
   let changed = 0

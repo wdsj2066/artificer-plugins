@@ -11,7 +11,7 @@
 import { readOfficeFile, replaceOfficeText } from './officeFileService.js'
 
 export function register(ctx) {
-  const { registerTool, logger, importModule } = ctx
+  const { registerTool, logger } = ctx
 
   registerTool({
     id: 'readOffice',
@@ -20,7 +20,7 @@ export function register(ctx) {
     parameters: { type: 'object', properties: { filePath: { type: 'string', description: '工作区内的 .docx/.pptx 路径' } }, required: ['filePath'] },
     tags: ['office', 'readonly'],
     async handler({ filePath, _workspaceDir }) {
-      try { return { success: true, ...(await readOfficeFile(filePath, _workspaceDir, importModule)) } } catch (error) { return { success: false, error: `读取Office文档失败: ${error.message}` } }
+      try { return { success: true, ...(await readOfficeFile(filePath, _workspaceDir)) } } catch (error) { return { success: false, error: `读取Office文档失败: ${error.message}` } }
     }
   })
 
@@ -39,7 +39,7 @@ export function register(ctx) {
     },
     tags: ['office'],
     async handler({ filePath, outputPath, replacements, _workspaceDir }) {
-      try { return await replaceOfficeText(filePath, replacements, outputPath, _workspaceDir, importModule) } catch (error) { return { success: false, error: `编辑Office文档失败: ${error.message}` } }
+      try { return await replaceOfficeText(filePath, replacements, outputPath, _workspaceDir) } catch (error) { return { success: false, error: `编辑Office文档失败: ${error.message}` } }
     }
   })
 
@@ -91,7 +91,7 @@ export function register(ctx) {
           return { success: false, error: '输出文件必须以 .pptx 结尾' }
         }
 
-        const mod = await importModule('pptxgenjs')
+        const mod = await import('pptxgenjs')
         const PptxGenJS = mod.default || mod
         const pptx = new PptxGenJS()
         pptx.layout = 'LAYOUT_WIDE'
@@ -193,7 +193,7 @@ export function register(ctx) {
           return { success: false, error: '输出文件必须以 .docx 结尾' }
         }
 
-        const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, Header, Footer, PageNumber } = await importModule('docx')
+        const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, Header, Footer, PageNumber } = await import('docx')
 
         const children = []
         if (title) {
