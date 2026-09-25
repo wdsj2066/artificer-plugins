@@ -112,7 +112,13 @@ try {
     }
 
     Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue
-    Compress-Archive -LiteralPath $stagedPluginDirectory -DestinationPath $archivePath -Force
+    # Compress-Archive 在 Unix 上会跳过点号开头的目录；预编译 UI 位于 .artificer-dist。
+    [System.IO.Compression.ZipFile]::CreateFromDirectory(
+        $stagedPluginDirectory,
+        $archivePath,
+        [System.IO.Compression.CompressionLevel]::Optimal,
+        $true
+    )
 
     $hash = Get-FileHash -LiteralPath $archivePath -Algorithm SHA256
     Write-Output "Package: $archivePath"
