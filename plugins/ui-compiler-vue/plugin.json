@@ -1,0 +1,9 @@
+{
+  "id": "ui-compiler-vue",
+  "name": "Vue UI 编译器",
+  "version": "1.0.0",
+  "description": "为外部插件编译 Vue 组件和样式",
+  "author": "Artificer",
+  "hasBackend": true,
+  "permissions": ["filesystem", "subprocess", "compiler"]
+}

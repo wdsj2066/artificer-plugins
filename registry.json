@@ -1,6 +1,24 @@
 {
   "plugins": [
     {
+      "id": "ui-compiler-vue",
+      "name": "Vue UI 编译器",
+      "description": "为外部插件编译 Vue 组件和样式",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "hasBackend": true,
+      "permissions": ["filesystem", "subprocess", "compiler"],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/ui-compiler-vue",
+      "downloads": {
+        "linux-x64": { "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-linux-x64.zip", "sha256": null },
+        "linux-arm64": { "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-linux-arm64.zip", "sha256": null },
+        "win32-x64": { "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-win32-x64.zip", "sha256": null },
+        "win32-arm64": { "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-win32-arm64.zip", "sha256": null },
+        "darwin-x64": { "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-darwin-x64.zip", "sha256": null },
+        "darwin-arm64": { "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-darwin-arm64.zip", "sha256": null }
+      }
+    },
+    {
       "id": "browser-automation",
       "name": "浏览器自动化",
       "description": "基于 Chrome DevTools Protocol 的本机网页导航、检查、交互与截图工具",
