@@ -108,7 +108,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserSelectElement',
     name: '选择预览元素',
-    description: '按 CSS 选择器读取预览页中的元素，并将它设为当前选中项，可在信息面板预览中高亮或引用到聊天框。',
+    description: '按 CSS 选择器读取预览页中的元素，并静默更新当前选中项，不弹出用户详情窗；可继续读取元素信息或把元素作为聊天上下文。',
     parameters: { type: 'object', properties: { selector: { type: 'string', description: 'CSS 选择器，例如 #hero 或 main .card' } }, required: ['selector'] },
     tags: ['browser', 'readonly'],
     async handler(args, executionContext) {

@@ -182,15 +182,17 @@ async function request(url, options) {
   return payload
 }
 
-function applySelection(next) {
+function applySelection(next, { showDetails = false, closeDetails = false } = {}) {
   selection.value = next || null
   const key = next ? `${next.selectedAt || ''}:${next.selector || ''}` : ''
-  if (key === lastSelectionKey) return
-  lastSelectionKey = key
-  selectionDetailsOpen.value = Boolean(next)
-  window.dispatchEvent(new CustomEvent('artificer:browser-selection', {
-    detail: { sessionId: props.sessionId, selection: selection.value }
-  }))
+  if (key !== lastSelectionKey) {
+    lastSelectionKey = key
+    window.dispatchEvent(new CustomEvent('artificer:browser-selection', {
+      detail: { sessionId: props.sessionId, selection: selection.value }
+    }))
+  }
+  if (!next || closeDetails) selectionDetailsOpen.value = false
+  else if (showDetails) selectionDetailsOpen.value = true
 }
 
 async function loadStatus() {
@@ -306,7 +308,7 @@ async function onFrameMessage(event) {
   } else if (data.type === 'selection') {
     selecting.value = false
     const selected = { ...data.selection, selectedAt: Date.now() }
-    applySelection(selected)
+    applySelection(selected, { showDetails: true })
     try {
       await request('/api/plugins/browser-automation/bridge/selection', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -314,7 +316,7 @@ async function onFrameMessage(event) {
       })
     } catch (cause) { error.value = cause.message || '保存所选元素失败。' }
   } else if (data.type === 'command-result') {
-    if (data.result?.selection) applySelection(data.result.selection)
+    if (data.result?.selection) applySelection(data.result.selection, { closeDetails: true })
     try {
       await request('/api/plugins/browser-automation/bridge/result', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
