@@ -2,13 +2,16 @@ import { spawn } from 'child_process'
 import { createServer } from 'http'
 import net from 'net'
 import path from 'path'
-import { createReadStream, existsSync, realpathSync, statSync } from 'fs'
+import { createReadStream, existsSync, readFileSync, realpathSync, statSync } from 'fs'
 import { randomUUID } from 'crypto'
+import { fileURLToPath } from 'url'
 
 const MAX_OUTPUT_BYTES = 64 * 1024
 const MAX_HTML_BYTES = 2 * 1024 * 1024
 const DEFAULT_COMMAND_TIMEOUT = 20_000
 const COMMAND_RETRY_MS = 800
+const MAX_SCREENSHOT_DATA_URL = 7_000_000
+const HTML2CANVAS_SCRIPT = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'node_modules', 'html2canvas', 'dist', 'html2canvas.min.js'), 'utf8')
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -50,11 +53,32 @@ function bridgeScript(token) {
     const box = shadow.querySelector('.box');
     const label = shadow.querySelector('.label');
     const send = (type, data = {}) => window.parent.postMessage({ source: SOURCE, token: TOKEN, type, ...data }, '*');
+    let screenshotLibraryPromise = null;
+    const loadScreenshotLibrary = () => {
+      if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
+      if (!screenshotLibraryPromise) screenshotLibraryPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = '/__artificer_html2canvas.js';
+        script.onload = () => {
+          if (typeof window.html2canvas === 'function') resolve(window.html2canvas);
+          else { screenshotLibraryPromise = null; reject(new Error('网页截图组件未能加载。')); }
+        };
+        script.onerror = () => { screenshotLibraryPromise = null; reject(new Error('网页截图组件加载失败。')); };
+        (document.head || document.documentElement).appendChild(script);
+      });
+      return screenshotLibraryPromise;
+    };
     const announceReady = () => {
       if (document.documentElement && !overlayHost.isConnected) document.documentElement.appendChild(overlayHost);
       send('ready', { url: location.href, title: document.title, documentId: DOCUMENT_ID });
     };
     window.addEventListener('pagehide', () => send('unloading', { documentId: DOCUMENT_ID }), { once: true });
+    let lastUrl = location.href;
+    setInterval(() => {
+      if (location.href === lastUrl) return;
+      lastUrl = location.href;
+      send('navigated', { url: lastUrl, documentId: DOCUMENT_ID });
+    }, 250);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', announceReady, { once: true });
     else announceReady();
     const escape = value => CSS.escape(value);
@@ -138,10 +162,62 @@ function bridgeScript(token) {
     const run = async command => {
       const args = command.args || {};
       switch (command.type) {
+        case 'screenshot': {
+          const capture = await loadScreenshotLibrary();
+          const fullPage = args.mode === 'fullPage';
+          const root = document.documentElement;
+          const body = document.body;
+          const width = fullPage ? Math.max(root.scrollWidth, root.offsetWidth, body?.scrollWidth || 0, window.innerWidth) : window.innerWidth;
+          const height = fullPage ? Math.max(root.scrollHeight, root.offsetHeight, body?.scrollHeight || 0, window.innerHeight) : window.innerHeight;
+          const scale = Math.min(window.devicePixelRatio || 1, 1.5, 10000 / width, 10000 / height, Math.sqrt(8000000 / (width * height)));
+          let canvas = await capture(root, {
+            backgroundColor: '#ffffff', useCORS: true, allowTaint: false, imageTimeout: 5000, logging: false,
+            width, height, x: fullPage ? 0 : window.scrollX, y: fullPage ? 0 : window.scrollY,
+            scrollX: fullPage ? 0 : window.scrollX, scrollY: fullPage ? 0 : window.scrollY,
+            windowWidth: fullPage ? Math.max(width, window.innerWidth) : window.innerWidth,
+            windowHeight: fullPage ? Math.max(height, window.innerHeight) : window.innerHeight,
+            scale, ignoreElements: element => element === overlayHost || element.hasAttribute?.('data-html2canvas-ignore')
+          });
+          let dataUrl = canvas.toDataURL('image/jpeg', 0.86);
+          while (dataUrl.length > MAX_SCREENSHOT_DATA_URL && canvas.width > 800 && canvas.height > 600) {
+            const factor = Math.max(0.55, Math.min(0.85, Math.sqrt(MAX_SCREENSHOT_DATA_URL / dataUrl.length) * 0.9));
+            const reduced = document.createElement('canvas');
+            reduced.width = Math.max(1, Math.floor(canvas.width * factor));
+            reduced.height = Math.max(1, Math.floor(canvas.height * factor));
+            reduced.getContext('2d').drawImage(canvas, 0, 0, reduced.width, reduced.height);
+            canvas = reduced;
+            dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+          }
+          if (dataUrl.length > MAX_SCREENSHOT_DATA_URL) throw new Error('网页截图过大，请改截当前视口。');
+          return { dataUrl, width: canvas.width, height: canvas.height, mode: fullPage ? 'fullPage' : 'viewport', url: location.href, title: document.title };
+        }
         case 'inspect': {
           const visible = element => !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
           const describeControl = element => ({ tag: element.tagName.toLowerCase(), id: element.id || '', name: element.getAttribute('name') || '', type: element.getAttribute('type') || '', text: (element.innerText || element.getAttribute('aria-label') || element.title || '').trim().slice(0, 120), selector: selectorFor(element), disabled: !!element.disabled });
-          return { title: document.title, url: location.href, readyState: document.readyState, text: (document.body?.innerText || '').slice(0, 16000), links: [...document.querySelectorAll('a[href]')].filter(visible).slice(0, 60).map(a => ({ text: (a.innerText || a.textContent || '').trim().slice(0, 120), href: a.href })), elements: [...document.querySelectorAll('button,input,select,textarea,[role="button"],[contenteditable="true"]')].filter(visible).slice(0, 80).map(describeControl) };
+          const popupSelector = 'dialog[open],[role="dialog"],[role="alertdialog"],[aria-modal="true"],[popover]:popover-open,[class*="modal" i],[id*="modal" i],[class*="dialog" i],[id*="dialog" i],[class*="popup" i],[id*="popup" i],[class*="popover" i],[id*="popover" i],[class*="drawer" i],[id*="drawer" i]';
+          const popupCandidates = new Set(document.querySelectorAll(popupSelector));
+          for (const trigger of document.querySelectorAll('[aria-expanded="true"][aria-controls]')) {
+            for (const id of trigger.getAttribute('aria-controls').split(/\s+/)) {
+              const target = document.getElementById(id);
+              if (target) popupCandidates.add(target);
+            }
+          }
+          for (const element of document.querySelectorAll('body *')) {
+            const style = getComputedStyle(element);
+            if ((style.position !== 'fixed' && style.position !== 'absolute') || style.zIndex === 'auto' || Number(style.zIndex) < 20 || !visible(element)) continue;
+            const rect = element.getBoundingClientRect();
+            if (rect.width >= 160 && rect.height >= 100 && rect.width * rect.height >= innerWidth * innerHeight * 0.015) popupCandidates.add(element);
+          }
+          const visiblePopupCandidates = [...popupCandidates].filter(element => visible(element) && element !== overlayHost && !overlayHost.contains(element));
+          const popups = visiblePopupCandidates.filter(element => !visiblePopupCandidates.some(parent => parent !== element && parent.contains(element))).slice(0, 20).map(element => {
+            const details = describe(element);
+            return {
+              selector: details.selector, tag: details.tag, id: details.id, classes: details.classes,
+              role: details.role, text: details.text, html: details.html.slice(0, 2500), bounds: details.bounds,
+              controls: [...element.querySelectorAll('button,input,select,textarea,[role="button"],[role="menuitem"],[role="option"],[contenteditable="true"]')].filter(visible).slice(0, 40).map(describeControl)
+            };
+          });
+          return { title: document.title, url: location.href, readyState: document.readyState, text: (document.body?.innerText || '').slice(0, 16000), popups, links: [...document.querySelectorAll('a[href]')].filter(visible).slice(0, 60).map(a => ({ text: (a.innerText || a.textContent || '').trim().slice(0, 120), href: a.href })), elements: [...document.querySelectorAll('button,input,select,textarea,[role="button"],[contenteditable="true"]')].filter(visible).slice(0, 80).map(describeControl) };
         }
         case 'readHtml': return { html: document.documentElement?.outerHTML?.slice(0, Math.min(Number(args.maxChars) || 30000, 60000)) || '' };
         case 'selectElement': return { selection: describe(find(args.selector)) };
@@ -229,6 +305,7 @@ function stripHopHeaders(headers) {
 export class BrowserPreviewRuntime {
   constructor({ onActivity = () => {} } = {}) {
     this.sessions = new Map()
+    this.screenshots = new Map()
     this.latestActivity = null
     this.onActivity = onActivity
   }
@@ -238,7 +315,7 @@ export class BrowserPreviewRuntime {
     let state = this.sessions.get(sessionId)
     if (!state) {
       state = {
-        sessionId, process: null, staticServer: null, command: '', cwd: '', output: '', upstreamUrl: '', previewUrl: '',
+        sessionId, process: null, staticServer: null, command: '', cwd: '', output: '', upstreamUrl: '', previewUrl: '', currentUrl: '',
         proxy: null, proxySockets: new Set(), connectingUrl: '', html: '', htmlPath: '', htmlTruncated: false, bridgeToken: randomUUID(), bridgeReady: false,
         selection: null, pending: new Map()
       }
@@ -397,27 +474,34 @@ export class BrowserPreviewRuntime {
   async attach(sessionId, address) {
     const url = loopbackUrl(address)
     const state = this._session(sessionId)
-    await this._closeProxy(state)
+    let reuseProxy = false
+    if (state.proxy && state.upstreamUrl) {
+      try { reuseProxy = new URL(state.upstreamUrl).origin === url.origin } catch {}
+    }
+    if (!reuseProxy) {
+      await this._closeProxy(state)
+      state.bridgeToken = randomUUID()
+      const proxy = createServer((req, res) => { void this._proxyRequest(state, req, res) })
+      proxy.on('connection', socket => {
+        state.proxySockets.add(socket)
+        socket.once('close', () => state.proxySockets.delete(socket))
+      })
+      proxy.on('upgrade', (req, socket, head) => this._proxyUpgrade(state, req, socket, head))
+      await new Promise((resolve, reject) => {
+        proxy.once('error', reject)
+        proxy.listen(0, '127.0.0.1', resolve)
+      })
+      state.proxy = proxy
+    }
     state.upstreamUrl = url.href
-    state.bridgeToken = randomUUID()
     state.bridgeReady = false
     state.selection = null
     state.html = ''
     state.htmlTruncated = false
     state.htmlPath = ''
-    const proxy = createServer((req, res) => { void this._proxyRequest(state, req, res) })
-    proxy.on('connection', socket => {
-      state.proxySockets.add(socket)
-      socket.once('close', () => state.proxySockets.delete(socket))
-    })
-    proxy.on('upgrade', (req, socket, head) => this._proxyUpgrade(state, req, socket, head))
-    await new Promise((resolve, reject) => {
-      proxy.once('error', reject)
-      proxy.listen(0, '127.0.0.1', resolve)
-    })
-    state.proxy = proxy
-    const { port } = proxy.address()
+    const { port } = state.proxy.address()
     state.previewUrl = `http://127.0.0.1:${port}${url.pathname}${url.search}`
+    state.currentUrl = state.previewUrl
     try {
       const response = await fetch(state.previewUrl, { signal: AbortSignal.timeout(5000), cache: 'no-store' })
       await response.arrayBuffer()
@@ -425,6 +509,7 @@ export class BrowserPreviewRuntime {
       await this._closeProxy(state)
       state.previewUrl = ''
       state.upstreamUrl = ''
+      state.currentUrl = ''
       throw new Error(`无法连接本机开发服务：${error.message}`)
     }
     this.latestActivity = { id: randomUUID(), sessionId, url: state.previewUrl, upstreamUrl: url.href, createdAt: Date.now() }
@@ -434,6 +519,13 @@ export class BrowserPreviewRuntime {
   }
 
   async _proxyRequest(state, req, res) {
+    let pathname = ''
+    try { pathname = new URL(req.url || '/', 'http://localhost').pathname } catch {}
+    if (pathname === '/__artificer_html2canvas.js') {
+      res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=86400', 'x-content-type-options': 'nosniff', 'content-length': Buffer.byteLength(HTML2CANVAS_SCRIPT) })
+      res.end(HTML2CANVAS_SCRIPT)
+      return
+    }
     if (req.url === '/__artificer_browser_bridge.js') {
       const body = bridgeScript(state.bridgeToken)
       res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store', 'content-length': Buffer.byteLength(body) })
@@ -546,6 +638,26 @@ export class BrowserPreviewRuntime {
 
   getLatestActivity() { return this.latestActivity }
 
+  storeScreenshot(sessionId, screenshot) {
+    const now = Date.now()
+    for (const [id, item] of this.screenshots) {
+      if (now - item.createdAt > 5 * 60_000) this.screenshots.delete(id)
+    }
+    while (this.screenshots.size >= 8) this.screenshots.delete(this.screenshots.keys().next().value)
+    const id = randomUUID()
+    this.screenshots.set(id, { sessionId, createdAt: now, ...screenshot })
+    return id
+  }
+
+  getScreenshot(sessionId, screenshotId) {
+    const screenshot = this.screenshots.get(screenshotId)
+    if (!screenshot || screenshot.sessionId !== sessionId || Date.now() - screenshot.createdAt > 5 * 60_000) {
+      this.screenshots.delete(screenshotId)
+      throw new Error('截图不存在或已过期，请重新截取。')
+    }
+    return screenshot
+  }
+
   getStatus(sessionId) {
     const state = this.sessions.get(sessionId)
     if (!state) return null
@@ -557,6 +669,7 @@ export class BrowserPreviewRuntime {
       running: !!state.process,
       upstreamUrl: state.upstreamUrl,
       previewUrl: state.previewUrl,
+      currentUrl: state.currentUrl,
       bridgeToken: state.bridgeToken,
       bridgeReady: state.bridgeReady,
       htmlPath: state.htmlPath,
@@ -624,6 +737,12 @@ export class BrowserPreviewRuntime {
     }
     state.bridgeReady = true
     state.title = String(details.title || '')
+    if (details.url) {
+      try {
+        const currentUrl = new URL(details.url)
+        if (currentUrl.origin === new URL(state.previewUrl).origin) state.currentUrl = currentUrl.href
+      } catch {}
+    }
     return true
   }
 

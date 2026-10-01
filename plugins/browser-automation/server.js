@@ -74,13 +74,35 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserInspect',
     name: '检查预览网页',
-    description: '读取当前可交互预览中的页面标题、地址、正文、链接和表单控件。',
+    description: '读取当前预览页面标题、地址、正文、链接、表单控件，并识别常见的对话框、模态框、弹出层和抽屉及其可操作控件。',
     parameters: { type: 'object', properties: {} },
     tags: ['browser', 'readonly'],
     async handler(_args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
       try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'inspect')) } }
       catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserScreenshot',
+    name: '网页截图',
+    description: '截取当前预览 iframe 中的网页当前视口或完整页面。截图会显示在工具结果卡片中，可另存为 JPG；它不包含 Artificer 外层界面。',
+    parameters: {
+      type: 'object',
+      properties: { mode: { type: 'string', enum: ['viewport', 'fullPage'], description: 'viewport 截取当前可视区域；fullPage 截取完整网页，默认 viewport' } }
+    },
+    tags: ['browser', 'readonly'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try {
+        const screenshot = await runtime.runInPage(sessionId, 'screenshot', { mode: args.mode === 'fullPage' ? 'fullPage' : 'viewport' }, 60_000)
+        const screenshotId = runtime.storeScreenshot(sessionId, screenshot)
+        return {
+          success: true, sessionId, screenshotId, title: screenshot.title, url: screenshot.url,
+          width: screenshot.width, height: screenshot.height, mode: screenshot.mode
+        }
+      } catch (error) { return failure(error, { sessionId }) }
     }
   })
 
@@ -204,6 +226,30 @@ export function register(ctx) {
       const sessionId = String(body?.sessionId || '')
       if (!sessionId) return { success: false, error: '缺少会话 ID。' }
       try { return { success: true, data: await runtime.stop(sessionId) } }
+      catch (error) { return failure(error) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'POST', path: '/api/plugins/browser-automation/screenshot',
+    async handler({ body }) {
+      const sessionId = String(body?.sessionId || '')
+      const mode = body?.mode === 'fullPage' ? 'fullPage' : 'viewport'
+      if (!sessionId) return { success: false, error: '缺少会话 ID。' }
+      try {
+        const screenshot = await runtime.runInPage(sessionId, 'screenshot', { mode }, 60_000)
+        return { success: true, data: screenshot }
+      } catch (error) { return failure(error) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'GET', path: '/api/plugins/browser-automation/screenshot/image',
+    async handler({ query }) {
+      const sessionId = String(query?.sessionId || '')
+      const screenshotId = String(query?.screenshotId || '')
+      if (!sessionId || !screenshotId) return { success: false, error: '需要会话 ID 和截图 ID。' }
+      try { return { success: true, data: { dataUrl: runtime.getScreenshot(sessionId, screenshotId).dataUrl } } }
       catch (error) { return failure(error) }
     }
   })

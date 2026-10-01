@@ -25,10 +25,13 @@ Agent 工具
 
 1. Agent 调用 `browserStartPreview`。传入 `htmlFile` 时，后端从当前工作区直接提供该 `.html` / `.htm` 文件和相对静态资源；否则默认运行 `npm run dev`。开发服务器地址可从 stdout/stderr 自动识别，也可传入不同命令、通过 `directory` 指定工作区子目录，或接入已运行服务的本机 URL。
 2. 开发服务模式会动态分配本机代理端口，预热首页并缓存原始 HTML 响应；静态文件模式也经过同一个 HTML 代理，以便注入页面桥接脚本。
+   同一会话重新连接到相同上游源（协议、主机、端口）时复用代理端口并保留 iframe 浏览上下文，保持浏览器 origin 不变，让 localStorage、sessionStorage、IndexedDB 和站点登录态继续可用；切换上游源时创建新端口，隔离不同站点的数据。
 3. 信息面板监听预览活动，切换到发起调用的会话并自动激活“网页预览”页签。iframe 加载代理地址，页面可直接点击和输入；开发服务模式同时转发 WebSocket 热更新，静态 HTML 文件可手动刷新。
 4. 代理仅改写 HTML 响应：插入桥接脚本，并移除阻止本机 iframe 展示的响应级 CSP / X-Frame-Options。其他资源直接流式代理，Vite WebSocket HMR 通过 TCP 隧道转发。
-5. 桥接脚本在页面源内执行 DOM 查询与操作；后端把工具命令交给面板轮询，再由面板 `postMessage` 转给 iframe。ready 在 iframe 文档就绪时确认；iframe 的 `pagehide` 负责清除过期 ready 状态，父窗口的 `load` 事件不再覆盖桥接确认。命令按确认回包重发，iframe 按命令 ID 缓存结果并去重，避免一次丢消息导致工具永久等待，也避免重试重复点击。
-6. 用户启用选择模式后，鼠标移动会高亮目标节点，点击默认选中最近的 `div`，并打开独立悬浮详情窗。Agent 调用 `browserSelectElement` 时只更新选中状态，不打开详情窗、不打断用户。选择结果带有 CSS 选择器、可见文本和脱敏截断的 HTML 片段；详情窗内的动作通过宿主的 `artificer:chat-insert-text` 事件写入当前聊天输入框，不在输入栏占用空间。
+5. 工具栏截图按钮和 Agent 的 `browserScreenshot` 工具共用页面桥接；桥接在 iframe 页面里调用随插件打包的 html2canvas，截取当前视口或完整网页。面板直接预览并保存 JPG；工具结果只返回截图元数据和短期缓存 ID，由结果卡片单独取图并显示，避免把 Base64 图像塞进对话记录。截图目标是网页 DOM，不包含 Artificer 外层界面。
+   截图由 DOM 与样式重绘生成，不是浏览器像素级捕获；跨源图片、画布和少数 CSS 效果可能无法完整呈现。
+6. 桥接脚本在页面源内执行 DOM 查询与操作；后端把工具命令交给面板轮询，再由面板 `postMessage` 转给 iframe。ready 在 iframe 文档就绪时确认；iframe 的 `pagehide` 负责清除过期 ready 状态，父窗口的 `load` 事件不再覆盖桥接确认。命令按确认回包重发，iframe 按命令 ID 缓存结果并去重，避免一次丢消息导致工具永久等待，也避免重试重复点击。
+7. 用户启用选择模式后，鼠标移动会高亮目标节点，点击默认选中最近的 `div`，并打开独立悬浮详情窗。Agent 调用 `browserSelectElement` 时只更新选中状态，不打开详情窗、不打断用户。选择结果带有 CSS 选择器、可见文本和脱敏截断的 HTML 片段；详情窗内的动作通过宿主的 `artificer:chat-insert-text` 事件写入当前聊天输入框，不在输入栏占用空间。
 
 ## 工具接口
 
@@ -43,6 +46,7 @@ Agent 工具
 | `browserGetSelection` | 读取用户在面板中选中的元素 |
 | `browserAct` | 通过选择器点击、输入、选择、按键、悬停或滚动 |
 | `browserMouse` | 通过视口坐标移动、单击、双击、右击或滚动 |
+| `browserScreenshot` | 截取 iframe 网页当前视口或完整页面，并在工具结果卡片中显示和保存 JPG |
 
 以上工具通过外置插件 SDK 的 `ctx.registerTool()` 注册，沿用工具 JSON Schema、`tags` 与统一的 Agent 工具执行链。面板和后端之间的插件路由只承载 iframe 桥接消息，不构成额外工具类型。
 

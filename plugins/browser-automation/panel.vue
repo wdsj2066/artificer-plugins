@@ -10,6 +10,7 @@
         <button class="toolbar-icon-button" type="submit" title="连接地址" aria-label="连接地址" :disabled="connecting || !sessionId || !address.trim()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></button>
       </form>
       <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="刷新页面" aria-label="刷新页面" @click="reloadFrame"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4m-4 5a8 8 0 0 0 14.9 3M20 20v-4h-4" /></svg></button>
+      <button class="toolbar-icon-button" type="button" :disabled="!status?.bridgeReady || screenshotLoading" title="截取网页" aria-label="截取网页" @click="captureScreenshot('viewport')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h-4l-2 3H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2-3Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
       <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="停止预览" aria-label="停止预览" @click="stopPreview"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1" /></svg></button>
       <span class="toolbar-divider" aria-hidden="true"></span>
       <button class="toolbar-icon-button" :class="{ active: selecting }" type="button" :disabled="!status?.bridgeReady" :title="selecting ? '取消选择元素' : '选择页面元素'" :aria-label="selecting ? '取消选择元素' : '选择页面元素'" :aria-pressed="selecting" @click="toggleSelectMode"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 9-7 1-3 7-4-17Z" /></svg></button>
@@ -29,8 +30,7 @@
       <iframe
         ref="frame"
         class="browser-frame"
-        :key="status.previewUrl"
-        :src="status.previewUrl"
+        :src="frameUrl"
         title="本机网页实时预览"
         sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin"
         allow="clipboard-read; clipboard-write; fullscreen"
@@ -99,6 +99,26 @@
           </footer>
         </section>
       </div>
+      <div v-if="screenshotOpen" class="screenshot-dialog-backdrop" @pointerdown.self="screenshotOpen = false">
+        <section class="screenshot-dialog" role="dialog" aria-modal="true" aria-labelledby="screenshot-dialog-title">
+          <header class="screenshot-dialog-header">
+            <div><h2 id="screenshot-dialog-title">网页截图</h2><p>{{ screenshotResult?.title || status?.title || '当前预览页面' }}</p></div>
+            <button type="button" class="selection-icon-button" title="关闭" aria-label="关闭截图" @click="screenshotOpen = false">×</button>
+          </header>
+          <div class="screenshot-preview">
+            <div v-if="screenshotLoading" class="screenshot-placeholder">正在截取网页…</div>
+            <p v-else-if="screenshotError" class="screenshot-error" role="alert">{{ screenshotError }}</p>
+            <img v-else-if="screenshotResult?.dataUrl" :src="screenshotResult.dataUrl" alt="网页截图预览" />
+            <div v-else class="screenshot-placeholder">选择截图范围</div>
+          </div>
+          <footer class="screenshot-dialog-footer">
+            <button type="button" class="dialog-button" :disabled="screenshotLoading || !status?.bridgeReady" @click="captureScreenshot('viewport')">当前视口</button>
+            <button type="button" class="dialog-button" :disabled="screenshotLoading || !status?.bridgeReady" @click="captureScreenshot('fullPage')">完整网页</button>
+            <span class="screenshot-footer-spacer"></span>
+            <a v-if="screenshotResult?.dataUrl" class="dialog-button dialog-button-primary screenshot-download" :href="screenshotResult.dataUrl" :download="screenshotFileName">保存 JPG</a>
+          </footer>
+        </section>
+      </div>
     </Teleport>
   </div>
 </template>
@@ -111,6 +131,7 @@ const ACTIVITY_URL = '/api/plugins/browser-automation/activity'
 const OPEN_REQUEST_KEY = 'artificer_browser_preview_open_request'
 const root = ref(null)
 const frame = ref(null)
+const frameUrl = ref('')
 const status = ref(null)
 const address = ref('')
 const error = ref('')
@@ -127,6 +148,10 @@ const editInput = ref(null)
 const composing = ref(false)
 const composeError = ref('')
 const frameReady = ref(false)
+const screenshotOpen = ref(false)
+const screenshotLoading = ref(false)
+const screenshotError = ref('')
+const screenshotResult = ref(null)
 let statusTimer = null
 let commandTimer = null
 let activityTimer = null
@@ -146,6 +171,10 @@ const statusLabel = computed(() => {
 const selectionDialogStyle = computed(() => selectionDialogPosition.value
   ? { position: 'absolute', left: `${selectionDialogPosition.value.x}px`, top: `${selectionDialogPosition.value.y}px`, margin: '0' }
   : null)
+const screenshotFileName = computed(() => {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  return `webpage-screenshot-${timestamp}.jpg`
+})
 let selectionDialogDrag = null
 
 function beginSelectionDialogDrag(event) {
@@ -174,7 +203,10 @@ function endSelectionDialogDrag() {
 }
 
 function onSelectionDialogKeydown(event) {
-  if (event.key === 'Escape') selectionDetailsOpen.value = false
+  if (event.key === 'Escape') {
+    selectionDetailsOpen.value = false
+    screenshotOpen.value = false
+  }
 }
 
 async function request(url, options) {
@@ -205,6 +237,7 @@ async function loadStatus() {
   try {
     const payload = await request(`/api/plugins/browser-automation/status?sessionId=${encodeURIComponent(props.sessionId)}`, { cache: 'no-store' })
     const next = payload.data?.status || null
+    if (next?.previewUrl !== status.value?.previewUrl) frameUrl.value = next?.currentUrl || next?.previewUrl || ''
     if (next) next.bridgeReady = Boolean(next.bridgeReady && frameReady.value)
     status.value = next
     address.value = next?.upstreamUrl || address.value
@@ -226,9 +259,13 @@ async function connectUrl() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId: props.sessionId, url: address.value.trim() })
     })
+    const targetFrameUrl = payload.data?.currentUrl || payload.data?.previewUrl || ''
     frameReady.value = false
     frameDocumentId = null
     status.value = payload.data
+    frameUrl.value = targetFrameUrl
+    await nextTick()
+    if (frame.value && targetFrameUrl) frame.value.src = targetFrameUrl
     address.value = payload.data?.upstreamUrl || address.value
     selecting.value = false
     applySelection(null)
@@ -244,6 +281,7 @@ async function stopPreview() {
       body: JSON.stringify({ sessionId: props.sessionId })
     })
     status.value = null
+    frameUrl.value = ''
     frameReady.value = false
     frameDocumentId = null
     bridgeError.value = ''
@@ -261,7 +299,34 @@ function reloadFrame() {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionId: props.sessionId, token: status.value.bridgeToken, ready: false })
   }).catch(cause => { bridgeError.value = `预览桥接重置失败：${cause.message || '请求失败'}` })
-  frame.value.src = `${status.value.previewUrl}${status.value.previewUrl.includes('?') ? '&' : '?'}_artificer_reload=${Date.now()}`
+  let currentUrl = frameUrl.value || status.value.previewUrl
+  try {
+    if (frame.value.contentWindow?.location?.origin === new URL(status.value.previewUrl).origin) {
+      currentUrl = frame.value.contentWindow.location.href
+    }
+  } catch {}
+  const reloadUrl = new URL(currentUrl)
+  reloadUrl.searchParams.set('_artificer_reload', String(Date.now()))
+  frame.value.src = reloadUrl.href
+}
+
+async function captureScreenshot(mode = 'viewport') {
+  if (!props.sessionId || !status.value?.bridgeReady) return
+  screenshotOpen.value = true
+  screenshotLoading.value = true
+  screenshotError.value = ''
+  screenshotResult.value = null
+  try {
+    const payload = await request('/api/plugins/browser-automation/screenshot', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: props.sessionId, mode })
+    })
+    screenshotResult.value = payload.data
+  } catch (cause) {
+    screenshotError.value = cause.message || '网页截图失败。'
+  } finally {
+    screenshotLoading.value = false
+  }
 }
 
 function sendToFrame(message) {
@@ -294,12 +359,20 @@ async function onFrameMessage(event) {
         body: JSON.stringify({ sessionId: props.sessionId, token: data.token, ready: false })
       })
     } catch (cause) { bridgeError.value = `预览桥接状态同步失败：${cause.message || '请求失败'}` }
+  } else if (data.type === 'navigated') {
+    if (frameDocumentId && data.documentId !== frameDocumentId) return
+    try {
+      await request('/api/plugins/browser-automation/bridge/ready', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: props.sessionId, token: data.token, url: data.url })
+      })
+    } catch (cause) { bridgeError.value = `预览地址同步失败：${cause.message || '请求失败'}` }
   } else if (data.type === 'ready') {
     frameDocumentId = data.documentId || null
     try {
       await request('/api/plugins/browser-automation/bridge/ready', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: props.sessionId, token: data.token, title: data.title })
+        body: JSON.stringify({ sessionId: props.sessionId, token: data.token, title: data.title, url: data.url })
       })
       frameReady.value = true
       status.value.bridgeReady = true
@@ -521,6 +594,7 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
     }).catch(() => {})
   }
   status.value = null
+  frameUrl.value = ''
   bridgeError.value = ''
   frameReady.value = false
   frameDocumentId = null
@@ -588,6 +662,18 @@ button:disabled,select:disabled { opacity:.45; cursor:default; }
 .dialog-button-primary { border-color:var(--primary-bg,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-bg,var(--accent)); }
 .dialog-button-primary:hover { border-color:var(--primary-hover,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-hover,var(--accent)); }
 .dialog-button:disabled { opacity:.55; cursor:default; }
+.screenshot-dialog-backdrop { position:fixed; inset:0; z-index:4200; display:grid; place-items:center; padding:20px; background:rgba(20,20,20,.36); backdrop-filter:blur(3px); }
+.screenshot-dialog { display:flex; width:min(980px,calc(100vw - 32px)); max-height:calc(100vh - 40px); flex-direction:column; overflow:hidden; color:var(--text-primary); background:var(--surface,var(--bg-primary)); border:1px solid var(--border-color); border-radius:var(--radius-lg,12px); box-shadow:0 24px 72px rgba(0,0,0,.28); }
+.screenshot-dialog-header { display:flex; flex:none; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; border-bottom:1px solid var(--border-color); }
+.screenshot-dialog-header h2 { margin:0; font-size:15px; font-weight:600; }
+.screenshot-dialog-header p { max-width:min(70vw,760px); margin:3px 0 0; overflow:hidden; color:var(--text-muted); font:11px/1.45 var(--font-mono,Consolas,monospace); text-overflow:ellipsis; white-space:nowrap; }
+.screenshot-preview { display:grid; min-height:180px; flex:1; place-items:center; overflow:auto; padding:12px; background:var(--bg-secondary); }
+.screenshot-preview img { display:block; max-width:100%; max-height:calc(100vh - 190px); object-fit:contain; box-shadow:0 2px 14px rgba(0,0,0,.18); }
+.screenshot-placeholder { color:var(--text-muted); font-size:13px; }
+.screenshot-error { max-width:560px; margin:0; color:#c62828; font-size:13px; line-height:1.6; text-align:center; }
+.screenshot-dialog-footer { display:flex; flex:none; align-items:center; gap:8px; padding:12px 16px; border-top:1px solid var(--border-color); }
+.screenshot-footer-spacer { flex:1; }
+.screenshot-download { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; }
 .server-output { flex:none; max-height:120px; overflow:auto; color:var(--text-muted); font-size:10px; }
 .server-output summary { cursor:pointer; }
 .server-output pre { white-space:pre-wrap; overflow-wrap:anywhere; }
@@ -597,5 +683,8 @@ button:disabled,select:disabled { opacity:.45; cursor:default; }
   .selection-dialog-header,.selection-dialog-body { padding-right:14px; padding-left:14px; }
   .selection-dialog-footer { flex-wrap:wrap; justify-content:stretch; padding:12px 14px; }
   .dialog-button { flex:1 1 calc(50% - 8px); }
+  .screenshot-dialog-footer { flex-wrap:wrap; }
+  .screenshot-footer-spacer { display:none; }
+  .screenshot-download { flex-basis:100%; }
 }
 </style>
