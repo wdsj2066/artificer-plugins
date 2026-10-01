@@ -1,15 +1,9 @@
 <template>
-  <div class="browser-floating-root">
-    <button v-if="!windowOpen" class="browser-launcher" type="button" @click="showWindow">
-      <span class="launcher-dot" :class="{ active: status?.previewUrl }"></span>
-      <span>网页预览</span>
-      <span v-if="status?.previewUrl" class="launcher-state">{{ status.bridgeReady ? '实时' : '已启动' }}</span>
-    </button>
-
-    <section ref="root" v-show="windowOpen" class="browser-panel">
-    <header class="browser-window-header" data-floating-panel-handle>
-      <div class="window-title"><span class="window-icon">◉</span><strong>网页预览与控制</strong><span class="window-subtitle">可拖动窗口</span></div>
-      <button class="window-minimize" type="button" title="收起预览窗" @click.stop="hideWindow">—</button>
+  <div class="browser-info-panel">
+    <section ref="root" class="browser-panel">
+    <header class="browser-panel-heading">
+      <div class="window-title"><span class="window-icon">◉</span><strong>网页预览与控制</strong></div>
+      <span class="panel-live-state"><i class="status-dot" :class="{ active: status?.running || status?.bridgeReady }"></i>{{ status?.bridgeReady ? '实时连接' : status?.previewUrl ? '已启动' : '等待预览' }}</span>
     </header>
     <header class="browser-toolbar">
       <form class="browser-address" @submit.prevent="connectUrl">
@@ -36,6 +30,7 @@
         <option value="main">优先选择 main</option>
         <option value="any">选择鼠标下的元素</option>
       </select>
+      <button v-if="selection" class="small-button selection-reopen" type="button" @click="selectionDetailsOpen = true">已选元素 · 查看详情</button>
       <span class="live-indicator">{{ status.bridgeReady ? '实时交互' : '正在连接页面…' }}</span>
     </div>
 
@@ -58,28 +53,56 @@
       <p>预览代理读取实际 HTML，并注入元素选择和自动化桥接；也可以在上方输入已运行的 localhost 地址。</p>
     </div>
 
-    <section v-if="selection" class="selection-card">
-      <div class="selection-card-heading">
-        <div>
-          <strong>已选择 &lt;{{ selection.tag || 'div' }}&gt;</strong>
-          <code>{{ selection.selector }}</code>
-        </div>
-        <button type="button" class="text-button" @click="clearSelection">清除</button>
-      </div>
-      <p v-if="selection.text" class="selection-text">{{ selection.text }}</p>
-      <pre v-if="selection.html" class="selection-html">{{ selection.html }}</pre>
-      <div class="selection-actions">
-        <button type="button" @click="compose('reference')">放入聊天框</button>
-        <button type="button" @click="compose('question')">单独提问</button>
-        <button type="button" class="primary" @click="compose('edit')">请求修改</button>
-      </div>
-    </section>
-
     <details v-if="status?.output" class="server-output">
       <summary>开发服务输出</summary>
       <pre>{{ status.output }}</pre>
     </details>
     </section>
+
+    <Teleport to="body">
+      <div v-if="selection && selectionDetailsOpen" class="selection-dialog-backdrop" @pointerdown.self="selectionDetailsOpen = false">
+        <section class="selection-dialog" :style="selectionDialogStyle" role="dialog" aria-modal="true" aria-labelledby="selection-dialog-title">
+          <header class="selection-dialog-header" data-selection-dialog-handle @pointerdown="beginSelectionDialogDrag">
+            <div class="selection-dialog-title-wrap">
+              <span class="selection-dialog-mark">&lt;/&gt;</span>
+              <div>
+                <span class="selection-eyebrow">网页元素</span>
+                <h2 id="selection-dialog-title">已选择 &lt;{{ selection.tag || 'div' }}&gt;</h2>
+              </div>
+            </div>
+            <div class="selection-dialog-controls">
+              <button type="button" class="selection-icon-button" title="清除选择" aria-label="清除选择" @click="clearSelection">×</button>
+              <button type="button" class="selection-icon-button" title="关闭详情" aria-label="关闭详情" @click="selectionDetailsOpen = false">—</button>
+            </div>
+          </header>
+
+          <div class="selection-dialog-body">
+            <div class="selection-meta">
+              <span class="selection-meta-label">CSS 选择器</span>
+              <code>{{ selection.selector || '—' }}</code>
+            </div>
+            <div class="selection-meta">
+              <span class="selection-meta-label">页面</span>
+              <span class="selection-page-url">{{ selection.title || selection.url || '当前预览页面' }}</span>
+            </div>
+            <section v-if="selection.text" class="selection-detail-section">
+              <h3>可见文本</h3>
+              <p class="selection-text">{{ selection.text }}</p>
+            </section>
+            <section v-if="selection.html" class="selection-detail-section">
+              <h3>HTML 结构</h3>
+              <pre class="selection-html">{{ selection.html }}</pre>
+            </section>
+          </div>
+
+          <footer class="selection-dialog-footer">
+            <button type="button" class="dialog-button" @click="compose('reference')">放入聊天框</button>
+            <button type="button" class="dialog-button" @click="compose('question')">围绕元素提问</button>
+            <button type="button" class="dialog-button dialog-button-primary" @click="compose('edit')">请求修改</button>
+          </footer>
+        </section>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -99,8 +122,9 @@ const connecting = ref(false)
 const selecting = ref(false)
 const preferredTag = ref('div')
 const selection = ref(null)
+const selectionDetailsOpen = ref(false)
+const selectionDialogPosition = ref(null)
 const frameReady = ref(false)
-const windowOpen = ref(false)
 let statusTimer = null
 let commandTimer = null
 let activityTimer = null
@@ -117,6 +141,39 @@ const statusLabel = computed(() => {
   if (status.value.running) return '开发服务运行中'
   return '已连接本机开发服务'
 })
+const selectionDialogStyle = computed(() => selectionDialogPosition.value
+  ? { position: 'absolute', left: `${selectionDialogPosition.value.x}px`, top: `${selectionDialogPosition.value.y}px`, margin: '0' }
+  : null)
+let selectionDialogDrag = null
+
+function beginSelectionDialogDrag(event) {
+  if (event.button !== 0 || event.target.closest('button')) return
+  const dialog = event.currentTarget.closest('.selection-dialog')
+  if (!dialog) return
+  const rect = dialog.getBoundingClientRect()
+  event.preventDefault()
+  selectionDialogPosition.value = { x: rect.left, y: rect.top }
+  selectionDialogDrag = { startX: event.clientX, startY: event.clientY, x: rect.left, y: rect.top, dialog }
+  window.addEventListener('pointermove', moveSelectionDialog)
+  window.addEventListener('pointerup', endSelectionDialogDrag, { once: true })
+}
+
+function moveSelectionDialog(event) {
+  if (!selectionDialogDrag) return
+  const { startX, startY, x, y, dialog } = selectionDialogDrag
+  const left = Math.max(8, Math.min(x + event.clientX - startX, window.innerWidth - dialog.offsetWidth - 8))
+  const top = Math.max(8, Math.min(y + event.clientY - startY, window.innerHeight - dialog.offsetHeight - 8))
+  selectionDialogPosition.value = { x: left, y: top }
+}
+
+function endSelectionDialogDrag() {
+  window.removeEventListener('pointermove', moveSelectionDialog)
+  selectionDialogDrag = null
+}
+
+function onSelectionDialogKeydown(event) {
+  if (event.key === 'Escape') selectionDetailsOpen.value = false
+}
 
 async function request(url, options) {
   const response = await fetch(url, options)
@@ -130,6 +187,7 @@ function applySelection(next) {
   const key = next ? `${next.selectedAt || ''}:${next.selector || ''}` : ''
   if (key === lastSelectionKey) return
   lastSelectionKey = key
+  selectionDetailsOpen.value = Boolean(next)
   window.dispatchEvent(new CustomEvent('artificer:browser-selection', {
     detail: { sessionId: props.sessionId, selection: selection.value }
   }))
@@ -149,15 +207,6 @@ async function loadStatus() {
   } catch (cause) {
     error.value = cause.message || '无法读取预览状态。'
   }
-}
-
-function showWindow() {
-  windowOpen.value = true
-  void loadStatus()
-}
-
-function hideWindow() {
-  windowOpen.value = false
 }
 
 async function connectUrl() {
@@ -311,6 +360,7 @@ function compose(kind) {
   window.dispatchEvent(new CustomEvent('artificer:chat-insert-text', {
     detail: { sessionId: props.sessionId, text: `\n${prompts[kind] || prompts.reference}` }
   }))
+  selectionDetailsOpen.value = false
 }
 
 async function clearSelection() {
@@ -328,7 +378,9 @@ function onOpenRequest(event) {
   const activity = event.detail || {}
   if (activity.sessionId !== props.sessionId) return
   try { sessionStorage.removeItem('artificer_browser_preview_open_request') } catch {}
-  windowOpen.value = true
+  window.dispatchEvent(new CustomEvent('artificer:activate-panel', {
+    detail: { region: 'right', panelKey: 'browser-automation/browser', reason: 'browser-preview' }
+  }))
   if (activity.upstreamUrl) address.value = activity.upstreamUrl
   void loadStatus()
 }
@@ -348,7 +400,6 @@ function updatePolling() {
 async function openActivity(activity) {
   if (!activity?.sessionId || !activity?.url) return
   try { sessionStorage.setItem(OPEN_REQUEST_KEY, JSON.stringify(activity)) } catch {}
-  windowOpen.value = true
   try { await window.artificer?.openSession?.(activity.sessionId) } catch {}
   window.dispatchEvent(new CustomEvent('artificer:browser-preview-open', { detail: activity }))
 }
@@ -376,6 +427,7 @@ async function pollActivity() {
 onMounted(() => {
   window.addEventListener('message', onFrameMessage)
   window.addEventListener('artificer:browser-preview-open', onOpenRequest)
+  window.addEventListener('keydown', onSelectionDialogKeydown)
   document.addEventListener('visibilitychange', updatePolling)
   if (root.value && 'IntersectionObserver' in window) {
     intersectionObserver = new IntersectionObserver(entries => {
@@ -388,8 +440,7 @@ onMounted(() => {
   void loadStatus()
   void pollActivity()
   statusTimer = setInterval(() => {
-    if (windowOpen.value) updatePolling()
-    else void loadStatus()
+    void loadStatus()
   }, 1200)
   commandTimer = setInterval(pollCommands, 300)
   activityTimer = setInterval(pollActivity, 900)
@@ -398,6 +449,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('message', onFrameMessage)
   window.removeEventListener('artificer:browser-preview-open', onOpenRequest)
+  window.removeEventListener('keydown', onSelectionDialogKeydown)
+  endSelectionDialogDrag()
   document.removeEventListener('visibilitychange', updatePolling)
   intersectionObserver?.disconnect()
   clearInterval(statusTimer)
@@ -425,56 +478,69 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
 </script>
 
 <style scoped>
-.browser-floating-root { display:contents; }
-.browser-launcher { display:inline-flex; align-items:center; gap:8px; min-width:142px; height:42px; padding:0 14px; border:1px solid var(--border-color); border-radius:999px; color:var(--text-primary); background:var(--bg-primary); box-shadow:0 8px 28px #0003; font-size:12px; cursor:pointer; }
-.browser-launcher:hover { border-color:var(--accent); }
-.launcher-dot { width:8px; height:8px; flex:none; border-radius:50%; background:#999; }
-.launcher-dot.active { background:#39b982; box-shadow:0 0 0 3px color-mix(in srgb,#39b982 16%,transparent); }
-.launcher-state { margin-left:auto; color:var(--text-muted); font-size:10px; }
-.browser-panel { display:flex; flex-direction:column; gap:8px; width:min(960px,calc(100vw - 72px)); height:min(720px,calc(100vh - 128px)); min-width:min(360px,calc(100vw - 24px)); min-height:min(320px,calc(100vh - 24px)); padding:10px; box-sizing:border-box; color:var(--text-primary); background:var(--bg-primary); border:1px solid var(--border-color); border-radius:12px; box-shadow:0 18px 55px #0005; }
-.browser-window-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:none; min-height:28px; padding:0 1px 5px; border-bottom:1px solid var(--border-color); user-select:none; touch-action:none; }
+.browser-info-panel { width:100%; height:100%; min-height:0; }
+.browser-panel { display:flex; width:100%; height:100%; min-height:0; box-sizing:border-box; flex-direction:column; gap:10px; padding:14px; color:var(--text-primary); background:var(--bg-secondary); }
+.browser-panel-heading { display:flex; flex:none; align-items:center; justify-content:space-between; gap:8px; min-height:32px; padding-bottom:9px; border-bottom:1px solid var(--border-color); }
 .window-title { display:flex; align-items:center; gap:8px; min-width:0; }
-.window-icon { color:var(--accent); font-size:15px; }
-.window-title strong { font-size:12px; }
-.window-subtitle { color:var(--text-muted); font-size:10px; }
-.window-minimize { display:grid; width:25px; height:25px; place-items:center; border:1px solid var(--border-color); border-radius:6px; color:var(--text-secondary); background:var(--bg-secondary); font-size:14px; cursor:pointer; }
-.window-minimize:hover { color:var(--text-primary); border-color:var(--accent); }
+.window-icon { color:var(--text-secondary); font-size:15px; }
+.window-title strong { font-size:13px; font-weight:600; }
+.panel-live-state { display:inline-flex; flex:none; align-items:center; gap:6px; color:var(--text-muted); font-size:11px; }
 .browser-toolbar,.browser-page-toolbar { display:flex; align-items:center; gap:6px; flex:none; }
 .browser-address { display:flex; flex:1; min-width:0; gap:5px; }
-.browser-address input { flex:1; min-width:0; height:29px; padding:0 8px; border:1px solid var(--border-color); border-radius:6px; color:var(--text-primary); background:var(--bg-primary); font-size:11px; }
-.browser-address button,.small-button,.select-button,.selection-actions button { border:1px solid var(--border-color); border-radius:6px; color:var(--text-secondary); background:var(--bg-secondary); cursor:pointer; }
-.browser-address button,.small-button { height:29px; padding:0 9px; font-size:11px; }
+.browser-address input { flex:1; min-width:0; height:34px; padding:0 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-primary); background:var(--bg-primary); font-family:inherit; font-size:12px; line-height:1.4; }
+.browser-address button,.small-button,.select-button { border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); cursor:pointer; }
+.browser-address button,.small-button { height:34px; padding:0 10px; font-size:12px; }
 button:disabled,select:disabled { opacity:.45; cursor:default; }
-.browser-status { display:flex; align-items:center; gap:7px; min-height:14px; color:var(--text-muted); font-size:10px; }
-.browser-status.is-error { color:#e66; }
+.browser-status { display:flex; align-items:center; gap:8px; min-height:18px; color:var(--text-muted); font-size:11px; }
+.browser-status.is-error { color:#c62828; }
 .status-dot { width:7px; height:7px; border-radius:50%; background:#999; }
 .status-dot.active { background:#39b982; box-shadow:0 0 0 3px color-mix(in srgb,#39b982 16%,transparent); }
 .browser-status-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.browser-page-toolbar { min-height:28px; }
-.select-button { height:27px; padding:0 9px; font-size:11px; }
-.select-button.active { color:#fff; border-color:#704de0; background:#704de0; }
-.browser-page-toolbar select { min-width:118px; max-width:150px; height:27px; padding:0 5px; border:1px solid var(--border-color); border-radius:6px; color:var(--text-secondary); background:var(--bg-primary); font-size:10px; }
-.live-indicator { margin-left:auto; color:var(--text-muted); font-size:10px; white-space:nowrap; }
-.browser-frame-wrap { position:relative; flex:1; min-height:160px; overflow:hidden; border:1px solid var(--border-color); border-radius:7px; background:#fff; }
+.browser-page-toolbar { min-height:34px; }
+.select-button { height:34px; padding:0 10px; font-size:12px; }
+.select-button.active { color:var(--primary-text,#fff); border-color:var(--primary-bg,var(--accent)); background:var(--primary-bg,var(--accent)); }
+.browser-page-toolbar select { min-width:118px; max-width:170px; height:34px; padding:0 8px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-size:12px; }
+.live-indicator { margin-left:auto; color:var(--text-muted); font-size:11px; white-space:nowrap; }
+.browser-frame-wrap { position:relative; flex:1; min-height:160px; overflow:hidden; border:1px solid var(--border-color); border-radius:var(--radius-md,8px); background:#fff; }
 .browser-frame { display:block; width:100%; height:100%; border:0; background:#fff; }
 .browser-empty { display:flex; flex:1; min-height:200px; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:20px; color:var(--text-muted); text-align:center; }
 .browser-empty strong { color:var(--text-primary); font-size:13px; }
-.browser-empty p { max-width:360px; margin:0; font-size:11px; line-height:1.6; }
+.browser-empty p { max-width:360px; margin:0; font-size:12px; line-height:1.6; }
 .browser-empty code { padding:1px 4px; border-radius:3px; background:var(--bg-secondary); }
 .empty-icon { display:grid; width:38px; height:38px; place-items:center; border:1px solid var(--border-color); border-radius:12px; color:var(--accent); font-size:20px; }
-.selection-card { display:flex; flex:none; flex-direction:column; gap:6px; max-height:34%; overflow:auto; padding:8px; border:1px solid color-mix(in srgb,var(--accent) 35%,var(--border-color)); border-radius:7px; background:var(--bg-secondary); }
-.selection-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-.selection-card-heading div { display:flex; min-width:0; flex-direction:column; gap:3px; }
-.selection-card-heading strong { font-size:11px; }
-.selection-card-heading code { overflow:hidden; color:var(--accent); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
-.text-button { border:0; color:var(--text-muted); background:transparent; font-size:10px; cursor:pointer; }
-.selection-text { margin:0; color:var(--text-secondary); font-size:10px; line-height:1.4; }
-.selection-html { max-height:90px; overflow:auto; margin:0; padding:5px; border-radius:4px; color:var(--text-secondary); background:var(--bg-primary); font:9px/1.4 Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
-.selection-actions { display:flex; gap:5px; }
-.selection-actions button { flex:1; min-height:27px; padding:3px 5px; font-size:10px; }
-.selection-actions button:hover { border-color:var(--accent); color:var(--accent); }
-.selection-actions button.primary { border-color:var(--accent); color:#fff; background:var(--accent); }
+.selection-reopen { color:var(--text-primary); }
+.selection-dialog-backdrop { position:fixed; inset:0; z-index:4100; display:grid; place-items:center; padding:24px; background:rgba(20,20,20,.28); backdrop-filter:blur(2px); }
+.selection-dialog { display:flex; width:min(620px,calc(100vw - 32px)); max-height:min(760px,calc(100vh - 48px)); flex-direction:column; overflow:hidden; color:var(--text-primary); background:var(--surface,var(--bg-primary)); border:1px solid var(--border-color); border-radius:var(--radius-lg,12px); box-shadow:0 24px 72px rgba(0,0,0,.24); }
+.selection-dialog-header { display:flex; flex:none; align-items:center; justify-content:space-between; gap:18px; padding:18px 20px; border-bottom:1px solid var(--border-color); background:var(--bg-primary); user-select:none; cursor:grab; touch-action:none; }
+.selection-dialog-title-wrap { display:flex; min-width:0; align-items:center; gap:13px; }
+.selection-dialog-mark { display:grid; width:38px; height:38px; flex:none; place-items:center; border:1px solid var(--border-color); border-radius:var(--radius-md,8px); color:var(--text-secondary); background:var(--bg-secondary); font:600 12px/1 var(--font-mono,monospace); }
+.selection-eyebrow { display:block; margin-bottom:3px; color:var(--text-muted); font-size:11px; letter-spacing:.04em; }
+.selection-dialog h2 { margin:0; color:var(--text-primary); font-size:16px; font-weight:600; line-height:1.4; }
+.selection-dialog-controls { display:flex; gap:6px; }
+.selection-icon-button { display:grid; width:30px; height:30px; place-items:center; padding:0; border:1px solid transparent; border-radius:var(--radius-sm,6px); color:var(--text-muted); background:transparent; font-size:19px; cursor:pointer; }
+.selection-icon-button:hover { border-color:var(--border-color); color:var(--text-primary); background:var(--bg-secondary); }
+.selection-dialog-body { display:flex; min-height:0; flex:1; flex-direction:column; gap:14px; overflow:auto; padding:18px 20px; }
+.selection-meta { display:flex; min-width:0; align-items:flex-start; gap:14px; }
+.selection-meta-label { width:82px; flex:none; padding-top:2px; color:var(--text-muted); font-size:12px; }
+.selection-meta code,.selection-page-url { min-width:0; color:var(--text-secondary); font:12px/1.55 var(--font-mono,Consolas,monospace); overflow-wrap:anywhere; }
+.selection-meta code { padding:2px 6px; border:1px solid var(--border-color); border-radius:var(--radius-xs,4px); background:var(--bg-secondary); }
+.selection-detail-section { min-width:0; padding-top:12px; border-top:1px solid var(--border-color); }
+.selection-detail-section h3 { margin:0 0 8px; color:var(--text-secondary); font-size:12px; font-weight:600; }
+.selection-text { margin:0; color:var(--text-primary); font-size:13px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+.selection-html { max-height:260px; overflow:auto; margin:0; padding:12px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-secondary); font:12px/1.55 var(--font-mono,Consolas,monospace); white-space:pre-wrap; overflow-wrap:anywhere; }
+.selection-dialog-footer { display:flex; flex:none; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border-color); background:var(--bg-primary); }
+.dialog-button { min-height:34px; padding:0 12px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-secondary); font-family:inherit; font-size:12px; font-weight:500; line-height:1; cursor:pointer; }
+.dialog-button:hover { border-color:var(--text-muted); color:var(--text-primary); }
+.dialog-button-primary { border-color:var(--primary-bg,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-bg,var(--accent)); }
+.dialog-button-primary:hover { border-color:var(--primary-hover,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-hover,var(--accent)); }
 .server-output { flex:none; max-height:120px; overflow:auto; color:var(--text-muted); font-size:10px; }
 .server-output summary { cursor:pointer; }
 .server-output pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+@media (max-width:560px) {
+  .selection-dialog-backdrop { padding:12px; }
+  .selection-dialog { width:calc(100vw - 24px); max-height:calc(100vh - 24px); }
+  .selection-dialog-header,.selection-dialog-body { padding-right:14px; padding-left:14px; }
+  .selection-dialog-footer { flex-wrap:wrap; justify-content:stretch; padding:12px 14px; }
+  .dialog-button { flex:1 1 calc(50% - 8px); }
+}
 </style>

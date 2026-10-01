@@ -6,7 +6,7 @@
       <span v-else-if="result.error">{{ result.error }}</span>
       <span v-else>等待本机开发服务输出 URL</span>
     </div>
-    <button v-if="result.previewUrl && result.sessionId" type="button" @click="openPreview">打开实时预览</button>
+    <button v-if="result.previewUrl && result.sessionId" type="button" @click="openPreview">打开信息面板预览</button>
   </div>
 </template>
 

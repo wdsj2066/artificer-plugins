@@ -16,7 +16,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserStartPreview',
     name: '启动网页预览',
-    description: '在可拖动的浮动窗口中启动网页实时预览。传 htmlFile 可直接运行工作区中的 .html/.htm 文件；否则默认运行 npm run dev，从控制台截取 localhost 地址并代理实际 HTML 响应。也可传 url 接入已运行的本机 HTTP 开发服务。',
+    description: '在右侧信息面板中启动网页实时预览，并自动切换到“网页预览”面板。传 htmlFile 可直接运行工作区中的 .html/.htm 文件；否则默认运行 npm run dev，从控制台截取 localhost 地址并代理实际 HTML 响应。也可传 url 接入已运行的本机 HTTP 开发服务。',
     parameters: {
       type: 'object',
       properties: {
@@ -108,7 +108,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserSelectElement',
     name: '选择预览元素',
-    description: '按 CSS 选择器读取预览页中的元素，并将它设为当前选中项，可在浮动预览窗中高亮或引用到聊天框。',
+    description: '按 CSS 选择器读取预览页中的元素，并将它设为当前选中项，可在信息面板预览中高亮或引用到聊天框。',
     parameters: { type: 'object', properties: { selector: { type: 'string', description: 'CSS 选择器，例如 #hero 或 main .card' } }, required: ['selector'] },
     tags: ['browser', 'readonly'],
     async handler(args, executionContext) {
@@ -165,7 +165,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserGetSelection',
     name: '读取选中网页元素',
-    description: '读取用户在实时预览窗中框选或点击选中的元素信息与 HTML。',
+    description: '读取用户在信息面板实时预览中框选或点击选中的元素信息与 HTML。',
     parameters: { type: 'object', properties: {} },
     tags: ['browser', 'readonly'],
     async handler(_args, executionContext) {
