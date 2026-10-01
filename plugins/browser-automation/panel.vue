@@ -1,5 +1,16 @@
 <template>
-  <section ref="root" class="browser-panel">
+  <div class="browser-floating-root">
+    <button v-if="!windowOpen" class="browser-launcher" type="button" @click="showWindow">
+      <span class="launcher-dot" :class="{ active: status?.previewUrl }"></span>
+      <span>网页预览</span>
+      <span v-if="status?.previewUrl" class="launcher-state">{{ status.bridgeReady ? '实时' : '已启动' }}</span>
+    </button>
+
+    <section ref="root" v-show="windowOpen" class="browser-panel">
+    <header class="browser-window-header" data-floating-panel-handle>
+      <div class="window-title"><span class="window-icon">◉</span><strong>网页预览与控制</strong><span class="window-subtitle">可拖动窗口</span></div>
+      <button class="window-minimize" type="button" title="收起预览窗" @click.stop="hideWindow">—</button>
+    </header>
     <header class="browser-toolbar">
       <form class="browser-address" @submit.prevent="connectUrl">
         <input v-model="address" type="url" placeholder="http://localhost:5173/" :disabled="connecting || !sessionId" />
@@ -69,13 +80,16 @@
       <summary>开发服务输出</summary>
       <pre>{{ status.output }}</pre>
     </details>
-  </section>
+    </section>
+  </div>
 </template>
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps({ sessionId: { type: String, default: null } })
+const ACTIVITY_URL = '/api/plugins/browser-automation/activity'
+const OPEN_REQUEST_KEY = 'artificer_browser_preview_open_request'
 const root = ref(null)
 const frame = ref(null)
 const status = ref(null)
@@ -86,10 +100,13 @@ const selecting = ref(false)
 const preferredTag = ref('div')
 const selection = ref(null)
 const frameReady = ref(false)
+const windowOpen = ref(false)
 let statusTimer = null
 let commandTimer = null
+let activityTimer = null
 let intersectionObserver = null
 let visible = true
+let lastActivityId = null
 let lastSelectionKey = ''
 
 const statusLabel = computed(() => {
@@ -130,6 +147,15 @@ async function loadStatus() {
   } catch (cause) {
     error.value = cause.message || '无法读取预览状态。'
   }
+}
+
+function showWindow() {
+  windowOpen.value = true
+  void loadStatus()
+}
+
+function hideWindow() {
+  windowOpen.value = false
 }
 
 async function connectUrl() {
@@ -224,7 +250,7 @@ function onFrameLoad() {
 }
 
 async function pollCommands() {
-  if (!visible || !frameReady.value || !props.sessionId) return
+  if (document.hidden || !frameReady.value || !props.sessionId) return
   try {
     const payload = await request(`/api/plugins/browser-automation/bridge/commands?sessionId=${encodeURIComponent(props.sessionId)}`, { cache: 'no-store' })
     for (const command of payload.data?.commands || []) sendToFrame({ type: 'command', command })
@@ -233,8 +259,25 @@ async function pollCommands() {
 
 function compose(kind) {
   if (!selection.value || !props.sessionId) return
-  window.dispatchEvent(new CustomEvent('artificer:browser-compose', {
-    detail: { sessionId: props.sessionId, selection: selection.value, kind }
+  const item = selection.value
+  const classes = (item.classes || []).map(name => `.${name}`).join('')
+  const identity = item.id ? `#${item.id}` : classes
+  const html = String(item.html || '').slice(0, 4000)
+  const context = [
+    '【浏览器选中的网页元素】',
+    `页面：${item.title || ''}（${item.url || ''}）`,
+    `元素：<${item.tag || 'div'}${identity}>`,
+    `CSS 选择器：${item.selector || ''}`,
+    item.text ? `可见文本：${item.text}` : '',
+    html ? `HTML：\n\`\`\`html\n${html}\n\`\`\`` : ''
+  ].filter(Boolean).join('\n')
+  const prompts = {
+    reference: `${context}\n\n请结合这个网页元素回答我接下来的问题：\n`,
+    question: `${context}\n\n请只围绕这个网页元素回答问题。我的问题是：\n`,
+    edit: `${context}\n\n请在当前工作区定位该网页元素对应的 HTML、Vue 或样式代码，并按下面的要求修改；完成后说明改动：\n`
+  }
+  window.dispatchEvent(new CustomEvent('artificer:chat-insert-text', {
+    detail: { sessionId: props.sessionId, text: `\n${prompts[kind] || prompts.reference}` }
   }))
 }
 
@@ -253,6 +296,7 @@ function onOpenRequest(event) {
   const activity = event.detail || {}
   if (activity.sessionId !== props.sessionId) return
   try { sessionStorage.removeItem('artificer_browser_preview_open_request') } catch {}
+  windowOpen.value = true
   if (activity.upstreamUrl) address.value = activity.upstreamUrl
   void loadStatus()
 }
@@ -269,6 +313,34 @@ function updatePolling() {
   void loadStatus()
 }
 
+async function openActivity(activity) {
+  if (!activity?.sessionId || !activity?.url) return
+  try { sessionStorage.setItem(OPEN_REQUEST_KEY, JSON.stringify(activity)) } catch {}
+  windowOpen.value = true
+  try { await window.artificer?.openSession?.(activity.sessionId) } catch {}
+  window.dispatchEvent(new CustomEvent('artificer:browser-preview-open', { detail: activity }))
+}
+
+async function pollActivity() {
+  try {
+    const response = await fetch(ACTIVITY_URL, { cache: 'no-store' })
+    const payload = await response.json()
+    const activity = payload?.data?.activity
+    if (!activity?.id) return
+    if (lastActivityId === null) {
+      lastActivityId = activity.id
+      if (Date.now() - Number(activity.createdAt || 0) > 15_000) return
+    } else if (lastActivityId === activity.id) {
+      return
+    } else {
+      lastActivityId = activity.id
+    }
+    await openActivity(activity)
+  } catch {
+    // 插件未启用或 API 正在重载时，下一轮继续检查。
+  }
+}
+
 onMounted(() => {
   window.addEventListener('message', onFrameMessage)
   window.addEventListener('artificer:browser-preview-open', onOpenRequest)
@@ -282,8 +354,13 @@ onMounted(() => {
   }
   consumeOpenRequest()
   void loadStatus()
-  statusTimer = setInterval(updatePolling, 1200)
+  void pollActivity()
+  statusTimer = setInterval(() => {
+    if (windowOpen.value) updatePolling()
+    else void loadStatus()
+  }, 1200)
   commandTimer = setInterval(pollCommands, 300)
+  activityTimer = setInterval(pollActivity, 900)
 })
 
 onUnmounted(() => {
@@ -293,6 +370,7 @@ onUnmounted(() => {
   intersectionObserver?.disconnect()
   clearInterval(statusTimer)
   clearInterval(commandTimer)
+  clearInterval(activityTimer)
 })
 
 watch(() => props.sessionId, () => {
@@ -306,7 +384,20 @@ watch(() => props.sessionId, () => {
 </script>
 
 <style scoped>
-.browser-panel { display:flex; flex-direction:column; gap:8px; width:100%; height:100%; min-height:0; padding:8px; box-sizing:border-box; color:var(--text-primary); }
+.browser-floating-root { display:contents; }
+.browser-launcher { display:inline-flex; align-items:center; gap:8px; min-width:142px; height:42px; padding:0 14px; border:1px solid var(--border-color); border-radius:999px; color:var(--text-primary); background:var(--bg-primary); box-shadow:0 8px 28px #0003; font-size:12px; cursor:pointer; }
+.browser-launcher:hover { border-color:var(--accent); }
+.launcher-dot { width:8px; height:8px; flex:none; border-radius:50%; background:#999; }
+.launcher-dot.active { background:#39b982; box-shadow:0 0 0 3px color-mix(in srgb,#39b982 16%,transparent); }
+.launcher-state { margin-left:auto; color:var(--text-muted); font-size:10px; }
+.browser-panel { display:flex; flex-direction:column; gap:8px; width:min(960px,calc(100vw - 72px)); height:min(720px,calc(100vh - 128px)); min-width:min(360px,calc(100vw - 24px)); min-height:min(320px,calc(100vh - 24px)); padding:10px; box-sizing:border-box; color:var(--text-primary); background:var(--bg-primary); border:1px solid var(--border-color); border-radius:12px; box-shadow:0 18px 55px #0005; }
+.browser-window-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:none; min-height:28px; padding:0 1px 5px; border-bottom:1px solid var(--border-color); user-select:none; touch-action:none; }
+.window-title { display:flex; align-items:center; gap:8px; min-width:0; }
+.window-icon { color:var(--accent); font-size:15px; }
+.window-title strong { font-size:12px; }
+.window-subtitle { color:var(--text-muted); font-size:10px; }
+.window-minimize { display:grid; width:25px; height:25px; place-items:center; border:1px solid var(--border-color); border-radius:6px; color:var(--text-secondary); background:var(--bg-secondary); font-size:14px; cursor:pointer; }
+.window-minimize:hover { color:var(--text-primary); border-color:var(--accent); }
 .browser-toolbar,.browser-page-toolbar { display:flex; align-items:center; gap:6px; flex:none; }
 .browser-address { display:flex; flex:1; min-width:0; gap:5px; }
 .browser-address input { flex:1; min-width:0; height:29px; padding:0 8px; border:1px solid var(--border-color); border-radius:6px; color:var(--text-primary); background:var(--bg-primary); font-size:11px; }

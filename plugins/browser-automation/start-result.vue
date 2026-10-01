@@ -30,7 +30,6 @@ async function openPreview() {
   }
   try { sessionStorage.setItem('artificer_browser_preview_open_request', JSON.stringify(activity)) } catch {}
   try { await window.artificer?.openSession?.(activity.sessionId) } catch {}
-  window.artificer?.activatePanel?.('right', 'browser-automation/browser')
   window.dispatchEvent(new CustomEvent('artificer:browser-preview-open', { detail: activity }))
 }
 </script>

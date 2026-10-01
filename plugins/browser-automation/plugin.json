@@ -1,24 +1,17 @@
 {
   "id": "browser-automation",
   "name": "网页预览与控制",
-  "version": "2.0.0",
-  "description": "启动或接入本机 HTML 开发服务，拦截并读取 HTML，在实时交互预览中选择元素并自动化操作网页",
+  "version": "2.1.0",
+  "description": "在可拖动的浮动窗口中实时预览本机 HTML，支持读取 DOM、框选元素和鼠标自动化",
   "author": "Artificer",
   "icon": "globe-2",
   "permissions": ["filesystem", "network", "subprocess"],
   "hasBackend": true,
-  "panelOrder": 35,
   "ui": {
-    "toolbar": "toolbar.vue",
-    "inputActions": "input-actions.vue",
-    "panels": [
+    "floatingPanels": [
       {
         "id": "browser",
-        "region": "right",
-        "component": "panel.vue",
-        "title": "网页预览",
-        "icon": "globe-2",
-        "width": "50%"
+        "component": "panel.vue"
       }
     ],
     "toolRenderers": {
