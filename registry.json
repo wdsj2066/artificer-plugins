@@ -16,35 +16,35 @@
       "downloads": {
         "linux-x64": {
           "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-linux-x64.zip",
-          "sha256": "d1fb8f6189c1276ee6bbe07074bc95399ceb73a0dc24051af87e058f41024f63"
+          "sha256": "94158d37ad36d406acd2f5de3b68e388a61d20372091d90778d06c70fc4db8d3"
         },
         "linux-arm64": {
           "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-linux-arm64.zip",
-          "sha256": "6fa03cb7cb33cb8ed039a480a7713c558fddf250d79237d202494621f8253b64"
+          "sha256": "79ae726b2646b0370a7fa6e1d19990e59076ca1e08bbe68951193a3dcc04a27b"
         },
         "win32-x64": {
           "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-win32-x64.zip",
-          "sha256": "0439e74ce035ff9009ac7fd52b134630f56869ccd23768a66f876a4f7d6c158c"
+          "sha256": "037e783bb6c1a14b1032d73f9138acc86e1e9fa79f9087a49eefea45da775615"
         },
         "win32-arm64": {
           "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-win32-arm64.zip",
-          "sha256": "473ca45c64d60f1c446da8feae0665d80386c8035d6c073f384dd59241f9c426"
+          "sha256": "89b862df18bb69ec6a525df639cbb49f2f30743ff28f51c7c7486ad3c3632fde"
         },
         "darwin-x64": {
           "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-darwin-x64.zip",
-          "sha256": "59a2ebb126666fb9a806e7915f2a27cdc0879cc226ba376b3ecf7ae7f4487b0d"
+          "sha256": "e10d6474079e9f3d837e08230e5c5bde4ea3b22fdc78e7384e7445f3cc610140"
         },
         "darwin-arm64": {
           "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-darwin-arm64.zip",
-          "sha256": "972fa2189aa7b3c1495bcfbe23905d8ee153285eda7738e37759ddb795545f74"
+          "sha256": "eebb65be9c5d39934fffb1ea88dce8452741e8eb01a589ff9a510b23f73d7732"
         }
       }
     },
     {
       "id": "browser-automation",
       "name": "网页预览与控制",
-      "description": "在可拖动的浮动窗口中实时预览本机 HTML，支持可靠的 DOM 桥接、框选元素和鼠标自动化",
-      "version": "2.2.0",
+      "description": "在信息面板中实时预览本机 HTML，支持框选元素、独立悬浮查看元素详情和鼠标自动化",
+      "version": "2.3.0",
       "author": "Artificer",
       "hasBackend": true,
       "permissions": [
@@ -53,8 +53,8 @@
         "subprocess"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.2.0/browser-automation-2.2.0.zip",
-      "sha256": "22735d6f64e1feb31a64eafbaaf930850c8f982053a1adc7db7e5ae29c4a2327"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.3.0/browser-automation-2.3.0.zip",
+      "sha256": "6cfc861f80de83540ea82a8b4bc247c12df9544dcebf444d4062a99836fabcc0"
     },
     {
       "id": "channel-feishu",
@@ -69,7 +69,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.0/channel-feishu-1.2.0.zip",
-      "sha256": "ebfa1a0d4b40b58877ee347cf758df9a2605b488a822e1eba0cdb5ec9d9ae4da"
+      "sha256": "4e14fc2f055c206db624ce79ca10e15fb5671efd6da3f198ef9f7bdbcd18eaa3"
     },
     {
       "id": "channel-wecom",
@@ -85,7 +85,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.0/channel-wecom-1.2.0.zip",
-      "sha256": "708407b87431c7a100d3c895a593e474d4e8dc13e3724abfe377d40545a8741f"
+      "sha256": "6f039d073093b3ac86b8708291a4ad104b35ac7839d74c2b65fa779f1a39c52f"
     },
     {
       "id": "token-usage",
@@ -97,7 +97,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "2d42d020ea4451881c1bb8665618b08b6c790d663ae53010552f90d5c0e37e88"
+      "sha256": "e6625de86f4702f22fd81ce7a60e18369df27746f0417c2562f0a500df519877"
     },
     {
       "id": "office",
@@ -111,7 +111,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.1/office-1.0.1.zip",
-      "sha256": "aba02004ed5c6ee6ada03dbc8b04b53540feb2c57ebf0f48d81f17c791ec1988"
+      "sha256": "75ed301720db20f724451f5b7c00e55d07a0903d955ff113c65599fab49d4412"
     },
     {
       "id": "plugin-builder",
@@ -126,7 +126,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.0/plugin-builder-1.0.0.zip",
-      "sha256": "c7d49914d3ff8b7545cb66e19ba6c045cbc1da9f53f325fa6ccae43b1aa9fb0b"
+      "sha256": "3d945fca9721f46b43e2af9d2469645e75bb4274c27c22a71d05a556db48fbe1"
     }
   ]
 }
