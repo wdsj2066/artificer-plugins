@@ -1,12 +1,28 @@
 {
   "id": "browser-automation",
-  "name": "浏览器自动化",
-  "version": "1.1.0",
-  "description": "基于 Chrome DevTools Protocol 的本机网页导航、检查、交互与截图工具",
+  "name": "网页预览与控制",
+  "version": "2.0.0",
+  "description": "启动或接入本机 HTML 开发服务，拦截并读取 HTML，在实时交互预览中选择元素并自动化操作网页",
   "author": "Artificer",
   "icon": "globe-2",
   "permissions": ["filesystem", "network", "subprocess"],
-  "runtimeDependencies": ["ws"],
   "hasBackend": true,
-  "panelOrder": 35
+  "panelOrder": 35,
+  "ui": {
+    "toolbar": "toolbar.vue",
+    "inputActions": "input-actions.vue",
+    "panels": [
+      {
+        "id": "browser",
+        "region": "right",
+        "component": "panel.vue",
+        "title": "网页预览",
+        "icon": "globe-2",
+        "width": "50%"
+      }
+    ],
+    "toolRenderers": {
+      "browserStartPreview": "start-result.vue"
+    }
+  }
 }

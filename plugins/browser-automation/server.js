@@ -1,20 +1,261 @@
-import { BrowserService } from './browserService.js'
+import { BrowserPreviewRuntime } from './previewRuntime.js'
 
-const browserOptions = {
-  type: 'object', properties: {
-    port: { type: 'number', description: 'Chrome DevTools 本机端口，默认 9222' },
-    launch: { type: 'boolean', description: '未运行时是否启动本机 Chrome，默认 true' },
-    newPage: { type: 'boolean', description: '是否新建独立页面，默认 false' }
-  }
+let runtime = null
+
+function sessionIdOf(executionContext) {
+  return executionContext?.runContext?.state?.storage?.sessionId || 'default'
+}
+
+function failure(error, extra = {}) {
+  return { success: false, ...extra, error: error?.message || '浏览器预览操作失败。' }
 }
 
 export function register(ctx) {
-  const browserService = new BrowserService({ importModule: ctx.importModule })
-  const sessionIdOf = executionContext => executionContext?.runContext?.state?.storage?.sessionId || 'default'
-  ctx.registerTool({ id: 'browserNavigate', name: '浏览器导航', description: '在隔离的本机 Chrome 调试页面中打开一个 HTTP(S) 地址。后续使用 browserInspect 检查页面。', parameters: { type: 'object', properties: { url: { type: 'string' }, ...browserOptions.properties }, required: ['url'] }, tags: ['browser', 'sensitive'], handler: async (args, executionContext) => ({ success: true, ...(await browserService.navigate(sessionIdOf(executionContext), args.url, args)) }) })
-  ctx.registerTool({ id: 'browserInspect', name: '检查网页', description: '读取当前页面的标题、地址、文本、链接、表单和可交互元素目录，便于确定后续 CSS 选择器。文本最多返回 24000 个字符。', parameters: browserOptions, tags: ['browser', 'readonly'], handler: async (args, executionContext) => ({ success: true, ...(await browserService.inspect(sessionIdOf(executionContext), { ...args, launch: false })) }) })
-  ctx.registerTool({ id: 'browserWait', name: '等待网页状态', description: '等待页面加载完成、指定 CSS 元素出现，或指定文本出现在页面中。适合在导航或点击后确认结果。', parameters: { type: 'object', properties: { condition: { type: 'string', enum: ['load', 'selector', 'text'], description: '默认 load' }, selector: { type: 'string', description: 'condition 为 selector 时必填' }, text: { type: 'string', description: 'condition 为 text 时必填' }, timeoutMs: { type: 'number', description: '超时毫秒，默认 10000，最大 30000' }, ...browserOptions.properties } }, tags: ['browser', 'readonly'], handler: async (args, executionContext) => ({ success: true, ...(await browserService.waitFor(sessionIdOf(executionContext), args)) }) })
-  ctx.registerTool({ id: 'browserAct', name: '操作网页元素', description: '通过 CSS 选择器点击、输入、选择、悬停、按键或滚动元素。涉及提交、购买、发布等外部副作用时必须先向用户确认。', parameters: { type: 'object', properties: { action: { type: 'string', enum: ['click', 'type', 'select', 'hover', 'press', 'scroll'] }, selector: { type: 'string', description: 'scroll 未指定时滚动页面，其余操作必填' }, value: { type: 'string', description: '输入文本、选项值、按键名称或滚动像素' }, ...browserOptions.properties }, required: ['action'] }, tags: ['browser', 'sensitive'], handler: async (args, executionContext) => ({ success: true, ...(await browserService.act(sessionIdOf(executionContext), args.action, args.selector, args.value, args)) }) })
-  ctx.registerTool({ id: 'browserScreenshot', name: '网页截图', description: '截取当前浏览器页面，将 PNG 保存到当前工作区并返回文件路径。可选择完整页面截图。', parameters: { type: 'object', properties: { ...browserOptions.properties, outputPath: { type: 'string', description: '相对工作区的 PNG 输出路径，可选' }, fullPage: { type: 'boolean', description: '是否截取完整可滚动页面，默认 false' } } }, tags: ['browser', 'readonly'], handler: async (args, executionContext) => ({ success: true, ...(await browserService.screenshot(sessionIdOf(executionContext), { ...args, workspaceRoot: args._workspaceDir?.root, launch: false })) }) })
-  ctx.logger.info('Browser automation plugin registered')
+  runtime = new BrowserPreviewRuntime()
+
+  ctx.registerTool({
+    id: 'browserStartPreview',
+    name: '启动网页预览',
+    description: '在当前工作区启动网页实时预览。传 htmlFile 可直接运行工作区中的 .html/.htm 文件；否则默认运行 npm run dev，从控制台截取 localhost 地址并代理实际 HTML 响应。也可传 url 接入已运行的本机 HTTP 开发服务。预览会显示为可交互网页面板。',
+    parameters: {
+      type: 'object',
+      properties: {
+        command: { type: 'string', description: '启动开发服务的命令，默认 npm run dev' },
+        directory: { type: 'string', description: '工作区内的启动目录，相对路径；默认工作区根目录' },
+        htmlFile: { type: 'string', description: '直接预览工作区内的 HTML 文件路径，例如 index.html 或 dist/index.html；相对工作区根目录' },
+        url: { type: 'string', description: '已运行服务的本机地址，例如 http://localhost:5173/' },
+        timeoutMs: { type: 'number', description: '等待服务输出本机 URL 的超时毫秒，默认 45000，最大 120000' }
+      }
+    },
+    tags: ['browser', 'sensitive'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try {
+        const status = args.url
+          ? await runtime.attach(sessionId, args.url)
+          : args.htmlFile
+            ? await runtime.startHtml(sessionId, args.htmlFile, args._workspaceDir?.root)
+            : await runtime.start(sessionId, {
+              command: args.command || 'npm run dev',
+              cwd: args.directory,
+              workspaceRoot: args._workspaceDir?.root,
+              timeoutMs: args.timeoutMs
+            })
+        return { success: true, ...status }
+      } catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserStopPreview',
+    name: '停止网页预览',
+    description: '停止当前会话启动的开发服务并关闭预览代理。',
+    parameters: { type: 'object', properties: {} },
+    tags: ['browser', 'sensitive'],
+    async handler(_args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try { return { success: true, sessionId, ...(await runtime.stop(sessionId)) } }
+      catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserPreviewStatus',
+    name: '查看网页预览状态',
+    description: '读取当前会话开发服务的运行状态、预览地址和最近控制台输出。',
+    parameters: { type: 'object', properties: {} },
+    tags: ['browser', 'readonly'],
+    async handler(_args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      return { success: true, sessionId, status: runtime.getStatus(sessionId) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserInspect',
+    name: '检查预览网页',
+    description: '读取当前可交互预览中的页面标题、地址、正文、链接和表单控件。',
+    parameters: { type: 'object', properties: {} },
+    tags: ['browser', 'readonly'],
+    async handler(_args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'inspect')) } }
+      catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserReadHtml',
+    name: '读取网页 HTML',
+    description: '读取代理拦截到的开发服务器 HTML 响应，并请求当前预览页已渲染的 DOM HTML。最多返回 60000 个字符。',
+    parameters: { type: 'object', properties: { maxChars: { type: 'number', description: 'HTML 字符上限，默认 30000，最大 60000' } } },
+    tags: ['browser', 'readonly'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try {
+        const response = runtime.readHtml(sessionId, args.maxChars)
+        const status = runtime.getStatus(sessionId)
+        let renderedDom = null
+        if (status?.bridgeReady) {
+          try { renderedDom = await runtime.runInPage(sessionId, 'readHtml', { maxChars: args.maxChars }) }
+          catch (error) { renderedDom = { error: error.message } }
+        }
+        return { success: true, sessionId, ...response, renderedDom }
+      } catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserSelectElement',
+    name: '选择预览元素',
+    description: '按 CSS 选择器读取预览页中的元素，并将它设为当前选中项，可在面板中高亮或引用到聊天框。',
+    parameters: { type: 'object', properties: { selector: { type: 'string', description: 'CSS 选择器，例如 #hero 或 main .card' } }, required: ['selector'] },
+    tags: ['browser', 'readonly'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'selectElement', { selector: args.selector })) } }
+      catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserAct',
+    name: '操作预览网页元素',
+    description: '在当前预览页中按 CSS 选择器点击、输入、下拉选择、悬停、按键或滚动元素。提交、购买、发布等外部副作用必须先向用户确认。',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['click', 'doubleClick', 'type', 'select', 'hover', 'press', 'scroll'] },
+        selector: { type: 'string', description: '目标元素的 CSS 选择器' },
+        value: { type: 'string', description: '输入文字、选项值、按键名称或滚动像素' }
+      },
+      required: ['action', 'selector']
+    },
+    tags: ['browser', 'sensitive'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'act', args)) }
+      } catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserMouse',
+    name: '控制预览页鼠标',
+    description: '按预览页面的 CSS 像素坐标移动鼠标、单击、双击、右击或滚动，用于多步网页自动化。滚动可只传 action 和 deltaY；其他动作需要 x/y。',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['move', 'click', 'doubleClick', 'rightClick', 'scroll'] },
+        x: { type: 'number', description: '视口内横坐标' },
+        y: { type: 'number', description: '视口内纵坐标' },
+        deltaX: { type: 'number', description: '横向滚动像素' },
+        deltaY: { type: 'number', description: '纵向滚动像素' }
+      },
+      required: ['action']
+    },
+    tags: ['browser', 'sensitive'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'mouse', args)) } }
+      catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserGetSelection',
+    name: '读取选中网页元素',
+    description: '读取用户在实时预览面板中框选或点击选中的元素信息与 HTML。',
+    parameters: { type: 'object', properties: {} },
+    tags: ['browser', 'readonly'],
+    async handler(_args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      return { success: true, sessionId, selection: runtime.getSelection(sessionId) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'GET', path: '/api/plugins/browser-automation/activity',
+    async handler() { return { success: true, data: { activity: runtime.getLatestActivity() } } }
+  })
+
+  ctx.registerRoute({
+    method: 'GET', path: '/api/plugins/browser-automation/status',
+    async handler({ query }) {
+      const sessionId = String(query?.sessionId || '')
+      if (!sessionId) return { success: false, error: '缺少会话 ID。' }
+      return { success: true, data: { status: runtime.getStatus(sessionId) } }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'POST', path: '/api/plugins/browser-automation/start',
+    async handler({ body }) {
+      const sessionId = String(body?.sessionId || '')
+      if (!sessionId || !body?.url) return { success: false, error: '需要会话 ID 和本机开发服务地址。' }
+      try { return { success: true, data: await runtime.attach(sessionId, body.url) } }
+      catch (error) { return failure(error) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'POST', path: '/api/plugins/browser-automation/stop',
+    async handler({ body }) {
+      const sessionId = String(body?.sessionId || '')
+      if (!sessionId) return { success: false, error: '缺少会话 ID。' }
+      try { return { success: true, data: await runtime.stop(sessionId) } }
+      catch (error) { return failure(error) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'GET', path: '/api/plugins/browser-automation/html',
+    async handler({ query }) {
+      const sessionId = String(query?.sessionId || '')
+      if (!sessionId) return { success: false, error: '缺少会话 ID。' }
+      try { return { success: true, data: runtime.readHtml(sessionId, query?.maxChars) } }
+      catch (error) { return failure(error) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'GET', path: '/api/plugins/browser-automation/bridge/commands',
+    async handler({ query }) {
+      const sessionId = String(query?.sessionId || '')
+      if (!sessionId) return { success: false, error: '缺少会话 ID。' }
+      return { success: true, data: { commands: runtime.getCommands(sessionId) } }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'POST', path: '/api/plugins/browser-automation/bridge/ready',
+    async handler({ body }) {
+      const ok = runtime.setBridgeReady(String(body?.sessionId || ''), String(body?.token || ''), body || {})
+      return ok ? { success: true } : { success: false, error: '浏览器预览令牌无效。' }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'POST', path: '/api/plugins/browser-automation/bridge/selection',
+    async handler({ body }) {
+      try {
+        const selection = runtime.recordSelection(String(body?.sessionId || ''), String(body?.token || ''), body?.selection)
+        return { success: true, data: { selection } }
+      } catch (error) { return failure(error) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'POST', path: '/api/plugins/browser-automation/bridge/result',
+    async handler({ body }) {
+      const accepted = runtime.receiveResult(String(body?.sessionId || ''), body || {})
+      return accepted ? { success: true } : { success: false, error: '浏览器操作已过期。' }
+    }
+  })
+
+  ctx.logger.info('Browser preview and automation plugin registered')
+}
+
+export async function onDisable() {
+  await runtime?.stopAll()
 }
