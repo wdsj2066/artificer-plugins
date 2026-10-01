@@ -1,38 +1,29 @@
 <template>
   <div class="browser-info-panel">
     <section ref="root" class="browser-panel">
-    <header class="browser-panel-heading">
-      <div class="window-title"><span class="window-icon">◉</span><strong>网页预览与控制</strong></div>
-      <span class="panel-live-state"><i class="status-dot" :class="{ active: status?.running || status?.bridgeReady }"></i>{{ status?.bridgeReady ? '实时连接' : status?.previewUrl ? '已启动' : '等待预览' }}</span>
-    </header>
-    <header class="browser-toolbar">
+    <header class="browser-toolbar" aria-label="网页预览工具栏">
       <form class="browser-address" @submit.prevent="connectUrl">
-        <input v-model="address" type="url" placeholder="http://localhost:5173/" :disabled="connecting || !sessionId" />
-        <button type="submit" :disabled="connecting || !sessionId || !address.trim()">连接</button>
+        <span class="address-field">
+          <span class="connection-dot" :class="{ active: status?.bridgeReady, pending: status?.previewUrl && !status?.bridgeReady, failed: error || bridgeError }" role="status" :aria-label="bridgeError || error || statusLabel" :title="bridgeError || error || statusLabel"></span>
+          <input v-model="address" type="url" placeholder="http://localhost:5173/" aria-label="预览地址" :disabled="connecting || !sessionId" />
+        </span>
+        <button class="toolbar-icon-button" type="submit" title="连接地址" aria-label="连接地址" :disabled="connecting || !sessionId || !address.trim()"><ArrowRight :size="16" /></button>
       </form>
-      <button class="small-button" type="button" :disabled="!status?.previewUrl" title="重新加载页面" @click="reloadFrame">刷新</button>
-      <button class="small-button" type="button" :disabled="!status?.previewUrl" @click="stopPreview">停止</button>
+      <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="刷新页面" aria-label="刷新页面" @click="reloadFrame"><RefreshCw :size="16" /></button>
+      <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="停止预览" aria-label="停止预览" @click="stopPreview"><Square :size="15" /></button>
+      <span class="toolbar-divider" aria-hidden="true"></span>
+      <button class="toolbar-icon-button" :class="{ active: selecting }" type="button" :disabled="!status?.bridgeReady" :title="selecting ? '取消选择元素' : '选择页面元素'" :aria-label="selecting ? '取消选择元素' : '选择页面元素'" :aria-pressed="selecting" @click="toggleSelectMode"><MousePointer2 :size="16" /></button>
+      <select v-model="preferredTag" class="tag-select" :disabled="!status?.bridgeReady || selecting" aria-label="优先选择的元素类型" title="优先选择的元素类型">
+        <option value="div">div</option>
+        <option value="section">section</option>
+        <option value="article">article</option>
+        <option value="main">main</option>
+        <option value="any">任意</option>
+      </select>
+      <button v-if="selection" class="toolbar-icon-button" type="button" title="查看已选元素详情" aria-label="查看已选元素详情" @click="selectionDetailsOpen = true"><Info :size="16" /></button>
     </header>
 
-    <div class="browser-status" :class="{ 'is-error': error || bridgeError }">
-      <span class="status-dot" :class="{ active: status?.running || status?.bridgeReady }"></span>
-      <span class="browser-status-text">{{ bridgeError || error || statusLabel }}</span>
-    </div>
-
-    <div v-if="status?.previewUrl" class="browser-page-toolbar">
-      <button class="select-button" :class="{ active: selecting }" type="button" :disabled="!status.bridgeReady" @click="toggleSelectMode">
-        {{ selecting ? '取消选择' : '选择页面元素' }}
-      </button>
-      <select v-model="preferredTag" :disabled="!status.bridgeReady || selecting" aria-label="选择元素类型">
-        <option value="div">优先选择 div</option>
-        <option value="section">优先选择 section</option>
-        <option value="article">优先选择 article</option>
-        <option value="main">优先选择 main</option>
-        <option value="any">选择鼠标下的元素</option>
-      </select>
-      <button v-if="selection" class="small-button selection-reopen" type="button" @click="selectionDetailsOpen = true">已选元素 · 查看详情</button>
-      <span class="live-indicator">{{ status.bridgeReady ? '实时交互' : '正在连接页面…' }}</span>
-    </div>
+    <div v-if="error || bridgeError" class="browser-error" role="alert" :title="bridgeError || error">{{ bridgeError || error }}</div>
 
     <div v-if="status?.previewUrl" class="browser-frame-wrap">
       <iframe
@@ -108,6 +99,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ArrowRight, RefreshCw, Square, MousePointer2, Info } from 'lucide-vue-next'
 
 const props = defineProps({ sessionId: { type: String, default: null } })
 const ACTIVITY_URL = '/api/plugins/browser-automation/activity'
@@ -482,27 +474,23 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
 <style scoped>
 .browser-info-panel { width:100%; height:100%; min-height:0; }
 .browser-panel { display:flex; width:100%; height:100%; min-height:0; box-sizing:border-box; flex-direction:column; gap:10px; padding:14px; color:var(--text-primary); background:var(--bg-secondary); }
-.browser-panel-heading { display:flex; flex:none; align-items:center; justify-content:space-between; gap:8px; min-height:32px; padding-bottom:9px; border-bottom:1px solid var(--border-color); }
-.window-title { display:flex; align-items:center; gap:8px; min-width:0; }
-.window-icon { color:var(--text-secondary); font-size:15px; }
-.window-title strong { font-size:13px; font-weight:600; }
-.panel-live-state { display:inline-flex; flex:none; align-items:center; gap:6px; color:var(--text-muted); font-size:11px; }
-.browser-toolbar,.browser-page-toolbar { display:flex; align-items:center; gap:6px; flex:none; }
-.browser-address { display:flex; flex:1; min-width:0; gap:5px; }
-.browser-address input { flex:1; min-width:0; height:34px; padding:0 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-primary); background:var(--bg-primary); font-family:inherit; font-size:12px; line-height:1.4; }
-.browser-address button,.small-button,.select-button { border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); cursor:pointer; }
-.browser-address button,.small-button { height:34px; padding:0 10px; font-size:12px; }
+.browser-toolbar { display:flex; flex:none; align-items:center; gap:6px; min-width:0; overflow-x:auto; white-space:nowrap; scrollbar-width:thin; }
+.browser-address { display:flex; flex:1; min-width:148px; align-items:center; gap:6px; margin:0; }
+.address-field { display:flex; flex:1; min-width:0; height:34px; box-sizing:border-box; align-items:center; gap:8px; padding:0 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); background:var(--bg-primary); }
+.connection-dot { width:7px; height:7px; flex:none; border-radius:50%; background:var(--text-muted); }
+.connection-dot.active { background:#39b982; box-shadow:0 0 0 3px color-mix(in srgb,#39b982 16%,transparent); }
+.connection-dot.pending { background:var(--warning-color); }
+.connection-dot.failed { background:#c62828; }
+.browser-address input { width:100%; min-width:0; height:100%; padding:0; border:0; outline:0; color:var(--text-primary); background:transparent; font-family:inherit; font-size:12px; line-height:1.4; }
+.address-field:focus-within { border-color:var(--accent); }
+.toolbar-icon-button { display:grid; width:34px; height:34px; flex:none; place-items:center; padding:0; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); cursor:pointer; }
+.toolbar-icon-button:hover:not(:disabled) { color:var(--text-primary); background:var(--bg-tertiary); }
+.toolbar-icon-button:focus-visible,.tag-select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.toolbar-icon-button.active { border-color:var(--primary-bg,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-bg,var(--accent)); }
+.toolbar-divider { width:1px; height:20px; flex:none; margin:0 1px; background:var(--border-color); }
+.tag-select { width:72px; height:34px; flex:none; padding:0 5px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-family:inherit; font-size:12px; cursor:pointer; }
 button:disabled,select:disabled { opacity:.45; cursor:default; }
-.browser-status { display:flex; align-items:center; gap:8px; min-height:18px; color:var(--text-muted); font-size:11px; }
-.browser-status.is-error { color:#c62828; }
-.status-dot { width:7px; height:7px; border-radius:50%; background:#999; }
-.status-dot.active { background:#39b982; box-shadow:0 0 0 3px color-mix(in srgb,#39b982 16%,transparent); }
-.browser-status-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.browser-page-toolbar { min-height:34px; }
-.select-button { height:34px; padding:0 10px; font-size:12px; }
-.select-button.active { color:var(--primary-text,#fff); border-color:var(--primary-bg,var(--accent)); background:var(--primary-bg,var(--accent)); }
-.browser-page-toolbar select { min-width:118px; max-width:170px; height:34px; padding:0 8px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-size:12px; }
-.live-indicator { margin-left:auto; color:var(--text-muted); font-size:11px; white-space:nowrap; }
+.browser-error { flex:none; overflow:hidden; color:#c62828; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .browser-frame-wrap { position:relative; flex:1; min-height:160px; overflow:hidden; border:1px solid var(--border-color); border-radius:var(--radius-md,8px); background:#fff; }
 .browser-frame { display:block; width:100%; height:100%; border:0; background:#fff; }
 .browser-empty { display:flex; flex:1; min-height:200px; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:20px; color:var(--text-muted); text-align:center; }
@@ -510,7 +498,6 @@ button:disabled,select:disabled { opacity:.45; cursor:default; }
 .browser-empty p { max-width:360px; margin:0; font-size:12px; line-height:1.6; }
 .browser-empty code { padding:1px 4px; border-radius:3px; background:var(--bg-secondary); }
 .empty-icon { display:grid; width:38px; height:38px; place-items:center; border:1px solid var(--border-color); border-radius:12px; color:var(--accent); font-size:20px; }
-.selection-reopen { color:var(--text-primary); }
 .selection-dialog-backdrop { position:fixed; inset:0; z-index:4100; display:grid; place-items:center; padding:24px; background:rgba(20,20,20,.28); backdrop-filter:blur(2px); }
 .selection-dialog { display:flex; width:min(620px,calc(100vw - 32px)); max-height:min(760px,calc(100vh - 48px)); flex-direction:column; overflow:hidden; color:var(--text-primary); background:var(--surface,var(--bg-primary)); border:1px solid var(--border-color); border-radius:var(--radius-lg,12px); box-shadow:0 24px 72px rgba(0,0,0,.24); }
 .selection-dialog-header { display:flex; flex:none; align-items:center; justify-content:space-between; gap:18px; padding:18px 20px; border-bottom:1px solid var(--border-color); background:var(--bg-primary); user-select:none; cursor:grab; touch-action:none; }
