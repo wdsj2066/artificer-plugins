@@ -7,12 +7,12 @@
           <span class="connection-dot" :class="{ active: status?.bridgeReady, pending: status?.previewUrl && !status?.bridgeReady, failed: error || bridgeError }" role="status" :aria-label="bridgeError || error || statusLabel" :title="bridgeError || error || statusLabel"></span>
           <input v-model="address" type="url" placeholder="http://localhost:5173/" aria-label="预览地址" :disabled="connecting || !sessionId" />
         </span>
-        <button class="toolbar-icon-button" type="submit" title="连接地址" aria-label="连接地址" :disabled="connecting || !sessionId || !address.trim()"><ArrowRight :size="16" /></button>
+        <button class="toolbar-icon-button" type="submit" title="连接地址" aria-label="连接地址" :disabled="connecting || !sessionId || !address.trim()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></button>
       </form>
-      <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="刷新页面" aria-label="刷新页面" @click="reloadFrame"><RefreshCw :size="16" /></button>
-      <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="停止预览" aria-label="停止预览" @click="stopPreview"><Square :size="15" /></button>
+      <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="刷新页面" aria-label="刷新页面" @click="reloadFrame"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4m-4 5a8 8 0 0 0 14.9 3M20 20v-4h-4" /></svg></button>
+      <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="停止预览" aria-label="停止预览" @click="stopPreview"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1" /></svg></button>
       <span class="toolbar-divider" aria-hidden="true"></span>
-      <button class="toolbar-icon-button" :class="{ active: selecting }" type="button" :disabled="!status?.bridgeReady" :title="selecting ? '取消选择元素' : '选择页面元素'" :aria-label="selecting ? '取消选择元素' : '选择页面元素'" :aria-pressed="selecting" @click="toggleSelectMode"><MousePointer2 :size="16" /></button>
+      <button class="toolbar-icon-button" :class="{ active: selecting }" type="button" :disabled="!status?.bridgeReady" :title="selecting ? '取消选择元素' : '选择页面元素'" :aria-label="selecting ? '取消选择元素' : '选择页面元素'" :aria-pressed="selecting" @click="toggleSelectMode"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 9-7 1-3 7-4-17Z" /></svg></button>
       <select v-model="preferredTag" class="tag-select" :disabled="!status?.bridgeReady || selecting" aria-label="优先选择的元素类型" title="优先选择的元素类型">
         <option value="div">div</option>
         <option value="section">section</option>
@@ -20,7 +20,7 @@
         <option value="main">main</option>
         <option value="any">任意</option>
       </select>
-      <button v-if="selection" class="toolbar-icon-button" type="button" title="查看已选元素详情" aria-label="查看已选元素详情" @click="selectionDetailsOpen = true"><Info :size="16" /></button>
+      <button v-if="selection" class="toolbar-icon-button" type="button" title="查看已选元素详情" aria-label="查看已选元素详情" @click="selectionDetailsOpen = true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></svg></button>
     </header>
 
     <div v-if="error || bridgeError" class="browser-error" role="alert" :title="bridgeError || error">{{ bridgeError || error }}</div>
@@ -84,12 +84,18 @@
               <h3>HTML 结构</h3>
               <pre class="selection-html">{{ selection.html }}</pre>
             </section>
+            <section v-if="editMode" class="selection-detail-section">
+              <h3>修改要求</h3>
+              <textarea ref="editInput" v-model="editInstruction" class="selection-edit-input" rows="3" placeholder="例如：缩小间距，并让按钮在手机上占满一行" aria-label="修改要求" @keydown.ctrl.enter.prevent="requestEdit"></textarea>
+              <span class="selection-edit-hint">按 Ctrl + Enter 发送修改请求</span>
+            </section>
+            <p v-if="composeError" class="selection-compose-error" role="alert">{{ composeError }}</p>
           </div>
 
           <footer class="selection-dialog-footer">
-            <button type="button" class="dialog-button" @click="compose('reference')">放入聊天框</button>
-            <button type="button" class="dialog-button" @click="compose('question')">围绕元素提问</button>
-            <button type="button" class="dialog-button dialog-button-primary" @click="compose('edit')">请求修改</button>
+            <button type="button" class="dialog-button" :disabled="composing" @click="compose('reference')">放入聊天框</button>
+            <button type="button" class="dialog-button" :disabled="composing" @click="compose('question')">围绕元素提问</button>
+            <button type="button" class="dialog-button dialog-button-primary" :disabled="composing" @click="requestEdit">{{ composing ? '正在送达…' : editMode ? '发送修改请求' : '请求修改' }}</button>
           </footer>
         </section>
       </div>
@@ -98,8 +104,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { ArrowRight, RefreshCw, Square, MousePointer2, Info } from 'lucide-vue-next'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps({ sessionId: { type: String, default: null } })
 const ACTIVITY_URL = '/api/plugins/browser-automation/activity'
@@ -116,6 +121,11 @@ const preferredTag = ref('div')
 const selection = ref(null)
 const selectionDetailsOpen = ref(false)
 const selectionDialogPosition = ref(null)
+const editMode = ref(false)
+const editInstruction = ref('')
+const editInput = ref(null)
+const composing = ref(false)
+const composeError = ref('')
 const frameReady = ref(false)
 let statusTimer = null
 let commandTimer = null
@@ -179,6 +189,9 @@ function applySelection(next, { showDetails = false, closeDetails = false } = {}
   const key = next ? `${next.selectedAt || ''}:${next.selector || ''}` : ''
   if (key !== lastSelectionKey) {
     lastSelectionKey = key
+    editMode.value = false
+    editInstruction.value = ''
+    composeError.value = ''
     window.dispatchEvent(new CustomEvent('artificer:browser-selection', {
       detail: { sessionId: props.sessionId, selection: selection.value }
     }))
@@ -332,7 +345,24 @@ async function pollCommands() {
   }
 }
 
-function compose(kind) {
+async function requestEdit() {
+  if (!editMode.value) {
+    editMode.value = true
+    composeError.value = ''
+    await nextTick()
+    editInput.value?.focus()
+    return
+  }
+  const requirement = editInstruction.value.trim()
+  if (!requirement) {
+    composeError.value = '请先写明希望怎样修改这个元素。'
+    editInput.value?.focus()
+    return
+  }
+  await compose('edit', requirement, { send: true })
+}
+
+async function compose(kind, requirement = '', { send = false } = {}) {
   if (!selection.value || !props.sessionId) return
   const item = selection.value
   const classes = (item.classes || []).map(name => `.${name}`).join('')
@@ -349,12 +379,27 @@ function compose(kind) {
   const prompts = {
     reference: `${context}\n\n请结合这个网页元素回答我接下来的问题：\n`,
     question: `${context}\n\n请只围绕这个网页元素回答问题。我的问题是：\n`,
-    edit: `${context}\n\n请在当前工作区定位该网页元素对应的 HTML、Vue 或样式代码，并按下面的要求修改；完成后说明改动：\n`
+    edit: `${context}\n\n请在当前工作区定位该网页元素对应的 HTML、Vue 或样式代码，按以下要求修改并说明改动：\n${requirement}`
   }
-  window.dispatchEvent(new CustomEvent('artificer:chat-insert-text', {
-    detail: { sessionId: props.sessionId, text: `\n${prompts[kind] || prompts.reference}` }
-  }))
-  selectionDetailsOpen.value = false
+  const text = `\n${prompts[kind] || prompts.reference}`
+  composing.value = true
+  composeError.value = ''
+  try {
+    if (typeof window.artificer?.composeChat === 'function') {
+      await window.artificer.composeChat({ sessionId: props.sessionId, text, send })
+    } else if (!send && window.location.pathname === '/chat') {
+      window.dispatchEvent(new CustomEvent('artificer:chat-insert-text', {
+        detail: { sessionId: props.sessionId, text }
+      }))
+    } else {
+      throw new Error('请更新 Artificer 桌面版后再从此窗口发送修改请求。')
+    }
+    selectionDetailsOpen.value = false
+  } catch (cause) {
+    composeError.value = cause.message || '聊天窗口没有接收请求，请重试。'
+  } finally {
+    composing.value = false
+  }
 }
 
 async function clearSelection() {
@@ -515,6 +560,10 @@ button:disabled,select:disabled { opacity:.45; cursor:default; }
 .selection-meta code { padding:2px 6px; border:1px solid var(--border-color); border-radius:var(--radius-xs,4px); background:var(--bg-secondary); }
 .selection-detail-section { min-width:0; padding-top:12px; border-top:1px solid var(--border-color); }
 .selection-detail-section h3 { margin:0 0 8px; color:var(--text-secondary); font-size:12px; font-weight:600; }
+.selection-edit-input { width:100%; box-sizing:border-box; min-height:84px; padding:9px 10px; resize:vertical; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); outline:none; color:var(--text-primary); background:var(--bg-primary); font-family:inherit; font-size:13px; line-height:1.6; }
+.selection-edit-input:focus { border-color:var(--accent); }
+.selection-edit-hint { display:block; margin-top:5px; color:var(--text-muted); font-size:11px; }
+.selection-compose-error { margin:0; color:#c62828; font-size:12px; line-height:1.5; }
 .selection-text { margin:0; color:var(--text-primary); font-size:13px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
 .selection-html { max-height:260px; overflow:auto; margin:0; padding:12px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-secondary); font:12px/1.55 var(--font-mono,Consolas,monospace); white-space:pre-wrap; overflow-wrap:anywhere; }
 .selection-dialog-footer { display:flex; flex:none; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border-color); background:var(--bg-primary); }
@@ -522,6 +571,7 @@ button:disabled,select:disabled { opacity:.45; cursor:default; }
 .dialog-button:hover { border-color:var(--text-muted); color:var(--text-primary); }
 .dialog-button-primary { border-color:var(--primary-bg,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-bg,var(--accent)); }
 .dialog-button-primary:hover { border-color:var(--primary-hover,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-hover,var(--accent)); }
+.dialog-button:disabled { opacity:.55; cursor:default; }
 .server-output { flex:none; max-height:120px; overflow:auto; color:var(--text-muted); font-size:10px; }
 .server-output summary { cursor:pointer; }
 .server-output pre { white-space:pre-wrap; overflow-wrap:anywhere; }
