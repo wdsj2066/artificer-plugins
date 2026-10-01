@@ -365,41 +365,56 @@ async function requestEdit() {
 async function compose(kind, requirement = '', { send = false } = {}) {
   if (!selection.value || !props.sessionId) return
   const item = selection.value
-  const classes = (item.classes || []).map(name => `.${name}`).join('')
-  const identity = item.id ? `#${item.id}` : classes
   const html = String(item.html || '').slice(0, 4000)
-  const context = [
-    '【浏览器选中的网页元素】',
+  const content = [
     `页面：${item.title || ''}（${item.url || ''}）`,
-    `元素：<${item.tag || 'div'}${identity}>`,
+    `元素：<${item.tag || 'div'}>`,
     `CSS 选择器：${item.selector || ''}`,
     item.text ? `可见文本：${item.text}` : '',
     html ? `HTML：\n\`\`\`html\n${html}\n\`\`\`` : ''
   ].filter(Boolean).join('\n')
   const prompts = {
-    reference: `${context}\n\n请结合这个网页元素回答我接下来的问题：\n`,
-    question: `${context}\n\n请只围绕这个网页元素回答问题。我的问题是：\n`,
-    edit: `${context}\n\n请在当前工作区定位该网页元素对应的 HTML、Vue 或样式代码，按以下要求修改并说明改动：\n${requirement}`
+    reference: '',
+    question: '关于这个元素：',
+    edit: `请定位并修改这个网页元素对应的代码：${requirement}`
   }
-  const text = `\n${prompts[kind] || prompts.reference}`
   composing.value = true
   composeError.value = ''
   try {
-    if (typeof window.artificer?.composeChat === 'function') {
-      await window.artificer.composeChat({ sessionId: props.sessionId, text, send })
-    } else if (!send && window.location.pathname === '/chat') {
-      window.dispatchEvent(new CustomEvent('artificer:chat-insert-text', {
-        detail: { sessionId: props.sessionId, text }
-      }))
-    } else {
-      throw new Error('请更新 Artificer 桌面版后再从此窗口发送修改请求。')
-    }
+    await deliverReference({
+      type: 'compose-plugin-draft', id: crypto.randomUUID(), sessionId: props.sessionId,
+      references: [{ label: `网页元素 · ${item.selector || item.tag || '元素'}`, content }],
+      text: prompts[kind] || '', send
+    })
     selectionDetailsOpen.value = false
   } catch (cause) {
     composeError.value = cause.message || '聊天窗口没有接收请求，请重试。'
   } finally {
     composing.value = false
   }
+}
+
+function deliverReference(payload) {
+  return new Promise((resolve, reject) => {
+    const channel = new BroadcastChannel('artificer-plugin-compose')
+    const timer = setTimeout(() => finish(new Error('聊天窗口没有接收引用，请打开对应会话后重试。')), 5000)
+    function finish(error) {
+      clearTimeout(timer)
+      channel.close()
+      window.removeEventListener('message', onResult)
+      if (error) reject(error)
+      else resolve()
+    }
+    function onResult(event) {
+      if (event.origin && event.origin !== window.location.origin) return
+      const result = event.data
+      if (result?.type !== 'compose-plugin-draft-result' || result.id !== payload.id) return
+      finish(result.success ? null : new Error(result.error || '聊天窗口没有接收引用。'))
+    }
+    channel.addEventListener('message', onResult)
+    window.addEventListener('message', onResult)
+    channel.postMessage(payload)
+  })
 }
 
 async function clearSelection() {
