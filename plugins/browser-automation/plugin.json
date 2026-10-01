@@ -1,8 +1,8 @@
 {
   "id": "browser-automation",
   "name": "网页预览与控制",
-  "version": "2.1.0",
-  "description": "在可拖动的浮动窗口中实时预览本机 HTML，支持读取 DOM、框选元素和鼠标自动化",
+  "version": "2.2.0",
+  "description": "在可拖动的浮动窗口中实时预览本机 HTML，支持可靠的 DOM 桥接、框选元素和鼠标自动化",
   "author": "Artificer",
   "icon": "globe-2",
   "permissions": ["filesystem", "network", "subprocess"],

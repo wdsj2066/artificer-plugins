@@ -249,7 +249,7 @@ export function register(ctx) {
     method: 'POST', path: '/api/plugins/browser-automation/bridge/result',
     async handler({ body }) {
       const accepted = runtime.receiveResult(String(body?.sessionId || ''), body || {})
-      return accepted ? { success: true } : { success: false, error: '浏览器操作已过期。' }
+      return { success: true, data: { accepted } }
     }
   })
 

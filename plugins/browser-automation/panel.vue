@@ -20,9 +20,9 @@
       <button class="small-button" type="button" :disabled="!status?.previewUrl" @click="stopPreview">停止</button>
     </header>
 
-    <div class="browser-status" :class="{ 'is-error': error }">
+    <div class="browser-status" :class="{ 'is-error': error || bridgeError }">
       <span class="status-dot" :class="{ active: status?.running || status?.bridgeReady }"></span>
-      <span class="browser-status-text">{{ error || statusLabel }}</span>
+      <span class="browser-status-text">{{ bridgeError || error || statusLabel }}</span>
     </div>
 
     <div v-if="status?.previewUrl" class="browser-page-toolbar">
@@ -48,7 +48,6 @@
         title="本机网页实时预览"
         sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin"
         allow="clipboard-read; clipboard-write; fullscreen"
-        @load="onFrameLoad"
       ></iframe>
     </div>
 
@@ -95,6 +94,7 @@ const frame = ref(null)
 const status = ref(null)
 const address = ref('')
 const error = ref('')
+const bridgeError = ref('')
 const connecting = ref(false)
 const selecting = ref(false)
 const preferredTag = ref('div')
@@ -107,6 +107,7 @@ let activityTimer = null
 let intersectionObserver = null
 let visible = true
 let lastActivityId = null
+let frameDocumentId = null
 let lastSelectionKey = ''
 
 const statusLabel = computed(() => {
@@ -139,6 +140,7 @@ async function loadStatus() {
   try {
     const payload = await request(`/api/plugins/browser-automation/status?sessionId=${encodeURIComponent(props.sessionId)}`, { cache: 'no-store' })
     const next = payload.data?.status || null
+    if (next) next.bridgeReady = Boolean(next.bridgeReady && frameReady.value)
     status.value = next
     address.value = next?.upstreamUrl || address.value
     if (next?.selection) applySelection(next.selection)
@@ -162,11 +164,14 @@ async function connectUrl() {
   if (!props.sessionId || !address.value.trim()) return
   connecting.value = true
   error.value = ''
+  bridgeError.value = ''
   try {
     const payload = await request('/api/plugins/browser-automation/start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId: props.sessionId, url: address.value.trim() })
     })
+    frameReady.value = false
+    frameDocumentId = null
     status.value = payload.data
     address.value = payload.data?.upstreamUrl || address.value
     selecting.value = false
@@ -183,6 +188,9 @@ async function stopPreview() {
       body: JSON.stringify({ sessionId: props.sessionId })
     })
     status.value = null
+    frameReady.value = false
+    frameDocumentId = null
+    bridgeError.value = ''
     selecting.value = false
     applySelection(null)
   } catch (cause) { error.value = cause.message || '停止预览失败。' }
@@ -191,6 +199,12 @@ async function stopPreview() {
 function reloadFrame() {
   if (!status.value?.previewUrl || !frame.value) return
   frameReady.value = false
+  frameDocumentId = null
+  status.value.bridgeReady = false
+  void request('/api/plugins/browser-automation/bridge/ready', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: props.sessionId, token: status.value.bridgeToken, ready: false })
+  }).catch(cause => { bridgeError.value = `预览桥接重置失败：${cause.message || '请求失败'}` })
   frame.value.src = `${status.value.previewUrl}${status.value.previewUrl.includes('?') ? '&' : '?'}_artificer_reload=${Date.now()}`
 }
 
@@ -213,16 +227,33 @@ async function onFrameMessage(event) {
   } catch { return }
   if (data?.source !== 'artificer-browser-preview' || data.token !== status.value.bridgeToken) return
 
-  if (data.type === 'ready') {
-    frameReady.value = true
-    status.value.bridgeReady = true
+  if (data.type === 'unloading') {
+    if (frameDocumentId && data.documentId !== frameDocumentId) return
+    frameDocumentId = null
+    frameReady.value = false
+    status.value.bridgeReady = false
+    try {
+      await request('/api/plugins/browser-automation/bridge/ready', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: props.sessionId, token: data.token, ready: false })
+      })
+    } catch (cause) { bridgeError.value = `预览桥接状态同步失败：${cause.message || '请求失败'}` }
+  } else if (data.type === 'ready') {
+    frameDocumentId = data.documentId || null
     try {
       await request('/api/plugins/browser-automation/bridge/ready', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: props.sessionId, token: data.token, title: data.title })
       })
-    } catch {}
-    sendToFrame({ type: 'select-mode', enabled: selecting.value, preferTag: preferredTag.value })
+      frameReady.value = true
+      status.value.bridgeReady = true
+      bridgeError.value = ''
+      sendToFrame({ type: 'select-mode', enabled: selecting.value, preferTag: preferredTag.value })
+    } catch (cause) {
+      frameReady.value = false
+      status.value.bridgeReady = false
+      bridgeError.value = `预览页已加载，但宿主未确认桥接：${cause.message || '请求失败'}`
+    }
   } else if (data.type === 'selection') {
     selecting.value = false
     const selected = { ...data.selection, selectedAt: Date.now() }
@@ -240,13 +271,12 @@ async function onFrameMessage(event) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: props.sessionId, id: data.id, success: data.success, result: data.result, error: data.error })
       })
-    } catch {}
+      sendToFrame({ type: 'command-ack', id: data.id })
+      bridgeError.value = ''
+    } catch (cause) {
+      bridgeError.value = `预览命令回包未被宿主接收：${cause.message || '请求失败'}`
+    }
   }
-}
-
-function onFrameLoad() {
-  frameReady.value = false
-  if (status.value) status.value.bridgeReady = false
 }
 
 async function pollCommands() {
@@ -254,7 +284,9 @@ async function pollCommands() {
   try {
     const payload = await request(`/api/plugins/browser-automation/bridge/commands?sessionId=${encodeURIComponent(props.sessionId)}`, { cache: 'no-store' })
     for (const command of payload.data?.commands || []) sendToFrame({ type: 'command', command })
-  } catch {}
+  } catch (cause) {
+    bridgeError.value = `预览命令通道异常：${cause.message || '请求失败'}`
+  }
 }
 
 function compose(kind) {
@@ -373,9 +405,18 @@ onUnmounted(() => {
   clearInterval(activityTimer)
 })
 
-watch(() => props.sessionId, () => {
+watch(() => props.sessionId, (sessionId, previousSessionId) => {
+  const previousToken = status.value?.bridgeToken
+  if (previousSessionId && previousToken) {
+    void request('/api/plugins/browser-automation/bridge/ready', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: previousSessionId, token: previousToken, ready: false })
+    }).catch(() => {})
+  }
   status.value = null
+  bridgeError.value = ''
   frameReady.value = false
+  frameDocumentId = null
   selecting.value = false
   applySelection(null)
   consumeOpenRequest()

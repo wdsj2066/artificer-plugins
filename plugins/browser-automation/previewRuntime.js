@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto'
 const MAX_OUTPUT_BYTES = 64 * 1024
 const MAX_HTML_BYTES = 2 * 1024 * 1024
 const DEFAULT_COMMAND_TIMEOUT = 20_000
+const COMMAND_RETRY_MS = 800
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -35,9 +36,12 @@ function bridgeScript(token) {
   return `(() => {
     const TOKEN = ${JSON.stringify(token)};
     const SOURCE = 'artificer-browser-preview';
+    const DOCUMENT_ID = Date.now().toString(36) + Math.random().toString(36).slice(2);
     let selecting = false;
     let preferredTag = 'div';
     let hovered = null;
+    const inFlightCommands = new Set();
+    const completedCommands = new Map();
     const overlayHost = document.createElement('div');
     overlayHost.setAttribute('data-artificer-browser-overlay', '');
     Object.assign(overlayHost.style, { position: 'fixed', inset: '0', zIndex: '2147483647', pointerEvents: 'none' });
@@ -48,8 +52,9 @@ function bridgeScript(token) {
     const send = (type, data = {}) => window.parent.postMessage({ source: SOURCE, token: TOKEN, type, ...data }, '*');
     const announceReady = () => {
       if (document.documentElement && !overlayHost.isConnected) document.documentElement.appendChild(overlayHost);
-      send('ready', { url: location.href, title: document.title });
+      send('ready', { url: location.href, title: document.title, documentId: DOCUMENT_ID });
     };
+    window.addEventListener('pagehide', () => send('unloading', { documentId: DOCUMENT_ID }), { once: true });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', announceReady, { once: true });
     else announceReady();
     const escape = value => CSS.escape(value);
@@ -189,9 +194,22 @@ function bridgeScript(token) {
       const data = event.data;
       if (event.source !== window.parent || !data || data.source !== SOURCE || data.token !== TOKEN) return;
       if (data.type === 'select-mode') { selecting = !!data.enabled; preferredTag = ['div','section','article','main','any'].includes(data.preferTag) ? data.preferTag : 'div'; if (!selecting) showHover(null); return; }
+      if (data.type === 'command-ack') { completedCommands.delete(data.id); return; }
       if (data.type === 'command') {
-        try { send('command-result', { id: data.command.id, success: true, result: await run(data.command) }); }
-        catch (error) { send('command-result', { id: data.command.id, success: false, error: error?.message || String(error) }); }
+        const id = data.command?.id;
+        if (!id) return;
+        const cached = completedCommands.get(id);
+        if (cached) { send('command-result', cached); return; }
+        if (inFlightCommands.has(id)) return;
+        inFlightCommands.add(id);
+        let resultMessage;
+        try { resultMessage = { id, success: true, result: await run(data.command) }; }
+        catch (error) { resultMessage = { id, success: false, error: error?.message || String(error) }; }
+        finally { inFlightCommands.delete(id); }
+        completedCommands.set(id, resultMessage);
+        while (completedCommands.size > 64) completedCommands.delete(completedCommands.keys().next().value);
+        setTimeout(() => completedCommands.delete(id), 60_000);
+        send('command-result', resultMessage);
       }
     });
   })();`
@@ -560,10 +578,11 @@ export class BrowserPreviewRuntime {
     const now = Date.now()
     const commands = []
     for (const pending of state.pending.values()) {
-      if (pending.delivered) continue
+      if (pending.lastSentAt && now - pending.lastSentAt < COMMAND_RETRY_MS) continue
       pending.lastSentAt = now
       pending.delivered = true
-      commands.push({ id: pending.id, type: pending.type, args: pending.args })
+      pending.attempts = (pending.attempts || 0) + 1
+      commands.push({ id: pending.id, type: pending.type, args: pending.args, attempt: pending.attempts })
     }
     return commands
   }
@@ -599,6 +618,10 @@ export class BrowserPreviewRuntime {
   setBridgeReady(sessionId, token, details = {}) {
     const state = this.sessions.get(sessionId)
     if (!state || state.bridgeToken !== token) return false
+    if (details.ready === false) {
+      state.bridgeReady = false
+      return true
+    }
     state.bridgeReady = true
     state.title = String(details.title || '')
     return true
@@ -633,8 +656,12 @@ export class BrowserPreviewRuntime {
     if (child && child.exitCode == null) {
       try {
         if (process.platform === 'win32') {
-          const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], { windowsHide: true, stdio: 'ignore' })
-          killer.unref()
+          const treeKilled = await new Promise(resolve => {
+            const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], { windowsHide: true, stdio: 'ignore' })
+            killer.once('error', () => resolve(false))
+            killer.once('exit', code => resolve(code === 0))
+          })
+          if (!treeKilled && child.exitCode == null) child.kill('SIGTERM')
         } else {
           process.kill(-child.pid, 'SIGTERM')
           setTimeout(() => { try { process.kill(-child.pid, 'SIGKILL') } catch {} }, 1500).unref()
