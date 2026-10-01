@@ -542,7 +542,7 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
 .connection-dot.pending { background:var(--warning-color); }
 .connection-dot.failed { background:#c62828; }
 .browser-address input { width:100%; min-width:0; height:100%; padding:0; border:0; outline:0; color:var(--text-primary); background:transparent; font-family:inherit; font-size:12px; line-height:1.4; }
-.address-field:focus-within { border-color:var(--accent); }
+.browser-address input:focus-visible { outline:none !important; box-shadow:none !important; }
 .toolbar-icon-button { display:grid; width:34px; height:34px; flex:none; place-items:center; padding:0; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); cursor:pointer; }
 .toolbar-icon-button:hover:not(:disabled) { color:var(--text-primary); background:var(--bg-tertiary); }
 .toolbar-icon-button:focus-visible,.tag-select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
@@ -551,8 +551,9 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
 .tag-select { width:72px; height:34px; flex:none; padding:0 5px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-family:inherit; font-size:12px; cursor:pointer; }
 button:disabled,select:disabled { opacity:.45; cursor:default; }
 .browser-error { flex:none; overflow:hidden; color:#c62828; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
-.browser-frame-wrap { position:relative; flex:1; min-height:160px; overflow:hidden; border:1px solid var(--border-color); border-radius:var(--radius-md,8px); background:#fff; }
-.browser-frame { display:block; width:100%; height:100%; border:0; background:#fff; }
+.browser-frame-wrap { position:relative; flex:1; min-height:160px; overflow:hidden; border:0; border-radius:var(--radius-md,8px); background:var(--bg-primary); }
+.browser-frame { display:block; width:100%; height:100%; border:0; background:var(--bg-primary); }
+.browser-frame:focus { outline:none !important; }
 .browser-empty { display:flex; flex:1; min-height:200px; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:20px; color:var(--text-muted); text-align:center; }
 .browser-empty strong { color:var(--text-primary); font-size:13px; }
 .browser-empty p { max-width:360px; margin:0; font-size:12px; line-height:1.6; }

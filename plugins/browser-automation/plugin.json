@@ -1,7 +1,7 @@
 {
   "id": "browser-automation",
   "name": "网页预览与控制",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "在信息面板中实时预览本机 HTML，支持框选元素、静默 Agent 选择、独立悬浮查看元素详情和鼠标自动化",
   "author": "Artificer",
   "icon": "globe-2",
