@@ -39,6 +39,7 @@ function bridgeScript(token) {
   return `(() => {
     const TOKEN = ${JSON.stringify(token)};
     const SOURCE = 'artificer-browser-preview';
+    const MAX_SCREENSHOT_DATA_URL = ${MAX_SCREENSHOT_DATA_URL};
     const DOCUMENT_ID = Date.now().toString(36) + Math.random().toString(36).slice(2);
     let selecting = false;
     let preferredTag = 'div';
