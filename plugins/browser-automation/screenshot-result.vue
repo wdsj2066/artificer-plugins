@@ -1,9 +1,9 @@
 <template>
   <section class="screenshot-result" :class="{ error: isError }">
     <header class="screenshot-result-header">
-      <strong>{{ isError ? '网页截图失败' : '网页截图' }}</strong>
+      <strong>{{ isError ? '截图失败' : result.scope === 'desktop' ? '桌面截图' : '网页截图' }}</strong>
       <span v-if="!isError && result.width && result.height">
-        {{ result.mode === 'fullPage' ? '完整网页' : '当前视口' }} · {{ result.width }} × {{ result.height }}
+        {{ result.scope === 'desktop' ? '整个屏幕' : result.mode === 'fullPage' ? '完整网页' : '当前视口' }} · {{ result.width }} × {{ result.height }}
       </span>
     </header>
     <p v-if="isError" class="screenshot-result-error">{{ result.error || '网页截图失败。' }}</p>
@@ -11,7 +11,7 @@
     <p v-else-if="loadError" class="screenshot-result-error">{{ loadError }}</p>
     <div v-else-if="dataUrl" class="screenshot-result-image-wrap">
       <a :href="dataUrl" target="_blank" rel="noopener" title="在新窗口查看原图">
-        <img :src="dataUrl" alt="网页截图" />
+        <img :src="dataUrl" :alt="result.scope === 'desktop' ? '桌面截图' : '网页截图'" />
       </a>
       <a class="screenshot-result-download" :href="dataUrl" :download="fileName">保存 JPG</a>
     </div>
@@ -34,7 +34,7 @@ const loading = ref(false)
 const loadError = ref('')
 const fileName = computed(() => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  return `webpage-screenshot-${timestamp}.jpg`
+  return `${result.value.scope === 'desktop' ? 'desktop' : 'webpage'}-screenshot-${timestamp}.jpg`
 })
 
 watch(() => [result.value.sessionId, result.value.screenshotId], async ([sessionId, screenshotId], _previous, onCleanup) => {

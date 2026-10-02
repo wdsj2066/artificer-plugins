@@ -671,6 +671,7 @@ export class BrowserPreviewRuntime {
       upstreamUrl: state.upstreamUrl,
       previewUrl: state.previewUrl,
       currentUrl: state.currentUrl,
+      title: state.title,
       bridgeToken: state.bridgeToken,
       bridgeReady: state.bridgeReady,
       htmlPath: state.htmlPath,

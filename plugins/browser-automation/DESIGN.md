@@ -10,29 +10,29 @@
 Agent 工具
   ├─ browserStartPreview ──启动命令──> 本机开发服务 ──拦截 HTML──┐
   │                       └─htmlFile──> 工作区静态 HTML ──────────┤
-  ├─ browserReadHtml ──────读取────────> HTML 反向代理捕获的原始响应
-  ├─ browserInspect / browserAct / browserMouse
-  │                         └─命令队列──> 预览页桥接脚本 ──结果──> Agent 工具
-  └─ browserSelectElement ──命令队列──> 预览页桥接脚本
+  ├─ browserInspect / browserReadHtml / browserAct / browserMouse
+  │                         └─Puppeteer Core──> Chromium CDP──> 预览 iframe
+  ├─ browserResolveDialog ──Puppeteer Dialog──> 页面原生 JS 对话框
+  └─ browserDesktopScreenshot ──Electron RPC──> desktopCapturer──> 屏幕截图
 
 右侧信息面板
   ├─ 实时 iframe ──HTTP + WebSocket──> 127.0.0.1 动态端口的代理 ──> localhost 开发服务
-  ├─ 注入的桥接脚本：元素选择、DOM 信息、Agent 操作
+  ├─ 注入的桥接脚本：用户手动框选元素、报告当前 iframe URL
   └─ 框选元素 ──> 独立悬浮详情窗 ──选择动作──> 当前聊天输入框
+
+启动前插件
+  └─ bootstrap ──app.commandLine──> Chromium 随机 CDP 端口（只绑定 127.0.0.1）
 ```
 
 ## 关键流程
 
-1. Agent 调用 `browserStartPreview`。传入 `htmlFile` 时，后端从当前工作区直接提供该 `.html` / `.htm` 文件和相对静态资源；否则默认运行 `npm run dev`。开发服务器地址可从 stdout/stderr 自动识别，也可传入不同命令、通过 `directory` 指定工作区子目录，或接入已运行服务的本机 URL。
-2. 开发服务模式会动态分配本机代理端口，预热首页并缓存原始 HTML 响应；静态文件模式也经过同一个 HTML 代理，以便注入页面桥接脚本。
-   同一会话重新连接到相同上游源（协议、主机、端口）时复用代理端口并保留 iframe 浏览上下文，保持浏览器 origin 不变，让 localStorage、sessionStorage、IndexedDB 和站点登录态继续可用；切换上游源时创建新端口，隔离不同站点的数据。
-3. 信息面板监听预览活动，切换到发起调用的会话并自动激活“网页预览”页签。iframe 加载代理地址，页面可直接点击和输入；开发服务模式同时转发 WebSocket 热更新，静态 HTML 文件可手动刷新。
-4. 代理仅改写 HTML 响应：插入桥接脚本，并移除阻止本机 iframe 展示的响应级 CSP / X-Frame-Options。其他资源直接流式代理，Vite WebSocket HMR 通过 TCP 隧道转发。
-5. 工具栏截图按钮和 Agent 的 `browserScreenshot` 工具共用页面桥接；桥接在 iframe 页面里调用随插件打包的 html2canvas，截取当前视口或完整网页。面板直接预览并保存 JPG；工具结果只返回截图元数据和短期缓存 ID，由结果卡片单独取图并显示，避免把 Base64 图像塞进对话记录。截图目标是网页 DOM，不包含 Artificer 外层界面。
-   截图由 DOM 与样式重绘生成，不是浏览器像素级捕获；跨源图片、画布和少数 CSS 效果可能无法完整呈现。
-6. 桥接脚本在页面源内执行 DOM 查询与操作；后端把工具命令交给面板轮询，再由面板 `postMessage` 转给 iframe。ready 在 iframe 文档就绪时确认；iframe 的 `pagehide` 负责清除过期 ready 状态，父窗口的 `load` 事件不再覆盖桥接确认。命令按确认回包重发，iframe 按命令 ID 缓存结果并去重，避免一次丢消息导致工具永久等待，也避免重试重复点击。
-7. 用户启用选择模式后，鼠标移动会高亮目标节点，点击默认选中最近的 `div`，并打开独立悬浮详情窗。Agent 调用 `browserSelectElement` 时只更新选中状态，不打开详情窗、不打断用户。选择结果带有 CSS 选择器、可见文本和脱敏截断的 HTML 片段；详情窗内的动作通过宿主的 `artificer:chat-insert-text` 事件写入当前聊天输入框，不在输入栏占用空间。
-
+1. 首次安装或启用插件后重启 Artificer。bootstrap 在 Electron app.ready 前设置 Chromium CDP 开关，让 Chromium 随机选择端口并把活动端口写入用户数据目录的 DevToolsActivePort。
+2. Agent 调用 browserStartPreview。传入 htmlFile 时，后端从当前工作区直接提供该 .html/.htm 文件和相对静态资源；否则默认运行 npm run dev。开发服务器地址可从 stdout/stderr 自动识别，也可传入不同命令、通过 directory 指定工作区子目录，或接入已运行的本机 URL。
+3. 开发服务模式会动态分配本机代理端口，预热首页并缓存原始 HTML 响应；静态文件模式也经过同一个 HTML 代理，以便注入用户框选桥接脚本。相同会话连接相同上游 origin 时复用代理和 iframe 上下文，保留站点存储和登录态；不同上游源使用不同代理 origin。
+4. API 插件通过主应用令牌保护的 RPC 向 Electron 插件请求 CDP browser URL。Puppeteer Core 连接后按会话代理 origin 找到对应 BrowserWindow 里的 iframe frame。Agent 的页面检查、HTML 读取、选择器操作和坐标鼠标操作直接运行在该 frame，不再靠面板轮询或手工拼有限控件列表。
+5. Puppeteer 监听页面的原生 dialog 事件。browserInspect 返回普通 DOM 模态框、可见正文、语义控件和未处理的 JS 原生对话框；Agent 使用 browserResolveDialog 显式接受或取消 alert、confirm 和 prompt。接受操作受 sensitive 工具确认流程保护。
+6. 网页截图保留当前视口/完整页面功能；全桌面截图由 browserDesktopScreenshot 调用 Electron 主进程 desktopCapturer，默认捕获主显示器，也可先用 browserListScreens 选择其他显示器。截图缩放到最长边 3200 像素后编码为 JPG。
+7. 用户框选功能仍使用页面桥接脚本：鼠标高亮目标、生成脱敏元素详情并写入插件状态。Agent 工具的 DOM 检查与操作不依赖该桥接。截图图像使用短期缓存 ID，避免 Base64 图像进入对话记录。
 ## 工具接口
 
 | 工具 | 用途 |
@@ -41,21 +41,23 @@ Agent 工具
 | `browserStopPreview` | 关闭当前会话的开发进程和代理 |
 | `browserPreviewStatus` | 查看服务状态和最近输出 |
 | `browserReadHtml` | 读取代理拦截的 HTML 响应及已渲染 DOM |
-| `browserInspect` | 检查页面正文、链接和表单控件 |
+| `browserInspect` | 检查页面 DOM、HTML、可访问性树、对话框和控件 |
 | `browserSelectElement` | 按 CSS 选择器选中元素 |
 | `browserGetSelection` | 读取用户在面板中选中的元素 |
 | `browserAct` | 通过选择器点击、输入、选择、按键、悬停或滚动 |
 | `browserMouse` | 通过视口坐标移动、单击、双击、右击或滚动 |
 | `browserScreenshot` | 截取 iframe 网页当前视口或完整页面，并在工具结果卡片中显示和保存 JPG |
+| `browserDesktopScreenshot` | 截取整个主显示器或指定显示器，并在工具结果卡片中显示和保存 JPG |
+| `browserListScreens` | 列出显示器名称、ID 和像素尺寸 |
+| `browserResolveDialog` | 接受或取消当前预览页的原生 JavaScript 对话框 |
 
 以上工具通过外置插件 SDK 的 `ctx.registerTool()` 注册，沿用工具 JSON Schema、`tags` 与统一的 Agent 工具执行链。面板和后端之间的插件路由只承载 iframe 桥接消息，不构成额外工具类型。
 
 ## 边界与安全
 
-- 预览代理只接受 `localhost`、`127.0.0.1` 和 `::1` 上的 HTTP 服务，防止其变成任意网络代理。
-- 启动命令的工作目录限制在当前会话工作区内。启动/停止进程及网页交互工具标记为 `sensitive`。
-- iframe 使用独立的本机代理源、受限 sandbox 和 `postMessage` 通信，不读取 Artificer 页面 DOM。
-- 框选时仅把选中元素上下文发送给聊天；HTML 片段会截断到 5000 字符，并移除表单控件的 value 内容。
-- 原始响应 HTML 最大缓存 2 MiB；工具读取最多返回 60000 字符。预览依赖宿主挂载右侧信息面板，以完成 Agent 与 iframe 的命令往返；切换信息面板标签不会销毁 iframe。
-- 当前实现面向本机 HTTP 开发服务。远程网站、HTTPS 服务、文件上传控件和需要可信用户事件的浏览器原生交互不属于首版范围。
-- Agent 的鼠标工具在页面内派发 DOM 鼠标/指针事件；浏览器要求可信物理输入的安全验证或原生交互无法由这些事件完成。
+- 预览代理只接受 localhost、127.0.0.1 和 ::1 上的 HTTP 开发服务，避免成为任意网络代理。
+- 启动命令的工作目录限制在当前会话工作区内；启动/停止进程、网页交互、原生对话框接受/取消和整个屏幕截图使用敏感工具标签。
+- CDP 服务随机选择端口并只绑定 127.0.0.1。本机其他进程若能发现该端口，也可以控制 Artificer 的 Chromium 页面。插件的 bootstrap 与 electron 入口属于完全受信任的主进程代码。
+- 禁用插件不会改变当前进程已经应用的 Chromium 启动参数；退出应用后，下次启动会根据插件启用状态决定是否再次打开 CDP。
+- CDP 覆盖页面 DOM、iframe 和浏览器原生 JavaScript 对话框。操作系统级文件选择器、屏幕录制授权提示和其他桌面程序窗口不属于网页 CDP；整个桌面截图通过 Electron 桌面采集接口实现。macOS 可能要求系统授予屏幕录制权限。
+- 表单当前值不包含在控件摘要中；选中元素 HTML 会截断并移除输入框的 value，以减少凭据泄露。

@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "html2canvas": "^1.4.1"
+    "html2canvas": "^1.4.1",
+    "puppeteer-core": "25.12.0"
   }
 }

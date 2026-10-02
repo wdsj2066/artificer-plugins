@@ -11,6 +11,7 @@
       </form>
       <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="刷新页面" aria-label="刷新页面" @click="reloadFrame"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4m-4 5a8 8 0 0 0 14.9 3M20 20v-4h-4" /></svg></button>
       <button class="toolbar-icon-button" type="button" :disabled="!status?.bridgeReady || screenshotLoading" title="截取网页" aria-label="截取网页" @click="captureScreenshot('viewport')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h-4l-2 3H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2-3Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="toolbar-icon-button" type="button" :disabled="!sessionId || screenshotLoading" title="截取整个屏幕" aria-label="截取整个屏幕" @click="captureScreenshot('screen')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></button>
       <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="停止预览" aria-label="停止预览" @click="stopPreview"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1" /></svg></button>
       <span class="toolbar-divider" aria-hidden="true"></span>
       <button class="toolbar-icon-button" :class="{ active: selecting }" type="button" :disabled="!status?.bridgeReady" :title="selecting ? '取消选择元素' : '选择页面元素'" :aria-label="selecting ? '取消选择元素' : '选择页面元素'" :aria-pressed="selecting" @click="toggleSelectMode"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 9-7 1-3 7-4-17Z" /></svg></button>
@@ -24,7 +25,7 @@
       <button v-if="selection" class="toolbar-icon-button" type="button" title="查看已选元素详情" aria-label="查看已选元素详情" @click="selectionDetailsOpen = true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></svg></button>
     </header>
 
-    <div v-if="error || bridgeError" class="browser-error" role="alert" :title="bridgeError || error">{{ bridgeError || error }}</div>
+    <div v-if="error || bridgeError || status?.cdp?.error" class="browser-error" role="alert" :title="bridgeError || error || status?.cdp?.error">{{ bridgeError || error || status?.cdp?.error }}</div>
 
     <div v-if="status?.previewUrl" class="browser-frame-wrap">
       <iframe
@@ -42,6 +43,7 @@
       <strong>启动 HTML 项目或连接本机预览</strong>
       <p>让 Agent 调用“启动网页预览”运行项目（默认 <code>npm run dev</code>），或直接传入工作区 HTML 文件路径。</p>
       <p>预览代理读取实际 HTML，并注入元素选择和自动化桥接；也可以在上方输入已运行的 localhost 地址。</p>
+      <p>首次安装或启用插件后，请重启 Artificer 以启用 CDP 自动化。</p>
     </div>
 
     <details v-if="status?.output" class="server-output">
@@ -102,18 +104,19 @@
       <div v-if="screenshotOpen" class="screenshot-dialog-backdrop" @pointerdown.self="screenshotOpen = false">
         <section class="screenshot-dialog" role="dialog" aria-modal="true" aria-labelledby="screenshot-dialog-title">
           <header class="screenshot-dialog-header">
-            <div><h2 id="screenshot-dialog-title">网页截图</h2><p>{{ screenshotResult?.title || status?.title || '当前预览页面' }}</p></div>
+            <div><h2 id="screenshot-dialog-title">{{ screenshotResult?.scope === 'desktop' ? '整个屏幕截图' : '网页截图' }}</h2><p>{{ screenshotResult?.scope === 'desktop' ? `${screenshotResult.title || '显示器'} · ${screenshotResult.width} × ${screenshotResult.height}` : screenshotResult?.title || status?.title || '当前预览页面' }}</p></div>
             <button type="button" class="selection-icon-button" title="关闭" aria-label="关闭截图" @click="screenshotOpen = false">×</button>
           </header>
           <div class="screenshot-preview">
-            <div v-if="screenshotLoading" class="screenshot-placeholder">正在截取网页…</div>
+            <div v-if="screenshotLoading" class="screenshot-placeholder">正在截取{{ screenshotRequestMode === 'screen' ? '整个屏幕' : '网页' }}…</div>
             <p v-else-if="screenshotError" class="screenshot-error" role="alert">{{ screenshotError }}</p>
             <img v-else-if="screenshotResult?.dataUrl" :src="screenshotResult.dataUrl" alt="网页截图预览" />
             <div v-else class="screenshot-placeholder">选择截图范围</div>
           </div>
           <footer class="screenshot-dialog-footer">
-            <button type="button" class="dialog-button" :disabled="screenshotLoading || !status?.bridgeReady" @click="captureScreenshot('viewport')">当前视口</button>
+            <button type="button" class="dialog-button" :disabled="screenshotLoading || !status?.bridgeReady" @click="captureScreenshot('viewport')">网页视口</button>
             <button type="button" class="dialog-button" :disabled="screenshotLoading || !status?.bridgeReady" @click="captureScreenshot('fullPage')">完整网页</button>
+            <button type="button" class="dialog-button" :disabled="screenshotLoading || !sessionId" @click="captureScreenshot('screen')">整个屏幕</button>
             <span class="screenshot-footer-spacer"></span>
             <a v-if="screenshotResult?.dataUrl" class="dialog-button dialog-button-primary screenshot-download" :href="screenshotResult.dataUrl" :download="screenshotFileName">保存 JPG</a>
           </footer>
@@ -152,6 +155,7 @@ const screenshotOpen = ref(false)
 const screenshotLoading = ref(false)
 const screenshotError = ref('')
 const screenshotResult = ref(null)
+const screenshotRequestMode = ref('viewport')
 let statusTimer = null
 let commandTimer = null
 let activityTimer = null
@@ -173,7 +177,7 @@ const selectionDialogStyle = computed(() => selectionDialogPosition.value
   : null)
 const screenshotFileName = computed(() => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  return `webpage-screenshot-${timestamp}.jpg`
+  return `${screenshotResult.value?.scope === 'desktop' ? 'desktop' : 'webpage'}-screenshot-${timestamp}.jpg`
 })
 let selectionDialogDrag = null
 
@@ -311,9 +315,10 @@ function reloadFrame() {
 }
 
 async function captureScreenshot(mode = 'viewport') {
-  if (!props.sessionId || !status.value?.bridgeReady) return
+  if (!props.sessionId || (mode !== 'screen' && !status.value?.bridgeReady)) return
   screenshotOpen.value = true
   screenshotLoading.value = true
+  screenshotRequestMode.value = mode
   screenshotError.value = ''
   screenshotResult.value = null
   try {

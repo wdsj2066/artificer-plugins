@@ -1,6 +1,8 @@
 import { BrowserPreviewRuntime } from './previewRuntime.js'
+import { CdpAutomationRuntime } from './cdpRuntime.js'
 
 let runtime = null
+let cdp = null
 
 function sessionIdOf(executionContext) {
   return executionContext?.runContext?.state?.storage?.sessionId || 'default'
@@ -12,6 +14,8 @@ function failure(error, extra = {}) {
 
 export function register(ctx) {
   runtime = new BrowserPreviewRuntime()
+  cdp = new CdpAutomationRuntime({ rpc: ctx.rpc, previewRuntime: runtime, logger: ctx.logger })
+  cdp.start()
 
   ctx.registerTool({
     id: 'browserStartPreview',
@@ -62,24 +66,24 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserPreviewStatus',
     name: '查看网页预览状态',
-    description: '读取当前会话开发服务的运行状态、预览地址和最近控制台输出。',
+    description: '读取当前会话开发服务、预览地址、CDP 连接和最近控制台输出。',
     parameters: { type: 'object', properties: {} },
     tags: ['browser', 'readonly'],
     async handler(_args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
-      return { success: true, sessionId, status: runtime.getStatus(sessionId) }
+      return { success: true, sessionId, status: runtime.getStatus(sessionId), cdp: cdp.status() }
     }
   })
 
   ctx.registerTool({
     id: 'browserInspect',
     name: '检查预览网页',
-    description: '读取当前预览页面标题、地址、正文、链接、表单控件，并识别常见的对话框、模态框、弹出层和抽屉及其可操作控件。',
+    description: '通过 Chromium CDP 检查当前预览 iframe 的实际 DOM、HTML、可访问性树、链接、控件和语义对话框；浏览器原生确认框会单独返回，之后可调用 browserResolveDialog。',
     parameters: { type: 'object', properties: {} },
     tags: ['browser', 'readonly'],
     async handler(_args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
-      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'inspect')) } }
+      try { return { success: true, sessionId, ...(await cdp.inspect(sessionId)) } }
       catch (error) { return failure(error, { sessionId }) }
     }
   })
@@ -107,21 +111,54 @@ export function register(ctx) {
   })
 
   ctx.registerTool({
+    id: 'browserDesktopScreenshot',
+    name: '截取整个屏幕',
+    description: '通过 Electron 桌面采集接口截取整个主显示器的真实屏幕画面，包含 Artificer 窗口及其他可见窗口。可先调用 browserListScreens 查看显示器并指定 displayId。',
+    parameters: {
+      type: 'object',
+      properties: { displayId: { type: 'string', description: '显示器 ID；不传时截取主显示器' } }
+    },
+    tags: ['browser', 'sensitive'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try {
+        const screenshot = await cdp.captureDesktop(args.displayId)
+        const screenshotId = runtime.storeScreenshot(sessionId, screenshot)
+        return {
+          success: true, sessionId, screenshotId, title: screenshot.title,
+          width: screenshot.width, height: screenshot.height, mode: screenshot.mode,
+          scope: screenshot.scope, displayId: screenshot.displayId
+        }
+      } catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserListScreens',
+    name: '列出显示器',
+    description: '读取可用于整个屏幕截图的显示器名称、尺寸和 displayId。',
+    parameters: { type: 'object', properties: {} },
+    tags: ['browser', 'readonly'],
+    async handler(_args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try { return { success: true, sessionId, screens: await cdp.listScreens() } }
+      catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
     id: 'browserReadHtml',
     name: '读取网页 HTML',
-    description: '读取代理拦截到的开发服务器 HTML 响应，并请求当前预览页已渲染的 DOM HTML。最多返回 60000 个字符。',
+    description: '读取代理拦截到的开发服务器原始 HTML 和 Chromium CDP 读取的当前 iframe 实际 DOM。最多返回 60000 个字符。',
     parameters: { type: 'object', properties: { maxChars: { type: 'number', description: 'HTML 字符上限，默认 30000，最大 60000' } } },
     tags: ['browser', 'readonly'],
     async handler(args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
       try {
         const response = runtime.readHtml(sessionId, args.maxChars)
-        const status = runtime.getStatus(sessionId)
-        let renderedDom = null
-        if (status?.bridgeReady) {
-          try { renderedDom = await runtime.runInPage(sessionId, 'readHtml', { maxChars: args.maxChars }) }
-          catch (error) { renderedDom = { error: error.message } }
-        }
+        let renderedDom
+        try { renderedDom = await cdp.readHtml(sessionId, args.maxChars) }
+        catch (error) { renderedDom = { error: error.message } }
         return { success: true, sessionId, ...response, renderedDom }
       } catch (error) { return failure(error, { sessionId }) }
     }
@@ -135,7 +172,7 @@ export function register(ctx) {
     tags: ['browser', 'readonly'],
     async handler(args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
-      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'selectElement', { selector: args.selector })) } }
+      try { return { success: true, sessionId, ...(await cdp.selectElement(sessionId, args.selector)) } }
       catch (error) { return failure(error, { sessionId }) }
     }
   })
@@ -143,7 +180,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserAct',
     name: '操作预览网页元素',
-    description: '在当前预览页中按 CSS 选择器点击、输入、下拉选择、悬停、按键或滚动元素。提交、购买、发布等外部副作用必须先向用户确认。',
+    description: '在当前预览页中使用 Puppeteer locator 按 CSS、文本或可访问名称选择器点击、输入、下拉选择、悬停、按键或滚动元素。提交、购买、发布等外部副作用必须先向用户确认。',
     parameters: {
       type: 'object',
       properties: {
@@ -156,7 +193,7 @@ export function register(ctx) {
     tags: ['browser', 'sensitive'],
     async handler(args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
-      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'act', args)) }
+      try { return { success: true, sessionId, ...(await cdp.act(sessionId, args)) }
       } catch (error) { return failure(error, { sessionId }) }
     }
   })
@@ -164,7 +201,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserMouse',
     name: '控制预览页鼠标',
-    description: '按预览页面的 CSS 像素坐标移动鼠标、单击、双击、右击或滚动，用于多步网页自动化。滚动可只传 action 和 deltaY；其他动作需要 x/y。',
+    description: '按预览 iframe 的 CSS 像素坐标移动 Chromium 鼠标、单击、双击、右击或滚动。滚动可只传 action 和 deltaY；其他动作需要 x/y。',
     parameters: {
       type: 'object',
       properties: {
@@ -179,7 +216,28 @@ export function register(ctx) {
     tags: ['browser', 'sensitive'],
     async handler(args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
-      try { return { success: true, sessionId, ...(await runtime.runInPage(sessionId, 'mouse', args)) } }
+      try { return { success: true, sessionId, ...(await cdp.mouse(sessionId, args)) } }
+      catch (error) { return failure(error, { sessionId }) }
+    }
+  })
+
+  ctx.registerTool({
+    id: 'browserResolveDialog',
+    name: '处理浏览器原生对话框',
+    description: '接受或取消由网页 window.alert、window.confirm 或 window.prompt 打开的浏览器原生对话框。先用 browserInspect 查看对话框内容和 ID，再按用户意图处理；接受确认框会执行网页操作。',
+    parameters: {
+      type: 'object',
+      properties: {
+        dialogId: { type: 'string', description: 'browserInspect 返回的对话框 ID；不传时处理最新的待处理对话框' },
+        action: { type: 'string', enum: ['accept', 'dismiss'], description: '接受或取消对话框' },
+        promptText: { type: 'string', description: 'window.prompt 的输入内容，仅 action=accept 时使用' }
+      },
+      required: ['action']
+    },
+    tags: ['browser', 'sensitive'],
+    async handler(args, executionContext) {
+      const sessionId = sessionIdOf(executionContext)
+      try { return { success: true, sessionId, ...(await cdp.resolveDialog(sessionId, args)) } }
       catch (error) { return failure(error, { sessionId }) }
     }
   })
@@ -206,7 +264,8 @@ export function register(ctx) {
     async handler({ query }) {
       const sessionId = String(query?.sessionId || '')
       if (!sessionId) return { success: false, error: '缺少会话 ID。' }
-      return { success: true, data: { status: runtime.getStatus(sessionId) } }
+      const status = runtime.getStatus(sessionId)
+      return { success: true, data: { status: status ? { ...status, cdp: cdp.status() } : null } }
     }
   })
 
@@ -234,12 +293,26 @@ export function register(ctx) {
     method: 'POST', path: '/api/plugins/browser-automation/screenshot',
     async handler({ body }) {
       const sessionId = String(body?.sessionId || '')
-      const mode = body?.mode === 'fullPage' ? 'fullPage' : 'viewport'
       if (!sessionId) return { success: false, error: '缺少会话 ID。' }
+      if (body?.mode === 'screen') {
+        try {
+          const screenshot = await cdp.captureDesktop(body?.displayId)
+          return { success: true, data: screenshot }
+        } catch (error) { return failure(error) }
+      }
+      const mode = body?.mode === 'fullPage' ? 'fullPage' : 'viewport'
       try {
         const screenshot = await runtime.runInPage(sessionId, 'screenshot', { mode }, 60_000)
         return { success: true, data: screenshot }
       } catch (error) { return failure(error) }
+    }
+  })
+
+  ctx.registerRoute({
+    method: 'GET', path: '/api/plugins/browser-automation/screens',
+    async handler() {
+      try { return { success: true, data: { screens: await cdp.listScreens() } } }
+      catch (error) { return failure(error) }
     }
   })
 
@@ -304,4 +377,5 @@ export function register(ctx) {
 
 export async function onDisable() {
   await runtime?.stopAll()
+  await cdp?.dispose()
 }

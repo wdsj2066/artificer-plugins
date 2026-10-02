@@ -1,12 +1,16 @@
 {
   "id": "browser-automation",
   "name": "网页预览与控制",
-  "version": "2.3.8",
-  "description": "在信息面板中实时预览本机 HTML，支持网页截图、框选元素、静默 Agent 选择、独立悬浮查看元素详情和鼠标自动化",
+  "version": "2.4.0",
+  "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图",
   "author": "Artificer",
   "icon": "globe-2",
-  "permissions": ["filesystem", "network", "subprocess"],
-  "entrypoints": { "api": "server.js" },
+  "permissions": ["filesystem", "network", "subprocess", "electron", "desktop-capture"],
+  "entrypoints": {
+    "bootstrap": "bootstrap.js",
+    "electron": "electron.js",
+    "api": "server.js"
+  },
   "ui": {
     "panels": [
       {
@@ -21,7 +25,8 @@
     ],
     "toolRenderers": {
       "browserStartPreview": "start-result.vue",
-      "browserScreenshot": "screenshot-result.vue"
+      "browserScreenshot": "screenshot-result.vue",
+      "browserDesktopScreenshot": "screenshot-result.vue"
     }
   }
 }
