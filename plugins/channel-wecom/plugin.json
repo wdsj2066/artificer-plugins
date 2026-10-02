@@ -1,13 +1,13 @@
 {
   "id": "channel-wecom",
   "name": "企业微信频道",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "企业微信智能机器人频道集成：长连接收发消息，支持独立频道会话与主会话挂载",
   "author": "Artificer",
   "icon": "message-square",
   "permissions": ["network", "channels", "settings"],
   "runtimeDependencies": ["ws"],
   "ui": { "view": "view.vue" },
-  "hasBackend": true,
+  "entrypoints": { "api": "server.js" },
   "panelOrder": 45
 }

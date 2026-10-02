@@ -61,7 +61,7 @@ export function createRuntimeUiPluginTools(runtimePlugins) {
   const buildRuntimeUiPluginTool = {
   id: 'buildRuntimeUiPlugin',
   name: '构建并加载运行时插件',
-  description: '构建用户数据目录中的运行时插件；若 plugin.json 声明 hasBackend 且提供 server.js，会作为受信任插件加载，可注册工具、命令、路由与 hooks。',
+  description: '构建用户数据目录中的运行时插件；plugin.json.entrypoints 声明的入口会作为受信任插件加载，可注册工具、命令、路由与 hooks。',
   parameters: {
     type: 'object',
     properties: {

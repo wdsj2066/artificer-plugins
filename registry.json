@@ -4,9 +4,11 @@
       "id": "ui-compiler-vue",
       "name": "Vue UI 编译器",
       "description": "为外部插件编译 Vue 组件和样式",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": "Artificer",
-      "hasBackend": true,
+      "entrypoints": {
+        "api": "server.js"
+      },
       "permissions": [
         "filesystem",
         "subprocess",
@@ -15,28 +17,28 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/ui-compiler-vue",
       "downloads": {
         "linux-x64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-linux-x64.zip",
-          "sha256": "def207b1578710de9e0d08f7d714c78dbaacc29a0d03b905d8c4df758c263cb3"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.1/ui-compiler-vue-1.0.1-linux-x64.zip",
+          "sha256": null
         },
         "linux-arm64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-linux-arm64.zip",
-          "sha256": "93f3e93e1830193cf82b0fb23e167244d5440b80dcccb3a6f4327afcea87f7aa"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.1/ui-compiler-vue-1.0.1-linux-arm64.zip",
+          "sha256": null
         },
         "win32-x64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-win32-x64.zip",
-          "sha256": "858dd43a5cb76d8a8704dffc104ed767c4f23b1c18df14ab8ba351b3f959f255"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.1/ui-compiler-vue-1.0.1-win32-x64.zip",
+          "sha256": null
         },
         "win32-arm64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-win32-arm64.zip",
-          "sha256": "7fec8c0ab8d3d5ef327d779a9c69d5484c8796122cf86401d9c3a8ced033b505"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.1/ui-compiler-vue-1.0.1-win32-arm64.zip",
+          "sha256": null
         },
         "darwin-x64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-darwin-x64.zip",
-          "sha256": "6bfffe9ad581748155a8b8d58e70288a7a4e4cd64d0aebe37d21deefb9cef624"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.1/ui-compiler-vue-1.0.1-darwin-x64.zip",
+          "sha256": null
         },
         "darwin-arm64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.0/ui-compiler-vue-1.0.0-darwin-arm64.zip",
-          "sha256": "6ed8ccc0ac1bc35af134f4d89690a0200f5b7014e7702d475611151102ab945c"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.1/ui-compiler-vue-1.0.1-darwin-arm64.zip",
+          "sha256": null
         }
       }
     },
@@ -44,48 +46,54 @@
       "id": "browser-automation",
       "name": "网页预览与控制",
       "description": "在信息面板中实时预览本机 HTML，支持网页截图、框选元素、静默 Agent 选择、独立悬浮查看元素详情和鼠标自动化",
-      "version": "2.3.7",
+      "version": "2.3.8",
       "author": "Artificer",
-      "hasBackend": true,
+      "entrypoints": {
+        "api": "server.js"
+      },
       "permissions": [
         "filesystem",
         "network",
         "subprocess"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.3.7/browser-automation-2.3.7.zip",
-      "sha256": "b2dd25fedf79971d624c507a51664ffa01c01c4291fb0690a7bde02ee0018124"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.3.8/browser-automation-2.3.8.zip",
+      "sha256": "823e03eb7a6d62eb5f74cc9334f4081c1dc42c62c9481b3e5f6105faf451f7c1"
     },
     {
       "id": "channel-feishu",
       "name": "飞书频道",
       "description": "飞书机器人频道集成：接收/发送消息，支持独立频道会话与主会话挂载",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "author": "Artificer",
-      "hasBackend": true,
+      "entrypoints": {
+        "api": "server.js"
+      },
       "permissions": [
         "network",
         "channels"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.0/channel-feishu-1.2.0.zip",
-      "sha256": "6f9878dcc02087050bf0334db8b08e5772670ba53358bccc05a8ad1f3e8ea9e1"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
+      "sha256": "de5f56f1d77332b4eca127eac2ae211b708fd3ae598843607c747cf6be491dc0"
     },
     {
       "id": "channel-wecom",
       "name": "企业微信频道",
       "description": "企业微信智能机器人频道集成：长连接收发消息，支持独立频道会话与主会话挂载",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "author": "Artificer",
-      "hasBackend": true,
+      "entrypoints": {
+        "api": "server.js"
+      },
       "permissions": [
         "network",
         "channels",
         "settings"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.0/channel-wecom-1.2.0.zip",
-      "sha256": "04dcbd974cc93f5b2da4fe39087d625c21526d4629016fbf5f25f312c4d04bf1"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
+      "sha256": "20cf10034ce61282e471341efa733e2fd24ae075a170657ed3a92fa580789dbb"
     },
     {
       "id": "token-usage",
@@ -93,7 +101,6 @@
       "description": "在聊天输入框下方显示本会话的模型 token 用量和缓存命中情况",
       "version": "1.1.0",
       "author": "Artificer",
-      "hasBackend": false,
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
@@ -103,30 +110,34 @@
       "id": "office",
       "name": "Office 办公",
       "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": "Artificer",
-      "hasBackend": true,
+      "entrypoints": {
+        "api": "server.js"
+      },
       "permissions": [
         "filesystem"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.1/office-1.0.1.zip",
-      "sha256": "6d2eb14130f47c343f74726f893df837b9dc7f53b611c825167261c77bf91647"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
+      "sha256": "6f0ea95a25cd05390c1bef3d2b34ea9ec28e9674c8089954dac2e6b67d3c70fa"
     },
     {
       "id": "plugin-builder",
       "name": "插件工坊",
       "description": "评估需求可行性，设计并构建受信任运行时插件：支持 Vue UI（状态栏/停靠面板/完整页面）与 Node.js 后端（工具、命令、API 路由、WebSocket、频道、hooks、持久化存储与设置）",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": "Artificer",
-      "hasBackend": true,
+      "entrypoints": {
+        "api": "server.js"
+      },
       "permissions": [
         "filesystem",
         "settings"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.0/plugin-builder-1.0.0.zip",
-      "sha256": "eefee1dae80a7a990b85888225765f5f428826e46c9ec7317734ea5bb06b9651"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.1/plugin-builder-1.0.1.zip",
+      "sha256": "b1bac7c170080ec42ab94356f7179818ef33f7d13d1e98c1ea1fe830e428e690"
     }
   ]
 }

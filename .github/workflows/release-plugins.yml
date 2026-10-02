@@ -172,7 +172,7 @@ jobs:
               description: manifest.description,
               version,
               author: manifest.author,
-              hasBackend: fs.existsSync(`plugins/${id}/server.js`),
+              entrypoints: manifest.entrypoints,
               permissions: manifest.permissions || [],
               repositoryUrl: `https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/${id}`,
               downloadUrl: `https://github.com/wdsj2066/artificer-plugins/releases/download/${tag}/${id}-${version}.zip`,
