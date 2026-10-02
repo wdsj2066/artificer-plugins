@@ -73,6 +73,7 @@ jobs:
         run: |
           npm ci
           npm ci --prefix plugins/office --ignore-scripts --no-audit --no-fund
+          npm ci --prefix plugins/browser-automation --ignore-scripts --no-audit --no-fund
           npm ci --prefix plugins/ui-compiler-vue --ignore-scripts --no-audit --no-fund
           npm test
 
