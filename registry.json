@@ -45,20 +45,24 @@
     {
       "id": "browser-automation",
       "name": "网页预览与控制",
-      "description": "在信息面板中实时预览本机 HTML，支持网页截图、框选元素、静默 Agent 选择、独立悬浮查看元素详情和鼠标自动化",
-      "version": "2.3.8",
+      "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图",
+      "version": "2.4.0",
       "author": "Artificer",
       "entrypoints": {
+        "bootstrap": "bootstrap.js",
+        "electron": "electron.js",
         "api": "server.js"
       },
       "permissions": [
         "filesystem",
         "network",
-        "subprocess"
+        "subprocess",
+        "electron",
+        "desktop-capture"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.3.8/browser-automation-2.3.8.zip",
-      "sha256": "1124b316cedb59359b19444de9de0aa60a3dcb5e5e2f1f3451605729c94eb75f"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.0/browser-automation-2.4.0.zip",
+      "sha256": "11aa33dc98503ace73ef8a848ff4aaa6524fdf049ccf1e9490a18e8be4ba829e"
     },
     {
       "id": "channel-feishu",
@@ -104,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "9a7dab340a0966e8bd156e52def3e116090f57cc07e78d19b98bb535c1b49f86"
+      "sha256": "05e14f54c3ef907c6862c1f5b054772469aa85b9df7c75f0c61bf3764e1ad2e7"
     },
     {
       "id": "office",
