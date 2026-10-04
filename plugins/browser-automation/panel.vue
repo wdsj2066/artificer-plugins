@@ -13,19 +13,29 @@
       <button class="toolbar-icon-button" type="button" :disabled="!status?.bridgeReady || screenshotLoading" title="截取网页" aria-label="截取网页" @click="captureScreenshot('viewport')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h-4l-2 3H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2-3Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
       <button class="toolbar-icon-button" type="button" :disabled="!sessionId || screenshotLoading" title="截取整个屏幕" aria-label="截取整个屏幕" @click="captureScreenshot('screen')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></button>
       <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="停止预览" aria-label="停止预览" @click="stopPreview"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1" /></svg></button>
-      <select v-model="viewportMode" class="viewport-mode-select" aria-label="预览视口尺寸" title="选择预览网页的逻辑窗口尺寸">
-        <option value="initial">保持初始窗口尺寸</option>
-        <option value="panel">跟随面板尺寸</option>
-      </select>
+      <NSelect
+        v-model:value="viewportMode"
+        class="viewport-mode-select"
+        :options="viewportModeOptions"
+        size="medium"
+        :bordered="false"
+        :consistent-menu-width="false"
+        aria-label="预览视口尺寸"
+        title="选择预览网页的逻辑窗口尺寸"
+      />
       <span class="toolbar-divider" aria-hidden="true"></span>
       <button class="toolbar-icon-button" :class="{ active: selecting }" type="button" :disabled="!status?.bridgeReady" :title="selecting ? '取消选择元素' : '选择页面元素'" :aria-label="selecting ? '取消选择元素' : '选择页面元素'" :aria-pressed="selecting" @click="toggleSelectMode"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 9-7 1-3 7-4-17Z" /></svg></button>
-      <select v-model="preferredTag" class="tag-select" :disabled="!status?.bridgeReady || selecting" aria-label="优先选择的元素类型" title="优先选择的元素类型">
-        <option value="div">div</option>
-        <option value="section">section</option>
-        <option value="article">article</option>
-        <option value="main">main</option>
-        <option value="any">任意</option>
-      </select>
+      <NSelect
+        v-model:value="preferredTag"
+        class="preferred-tag-select"
+        :options="preferredTagOptions"
+        size="medium"
+        :bordered="false"
+        :consistent-menu-width="false"
+        :disabled="!status?.bridgeReady || selecting"
+        aria-label="优先选择的元素类型"
+        title="优先选择的元素类型"
+      />
       <button v-if="selection" class="toolbar-icon-button" type="button" title="查看已选元素详情" aria-label="查看已选元素详情" @click="selectionDetailsOpen = true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></svg></button>
     </header>
 
@@ -134,10 +144,22 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { NSelect } from 'naive-ui'
 
 const props = defineProps({ sessionId: { type: String, default: null } })
 const ACTIVITY_URL = '/api/plugins/browser-automation/activity'
 const OPEN_REQUEST_KEY = 'artificer_browser_preview_open_request'
+const viewportModeOptions = [
+  { label: '保持初始窗口尺寸', value: 'initial' },
+  { label: '跟随面板尺寸', value: 'panel' }
+]
+const preferredTagOptions = [
+  { label: 'div', value: 'div' },
+  { label: 'section', value: 'section' },
+  { label: 'article', value: 'article' },
+  { label: 'main', value: 'main' },
+  { label: '任意', value: 'any' }
+]
 const root = ref(null)
 const frame = ref(null)
 const frameWrap = ref(null)
@@ -677,12 +699,12 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
 .browser-address input:focus-visible { outline:none !important; box-shadow:none !important; }
 .toolbar-icon-button { display:grid; width:34px; height:34px; flex:none; place-items:center; padding:0; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); cursor:pointer; }
 .toolbar-icon-button:hover:not(:disabled) { color:var(--text-primary); background:var(--bg-tertiary); }
-.toolbar-icon-button:focus-visible,.tag-select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.toolbar-icon-button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .toolbar-icon-button.active { border-color:var(--primary-bg,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-bg,var(--accent)); }
 .toolbar-divider { width:1px; height:20px; flex:none; margin:0 1px; background:var(--border-color); }
-.tag-select { width:72px; height:34px; flex:none; padding:0 5px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-family:inherit; font-size:12px; cursor:pointer; }
-.viewport-mode-select { height:34px; max-width:156px; flex:none; padding:0 6px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-family:inherit; font-size:11px; cursor:pointer; }
-button:disabled,select:disabled { opacity:.45; cursor:default; }
+.preferred-tag-select { width:78px; flex:none; }
+.viewport-mode-select { width:164px; flex:none; }
+button:disabled { opacity:.45; cursor:default; }
 .browser-error { flex:none; overflow:hidden; color:#c62828; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .browser-frame-wrap { position:relative; flex:1; min-height:160px; overflow:hidden; border:0; border-radius:var(--radius-md,8px); background:var(--bg-primary); }
 .browser-frame-stage { position:absolute; top:50%; left:50%; max-width:none; border-radius:var(--radius-md,8px); overflow:hidden; transform-origin:center; box-shadow:0 2px 18px rgba(0,0,0,.18); }

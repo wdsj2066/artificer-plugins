@@ -1,7 +1,7 @@
 {
   "id": "browser-automation",
   "name": "网页预览与控制",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图",
   "author": "Artificer",
   "icon": "globe-2",
