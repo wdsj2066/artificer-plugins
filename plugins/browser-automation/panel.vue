@@ -666,7 +666,7 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
 <style scoped>
 .browser-info-panel { width:100%; height:100%; min-height:0; }
 .browser-panel { display:flex; width:100%; height:100%; min-height:0; box-sizing:border-box; flex-direction:column; gap:10px; padding:14px; color:var(--text-primary); background:var(--bg-secondary); }
-.browser-toolbar { display:flex; flex:none; align-items:center; gap:6px; min-width:0; overflow-x:auto; white-space:nowrap; scrollbar-width:thin; }
+.browser-toolbar { display:flex; flex:none; flex-wrap:wrap; align-items:center; gap:6px; min-width:0; overflow:visible; }
 .browser-address { display:flex; flex:1; min-width:148px; align-items:center; gap:6px; margin:0; }
 .address-field { display:flex; flex:1; min-width:0; height:34px; box-sizing:border-box; align-items:center; gap:8px; padding:0 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); background:var(--bg-primary); }
 .connection-dot { width:7px; height:7px; flex:none; border-radius:50%; background:var(--text-muted); }
