@@ -46,7 +46,7 @@
       "id": "browser-automation",
       "name": "网页预览与控制",
       "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图",
-      "version": "2.4.1",
+      "version": "2.4.2",
       "author": "Artificer",
       "entrypoints": {
         "bootstrap": "bootstrap.js",
@@ -61,8 +61,8 @@
         "desktop-capture"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.1/browser-automation-2.4.1.zip",
-      "sha256": "97fc4df09d002a86292778fa28b44265c6b740744a6cbfd232bff7f0f3da83c0"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.2/browser-automation-2.4.2.zip",
+      "sha256": "a43974d3aacdbfcc673d482afaceedf2053538f18a890d154a4a4e067e554406"
     },
     {
       "id": "channel-feishu",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "ad411804bcf77b472710a35ea0e95fe138398f7a9e2fc42a4d31876e220419e9"
+      "sha256": "178f657e20c43093d68e9996ed5a822582079372a8dbe266630eae0d4e69686c"
     },
     {
       "id": "office",
