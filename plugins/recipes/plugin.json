@@ -1,0 +1,11 @@
+{
+  "id": "recipes",
+  "name": "对话转 Skill",
+  "version": "1.0.0",
+  "description": "把已完成的对话提炼成原生 Markdown Context Skill，保存到 Artificer 用户技能库",
+  "author": "Artificer",
+  "icon": "list-checks",
+  "permissions": ["llm", "routes"],
+  "entrypoints": { "api": "server.js" },
+  "ui": { "msgActions": "msg-actions.vue" }
+}
