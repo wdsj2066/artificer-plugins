@@ -13,6 +13,10 @@
       <button class="toolbar-icon-button" type="button" :disabled="!status?.bridgeReady || screenshotLoading" title="截取网页" aria-label="截取网页" @click="captureScreenshot('viewport')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h-4l-2 3H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2-3Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
       <button class="toolbar-icon-button" type="button" :disabled="!sessionId || screenshotLoading" title="截取整个屏幕" aria-label="截取整个屏幕" @click="captureScreenshot('screen')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></button>
       <button class="toolbar-icon-button" type="button" :disabled="!status?.previewUrl" title="停止预览" aria-label="停止预览" @click="stopPreview"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1" /></svg></button>
+      <select v-model="viewportMode" class="viewport-mode-select" aria-label="预览视口尺寸" title="选择预览网页的逻辑窗口尺寸">
+        <option value="initial">保持初始窗口尺寸</option>
+        <option value="panel">跟随面板尺寸</option>
+      </select>
       <span class="toolbar-divider" aria-hidden="true"></span>
       <button class="toolbar-icon-button" :class="{ active: selecting }" type="button" :disabled="!status?.bridgeReady" :title="selecting ? '取消选择元素' : '选择页面元素'" :aria-label="selecting ? '取消选择元素' : '选择页面元素'" :aria-pressed="selecting" @click="toggleSelectMode"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 9-7 1-3 7-4-17Z" /></svg></button>
       <select v-model="preferredTag" class="tag-select" :disabled="!status?.bridgeReady || selecting" aria-label="优先选择的元素类型" title="优先选择的元素类型">
@@ -27,15 +31,17 @@
 
     <div v-if="error || bridgeError || status?.cdp?.error" class="browser-error" role="alert" :title="bridgeError || error || status?.cdp?.error">{{ bridgeError || error || status?.cdp?.error }}</div>
 
-    <div v-if="status?.previewUrl" class="browser-frame-wrap">
-      <iframe
-        ref="frame"
-        class="browser-frame"
-        :src="frameUrl"
-        title="本机网页实时预览"
-        sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin"
-        allow="clipboard-read; clipboard-write; fullscreen"
-      ></iframe>
+    <div v-if="status?.previewUrl" ref="frameWrap" class="browser-frame-wrap">
+      <div class="browser-frame-stage" :style="frameStageStyle">
+        <iframe
+          ref="frame"
+          class="browser-frame"
+          :src="frameUrl"
+          title="本机网页实时预览"
+          sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin"
+          allow="clipboard-read; clipboard-write; fullscreen"
+        ></iframe>
+      </div>
     </div>
 
     <div v-else class="browser-empty">
@@ -134,7 +140,15 @@ const ACTIVITY_URL = '/api/plugins/browser-automation/activity'
 const OPEN_REQUEST_KEY = 'artificer_browser_preview_open_request'
 const root = ref(null)
 const frame = ref(null)
+const frameWrap = ref(null)
 const frameUrl = ref('')
+const initialViewport = {
+  width: Math.max(1, window.innerWidth),
+  height: Math.max(1, window.innerHeight)
+}
+const viewportMode = ref(readViewportMode())
+const viewportSize = ref({ ...initialViewport })
+const previewScale = ref(1)
 const status = ref(null)
 const address = ref('')
 const error = ref('')
@@ -160,6 +174,7 @@ let statusTimer = null
 let commandTimer = null
 let activityTimer = null
 let intersectionObserver = null
+let frameResizeObserver = null
 let visible = true
 let lastActivityId = null
 let frameDocumentId = null
@@ -179,7 +194,26 @@ const screenshotFileName = computed(() => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   return `${screenshotResult.value?.scope === 'desktop' ? 'desktop' : 'webpage'}-screenshot-${timestamp}.jpg`
 })
+const frameStageStyle = computed(() => ({
+  width: `${viewportSize.value.width}px`,
+  height: `${viewportSize.value.height}px`,
+  transform: `translate(-50%, -50%) scale(${previewScale.value})`
+}))
 let selectionDialogDrag = null
+
+function readViewportMode() {
+  try { return localStorage.getItem('artificer-browser-preview-viewport-mode') === 'panel' ? 'panel' : 'initial' }
+  catch { return 'initial' }
+}
+
+function updateFrameViewport() {
+  const bounds = frameWrap.value?.getBoundingClientRect()
+  if (!bounds?.width || !bounds?.height) return
+  const width = viewportMode.value === 'panel' ? Math.max(1, Math.floor(bounds.width)) : initialViewport.width
+  const height = viewportMode.value === 'panel' ? Math.max(1, Math.floor(bounds.height)) : initialViewport.height
+  viewportSize.value = { width, height }
+  previewScale.value = Math.min(bounds.width / width, bounds.height / height, 1)
+}
 
 function beginSelectionDialogDrag(event) {
   if (event.button !== 0 || event.target.closest('button')) return
@@ -560,6 +594,12 @@ onMounted(() => {
   window.addEventListener('message', onFrameMessage)
   window.addEventListener('artificer:browser-preview-open', onOpenRequest)
   window.addEventListener('keydown', onSelectionDialogKeydown)
+  if ('ResizeObserver' in window) {
+    frameResizeObserver = new ResizeObserver(updateFrameViewport)
+    if (frameWrap.value) frameResizeObserver.observe(frameWrap.value)
+  }
+  window.addEventListener('resize', updateFrameViewport)
+  updateFrameViewport()
   document.addEventListener('visibilitychange', updatePolling)
   if (root.value && 'IntersectionObserver' in window) {
     intersectionObserver = new IntersectionObserver(entries => {
@@ -584,11 +624,24 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onSelectionDialogKeydown)
   endSelectionDialogDrag()
   document.removeEventListener('visibilitychange', updatePolling)
+  window.removeEventListener('resize', updateFrameViewport)
   intersectionObserver?.disconnect()
+  frameResizeObserver?.disconnect()
   clearInterval(statusTimer)
   clearInterval(commandTimer)
   clearInterval(activityTimer)
 })
+
+watch(viewportMode, mode => {
+  try { localStorage.setItem('artificer-browser-preview-viewport-mode', mode) } catch {}
+  updateFrameViewport()
+})
+
+watch(frameWrap, (next, previous) => {
+  if (previous) frameResizeObserver?.unobserve(previous)
+  if (next) frameResizeObserver?.observe(next)
+  updateFrameViewport()
+}, { flush: 'post' })
 
 watch(() => props.sessionId, (sessionId, previousSessionId) => {
   const previousToken = status.value?.bridgeToken
@@ -628,9 +681,11 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
 .toolbar-icon-button.active { border-color:var(--primary-bg,var(--accent)); color:var(--primary-text,#fff); background:var(--primary-bg,var(--accent)); }
 .toolbar-divider { width:1px; height:20px; flex:none; margin:0 1px; background:var(--border-color); }
 .tag-select { width:72px; height:34px; flex:none; padding:0 5px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-family:inherit; font-size:12px; cursor:pointer; }
+.viewport-mode-select { height:34px; max-width:156px; flex:none; padding:0 6px; border:1px solid var(--border-color); border-radius:var(--radius-sm,6px); color:var(--text-secondary); background:var(--bg-primary); font-family:inherit; font-size:11px; cursor:pointer; }
 button:disabled,select:disabled { opacity:.45; cursor:default; }
 .browser-error { flex:none; overflow:hidden; color:#c62828; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .browser-frame-wrap { position:relative; flex:1; min-height:160px; overflow:hidden; border:0; border-radius:var(--radius-md,8px); background:var(--bg-primary); }
+.browser-frame-stage { position:absolute; top:50%; left:50%; max-width:none; border-radius:var(--radius-md,8px); overflow:hidden; transform-origin:center; box-shadow:0 2px 18px rgba(0,0,0,.18); }
 .browser-frame { display:block; width:100%; height:100%; border:0; background:var(--bg-primary); }
 .browser-frame:focus { outline:none !important; }
 .browser-empty { display:flex; flex:1; min-height:200px; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:20px; color:var(--text-muted); text-align:center; }
