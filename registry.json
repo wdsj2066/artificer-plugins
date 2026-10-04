@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "c5908c9bdf19520059f5d7a59020900a475163052a40d2ec9c643e65d9782a48"
+      "sha256": "ff21342686e892990b223da01a8b9fce7cd57211cce773f7b8ca91331c495817"
     },
     {
       "id": "office",
@@ -142,6 +142,23 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.1/plugin-builder-1.0.1.zip",
       "sha256": "12004f0a7be81a06d89659e3536430a39def511f87b0776b0714220299674620"
+    },
+    {
+      "id": "recipes",
+      "name": "对话转 Skill",
+      "description": "把已完成的对话提炼成原生 Markdown Context Skill，保存到 Artificer 用户技能库",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js"
+      },
+      "permissions": [
+        "llm",
+        "routes"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
+      "sha256": "b9b2e716b36883d0a23708f8c48a4f1374cb47288b2c1c8cd7e401743d96cf7c"
     }
   ]
 }
