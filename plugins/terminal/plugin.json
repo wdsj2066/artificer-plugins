@@ -1,0 +1,53 @@
+{
+  "id": "terminal",
+  "name": "终端",
+  "version": "1.0.0",
+  "description": "PTY 终端模拟器，支持交互式命令、实时流式输出和会话管理",
+  "author": "Artificer",
+  "icon": "terminal",
+  "permissions": ["filesystem", "subprocess", "routes", "settings"],
+  "entrypoints": { "api": "server.js" },
+  "ui": {
+    "view": "view.vue",
+    "panels": [{ "id": "terminal", "region": "bottom", "component": "view.vue", "title": "终端", "icon": "terminal" }]
+  },
+  "settings": {
+    "title": "终端设置",
+    "fields": [
+      {
+        "key": "defaultCols",
+        "label": "默认列数",
+        "type": "number",
+        "defaultValue": 80,
+        "min": 20,
+        "max": 200,
+        "description": "新建终端时的默认宽度（列数）"
+      },
+      {
+        "key": "defaultRows",
+        "label": "默认行数",
+        "type": "number",
+        "defaultValue": 24,
+        "min": 5,
+        "max": 100,
+        "description": "新建终端时的默认高度（行数）"
+      },
+      {
+        "key": "fontSize",
+        "label": "字体大小",
+        "type": "number",
+        "defaultValue": 13,
+        "min": 8,
+        "max": 24,
+        "description": "终端字体大小（像素）"
+      },
+      {
+        "key": "cursorBlink",
+        "label": "光标闪烁",
+        "type": "boolean",
+        "defaultValue": true,
+        "description": "是否启用终端光标闪烁效果"
+      }
+    ]
+  }
+}

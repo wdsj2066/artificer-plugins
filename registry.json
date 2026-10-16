@@ -159,6 +159,25 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
       "sha256": "b9b2e716b36883d0a23708f8c48a4f1374cb47288b2c1c8cd7e401743d96cf7c"
+    },
+    {
+      "id": "terminal",
+      "name": "终端",
+      "description": "PTY 终端模拟器，支持交互式命令、实时流式输出和会话管理",
+      "version": "1.0.0",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js"
+      },
+      "permissions": [
+        "filesystem",
+        "subprocess",
+        "routes",
+        "settings"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
+      "sha256": null
     }
   ]
 }
