@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "ff21342686e892990b223da01a8b9fce7cd57211cce773f7b8ca91331c495817"
+      "sha256": "061a021b475a74053bc2329f2b51a042d056ab80afb7a94ea12ccf439336c956"
     },
     {
       "id": "office",
@@ -177,7 +177,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": null
+      "sha256": "704b4f5b7a6f627588af5e74b4d593e85d946a538b35f12e0f2060279b76d38a"
     }
   ]
 }
