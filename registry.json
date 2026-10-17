@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "061a021b475a74053bc2329f2b51a042d056ab80afb7a94ea12ccf439336c956"
+      "sha256": "c9d798165c24280185ed237619a86322d318beaf0bb6d7a994516cd889fb1259"
     },
     {
       "id": "office",
@@ -178,6 +178,25 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
       "sha256": "704b4f5b7a6f627588af5e74b4d593e85d946a538b35f12e0f2060279b76d38a"
+    },
+    {
+      "id": "remote",
+      "name": "Remote 远程连接",
+      "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
+      "version": "0.1.0",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js"
+      },
+      "permissions": [
+        "network",
+        "routes",
+        "settings",
+        "filesystem"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.0/remote-0.1.0.zip",
+      "sha256": "1535787f3c0b0b611d98ba64a3bdb52d9238b2d41ae17a681ebe378e20b44d24"
     }
   ]
 }
