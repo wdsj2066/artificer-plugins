@@ -35,4 +35,4 @@
 pwsh -NoProfile -File scripts/package-plugin.ps1 -PluginId remote
 ```
 
-生成 dist/remote-0.1.2.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.2，并自动登记到 registry.json。
+生成 dist/remote-0.1.3.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.3，并自动登记到 registry.json。

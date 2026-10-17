@@ -263,19 +263,21 @@
         </p>
       </template>
     </div>
+
+    <!-- 轻提示：插件自带的 naive-ui 与宿主 provider 实例不同，不能使用 useMessage -->
+    <div class="toast-stack" aria-live="polite">
+      <div v-for="item in toasts" :key="item.id" class="toast" :class="`is-${item.tone}`">
+        <Check v-if="item.tone !== 'error'" :size="13" />
+        <X v-else :size="13" />
+        <span>{{ item.text }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import {
-  NButton,
-  NTooltip,
-  NSelect,
-  NSpin,
-  NPopconfirm,
-  useMessage,
-} from "naive-ui";
+import { NButton, NTooltip, NSelect, NSpin, NPopconfirm } from "naive-ui";
 import {
   Smartphone,
   RefreshCw,
@@ -290,7 +292,24 @@ import {
   Cloud,
 } from "lucide-vue-next";
 
-const message = useMessage();
+// 插件产物自带一份 naive-ui，与宿主 n-message-provider 注入的实例不是同一份，
+// useMessage() 会因找不到宿主 provider 而抛错并让整页白屏，因此这里用视图内的轻提示。
+const toasts = ref([]);
+let toastSeed = 0;
+let toastTimer = null;
+
+function notify(text, tone = "success") {
+  const id = ++toastSeed;
+  toasts.value = [...toasts.value.slice(-2), { id, text, tone }];
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toasts.value = toasts.value.filter((item) => item.id !== id);
+  }, 2600);
+}
+
+function notifyError(text) {
+  notify(text, "error");
+}
 
 const status = ref(null);
 const loading = ref(true);
@@ -380,9 +399,9 @@ async function generatePairing() {
     const address = serviceAddress.value.trim();
     await request("pairing", "POST", address ? { address } : {});
     await loadStatus();
-    message.success("配对码已生成，请在五分钟内完成配对");
+    notify("配对码已生成，请在五分钟内完成配对");
   } catch (e) {
-    message.error(e.message || "生成配对码失败");
+    notifyError(e.message || "生成配对码失败");
   } finally {
     generating.value = false;
   }
@@ -393,10 +412,10 @@ async function decide(item, allow) {
   actingId.value = item.id;
   try {
     await request(`requests/${encodeURIComponent(item.id)}`, "POST", { allow });
-    message.success(allow ? `已允许 ${item.name} 接入` : `已拒绝 ${item.name}`);
+    notify(allow ? `已允许 ${item.name} 接入` : `已拒绝 ${item.name}`);
     await loadStatus();
   } catch (e) {
-    message.error(e.message || "操作失败");
+    notifyError(e.message || "操作失败");
   } finally {
     actingId.value = "";
   }
@@ -405,10 +424,10 @@ async function decide(item, allow) {
 async function revoke(device) {
   try {
     await request(`devices/${encodeURIComponent(device.id)}`, "DELETE");
-    message.success(`${device.name} 的访问权限已撤销`);
+    notify(`${device.name} 的访问权限已撤销`);
     await loadStatus();
   } catch (e) {
-    message.error(e.message || "撤销失败");
+    notifyError(e.message || "撤销失败");
   }
 }
 
@@ -434,11 +453,11 @@ async function copy(text, tip) {
     }
     document.body.removeChild(area);
     if (!copied) {
-      message.error("复制失败，请手动选择文本");
+      notifyError("复制失败，请手动选择文本");
       return;
     }
   }
-  message.success(tip || "已复制");
+  notify(tip || "已复制");
 }
 
 function pad(value) {
@@ -649,6 +668,54 @@ onUnmounted(() => {
 .upstream-hint {
   font-size: 11.5px;
   color: var(--text-muted);
+}
+
+/* 轻提示 */
+.toast-stack {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 320px;
+  padding: 9px 13px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+  animation: toast-in 0.16s ease-out;
+}
+
+.toast.is-success svg {
+  color: #2ea043;
+  flex-shrink: 0;
+}
+
+.toast.is-error svg {
+  color: var(--warning-color, #d29922);
+  flex-shrink: 0;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* 两栏布局 */
