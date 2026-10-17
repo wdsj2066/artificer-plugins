@@ -36,6 +36,7 @@ export function createBridge({
   fetchImpl = fetch,
   now = Date.now,
   uploadRoot,
+  lookupUpstream,
 }) {
   let hostId = store.get("hostId");
   if (!hostId) {
@@ -47,6 +48,16 @@ export function createBridge({
   const attempts = new Map();
   const active = new Map();
   let pairing = null;
+  // 上游地址解析优先级：手动填写 > 自动探测 > 内置默认值。
+  // 自动探测由 server.js 通过管理请求的 Host 头提供，避免用户手写端口。
+  function resolveUpstream() {
+    const cfg = settings();
+    const manual = String(cfg.upstream || "").trim();
+    if (manual) return { origin: manual, source: "manual" };
+    const detected = lookupUpstream?.();
+    if (detected) return { origin: detected, source: "auto" };
+    return { origin: "http://127.0.0.1:8080", source: "default" };
+  }
   const json = (res, status, data) => {
     res.writeHead(status, {
       "Content-Type": "application/json",
@@ -191,7 +202,8 @@ export function createBridge({
       }
       if (!allowedPath(req.method, path)) throw fail(404, "接口未开放");
       const cfg = settings();
-      const target = new URL(cfg.upstream || "http://127.0.0.1:8080");
+      const upstreamTarget = resolveUpstream();
+      const target = new URL(upstreamTarget.origin);
       if (
         !["127.0.0.1", "localhost", "[::1]"].includes(target.hostname) ||
         target.protocol !== "http:"
@@ -252,6 +264,7 @@ export function createBridge({
     status: () => ({
       hostId,
       address: server.address(),
+      upstream: resolveUpstream(),
       pairing: pairing && pairing.expiresAt > now() ? pairing : null,
       pending: [...pending.values()]
         .filter((x) => x.expiresAt > now() && x.state === "pending")

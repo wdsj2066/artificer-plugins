@@ -4,9 +4,25 @@ import { homedir, networkInterfaces } from "node:os";
 import QRCode from "./vendor/qrcode.js";
 
 export async function register(ctx) {
+  // 宿主没有暴露自身端口的接口，但插件管理路由由宿主的 HTTP 服务承接，
+  // 因此本机管理请求的 Host 头就是真实的宿主 API 地址，可直接作为上游。
+  let detectedUpstream = "";
+  const rememberUpstream = (hostHeader) => {
+    if (!hostHeader) return;
+    try {
+      const url = new URL(`http://${hostHeader}`);
+      const hostname = url.hostname.replace(/^\[|\]$/g, "");
+      if (!["127.0.0.1", "localhost", "::1"].includes(hostname)) return;
+      const port = Number(url.port);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) return;
+      const host = hostname.includes(":") ? `[${hostname}]` : hostname;
+      detectedUpstream = `http://${host}:${port}`;
+    } catch {}
+  };
   const bridge = createBridge({
     store: ctx.getStore(),
     settings: () => ctx.getSettings(),
+    lookupUpstream: () => detectedUpstream,
     uploadRoot: join(
       process.env.APPDATA || homedir(),
       "Artificer",
@@ -45,6 +61,7 @@ export async function register(ctx) {
           input.res.status(403);
           return { success: false, error: "请在本机 Artificer 中管理远程设备" };
         }
+        rememberUpstream(input.req.headers.host);
         return handler(input);
       },
     });

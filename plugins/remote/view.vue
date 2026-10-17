@@ -64,6 +64,24 @@
           </div>
         </div>
 
+        <!-- 上游 API -->
+        <div class="upstream-row">
+          <div class="upstream-main">
+            <Cloud :size="14" class="upstream-icon" />
+            <span class="upstream-label">本机 API</span>
+            <span class="upstream-value mono" :title="upstreamOrigin || '未获取'">
+              {{ upstreamOrigin || "未获取" }}
+            </span>
+            <span class="source-tag" :class="`is-${upstreamSource}`">{{ sourceLabel }}</span>
+          </div>
+          <span v-if="upstreamSource === 'manual'" class="upstream-hint">
+            在插件设置中清空「本机 Artificer API」可恢复自动获取
+          </span>
+          <span v-else-if="upstreamSource === 'default'" class="upstream-hint">
+            暂未识别到当前实例，请打开本页一次或在设置中手动填写
+          </span>
+        </div>
+
         <div class="remote-grid">
           <!-- 左侧：配对 -->
           <section class="panel">
@@ -269,6 +287,7 @@ import {
   Link2,
   RotateCw,
   QrCode,
+  Cloud,
 } from "lucide-vue-next";
 
 const message = useMessage();
@@ -293,6 +312,14 @@ const pending = computed(() => status.value?.pending || []);
 const devices = computed(() => status.value?.devices || []);
 const pairing = computed(() => status.value?.pairing || null);
 const qrDataUrl = computed(() => status.value?.qrDataUrl || "");
+
+const upstreamOrigin = computed(() => status.value?.upstream?.origin || "");
+const upstreamSource = computed(() => status.value?.upstream?.source || "default");
+const sourceLabel = computed(
+  () =>
+    ({ auto: "自动获取", manual: "手动指定", default: "默认值" })[upstreamSource.value] ||
+    "默认值",
+);
 
 const addressOptions = computed(() =>
   addresses.value.map((address) => ({
@@ -557,6 +584,71 @@ onUnmounted(() => {
 
 .mono {
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+/* 上游 API 来源 */
+.upstream-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+}
+
+.upstream-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.upstream-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.upstream-label {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.upstream-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.source-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  padding: 0 6px;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.source-tag.is-auto {
+  color: #2ea043;
+  background: rgba(46, 160, 67, 0.12);
+}
+
+.source-tag.is-manual {
+  color: var(--accent);
+  background: var(--sidebar-active);
+}
+
+.upstream-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 /* 两栏布局 */

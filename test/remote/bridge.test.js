@@ -184,3 +184,53 @@ test("手机上传文件需认证，文件名不能逃逸上传目录", async (t
   assert.ok(resolve(result.data.data.path).startsWith(resolve(root)));
   assert.equal(await readFile(result.data.data.path, "utf8"), "hello");
 });
+
+
+test("上游地址留空时自动使用探测到的宿主地址，手动填写优先", async (t) => {
+  const auto = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: true, data: { from: "auto" } }));
+  });
+  await new Promise((r) => auto.listen(0, "127.0.0.1", r));
+  t.after(
+    () =>
+      new Promise((r) => {
+        auto.closeAllConnections();
+        auto.close(r);
+      }),
+  );
+  const autoOrigin = `http://127.0.0.1:${auto.address().port}`;
+
+  const f = await fixture(t, {
+    settings: () => ({ upstream: "" }),
+    lookupUpstream: () => autoOrigin,
+  });
+  const headers = await f.pair();
+  const proxied = await f.call("/api/sessions", "GET", undefined, headers);
+  assert.equal(proxied.status, 200);
+  assert.equal(proxied.data.data.from, "auto");
+  assert.deepEqual(f.bridge.status().upstream, {
+    origin: autoOrigin,
+    source: "auto",
+  });
+
+  // 手动填写后不再使用探测结果
+  const manual = await fixture(t, {
+    settings: () => ({ upstream: "http://127.0.0.1:9" }),
+    lookupUpstream: () => autoOrigin,
+  });
+  assert.deepEqual(manual.bridge.status().upstream, {
+    origin: "http://127.0.0.1:9",
+    source: "manual",
+  });
+
+  // 探测为空且未填写时回落到内置默认值
+  const fallback = await fixture(t, {
+    settings: () => ({}),
+    lookupUpstream: () => "",
+  });
+  assert.deepEqual(fallback.bridge.status().upstream, {
+    origin: "http://127.0.0.1:8080",
+    source: "default",
+  });
+});

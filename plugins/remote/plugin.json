@@ -1,7 +1,7 @@
 {
   "id": "remote",
   "name": "Remote 远程连接",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
   "author": "Artificer",
   "icon": "smartphone",
@@ -25,9 +25,10 @@
       },
       {
         "key": "upstream",
-        "label": "本机 Artificer API",
+        "label": "本机 Artificer API（留空则自动获取）",
         "type": "string",
-        "defaultValue": "http://127.0.0.1:8080"
+        "defaultValue": "",
+        "description": "留空时自动使用当前 Artificer 的实际地址；仅在自动获取失败或需要指向其他实例时填写"
       },
       {
         "key": "gatewayToken",

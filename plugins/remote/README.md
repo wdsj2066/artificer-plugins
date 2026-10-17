@@ -6,6 +6,8 @@
 
 安装并启用插件，在设置中核对本机 Artificer API 地址及网关令牌（如已启用）。默认监听 0.0.0.0:8091。监听地址与端口修改后需重启插件。
 
+「本机 Artificer API」默认留空，插件会自动使用当前实例的真实地址：插件管理接口由宿主 HTTP 服务承接，因此从本机管理请求的 `Host` 头即可得到实际监听的端口，宿主改端口或换实例后无需再手工同步。只有需要指向其他实例时才填写该项，填写后以手动值为准。页面上的「本机 API」一行会显示当前使用的地址与来源（自动获取 / 手动指定 / 默认值）。
+
 电脑端插件页面可选择局域网或自备外网地址，生成五分钟有效的二维码/一次性配对码。手机提交请求后，必须由电脑端确认，之后才能访问业务接口。设备可随时撤销。
 
 ## 电脑端界面
@@ -33,4 +35,4 @@
 pwsh -NoProfile -File scripts/package-plugin.ps1 -PluginId remote
 ```
 
-生成 dist/remote-0.1.1.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.1，并自动登记到 registry.json。
+生成 dist/remote-0.1.2.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.2，并自动登记到 registry.json。
