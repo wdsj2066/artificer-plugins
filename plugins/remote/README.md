@@ -1,0 +1,30 @@
+# Remote 远程连接
+
+为 Artificer Remote Android 客户端提供独立端口、设备配对与受控业务桥接。不修改主项目源码，不导入宿主内部模块，不替换宿主核心方法。
+
+## 使用
+
+安装并启用插件，在设置中核对本机 Artificer API 地址及网关令牌（如已启用）。默认监听 0.0.0.0:8091。监听地址与端口修改后需重启插件。
+
+电脑端插件页面可选择局域网或自备外网地址，生成五分钟有效的二维码/一次性配对码。手机提交请求后，必须由电脑端确认，之后才能访问业务接口。设备可随时撤销。
+
+手机不会得到主 API 网关令牌。插件仅代理审阅过的业务路径，阻止原始配置、网关令牌生成及 Remote 管理接口。管理端点还会校验本机地址和浏览器来源。配对设备具有电脑业务操作权限，Agent 工具执行仍受原会话授权策略约束。
+
+## 权限与生命周期
+
+- network / routes：独立 HTTP 服务、本机 API 请求及电脑端管理路由。
+- filesystem：将手机附件保存到用户数据目录 Artificer/remote-uploads，不写主项目源码。
+- settings：读取插件连接设置；配对身份和设备凭据摘要通过 ctx.getStore() 持久化。
+- disposeWithPlugin：停用/卸载时关闭监听和活跃桥接请求。
+
+手机断线后，插件继续消费本机对话流，使任务订阅不随手机连接断开；该路径已通过隔离测试，真实 Agent 长时间运行和宿主热重载仍需联调。外网应使用用户提供的 HTTPS 隧道或可信虚拟局域网。上传目录暂不自动清理，避免删除仍被会话引用的附件。
+
+## 编译发布
+
+源码和测试以本仓库为唯一维护位置。二维码依赖已打包在 vendor/ 并附许可证，不需要在用户电脑安装 npm 依赖。需要更新二维码依赖时，在仓库根目录运行 npm run build:remote-vendor。
+
+```powershell
+pwsh -NoProfile -File scripts/package-plugin.ps1 -PluginId remote
+```
+
+生成 dist/remote-0.1.0.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.0，并自动登记到 registry.json。

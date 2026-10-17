@@ -12,6 +12,7 @@ A single repository can maintain multiple plugins, but each plugin is published,
 - `plugin-builder`
 - `recipes`
 - `terminal`
+- `remote`
 - `ui-compiler-vue`
 
 Backend plugins must be manually reviewed to confirm that their declared `permissions` match their actual capabilities before installation or release.
@@ -29,6 +30,7 @@ Each plugin must be packaged into an independent ZIP file and uploaded to a GitH
 .\scripts\package-plugin.ps1 -PluginId plugin-builder
 .\scripts\package-plugin.ps1 -PluginId recipes
 .\scripts\package-plugin.ps1 -PluginId terminal
+.\scripts\package-plugin.ps1 -PluginId remote
 .\scripts\package-plugin.ps1 -PluginId ui-compiler-vue
 ```
 

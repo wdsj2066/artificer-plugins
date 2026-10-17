@@ -3,9 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:remote-vendor": "node scripts/build-remote-vendor.mjs"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
+    "qrcode": "^1.5.4",
     "vitest": "^4.1.10"
   }
 }

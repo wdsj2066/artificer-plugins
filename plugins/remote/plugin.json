@@ -1,0 +1,40 @@
+{
+  "id": "remote",
+  "name": "Remote 远程连接",
+  "version": "0.1.0",
+  "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
+  "author": "Artificer",
+  "icon": "smartphone",
+  "permissions": ["network", "routes", "settings", "filesystem"],
+  "entrypoints": { "api": "server.js" },
+  "ui": { "view": "view.vue" },
+  "settings": {
+    "title": "Remote 连接",
+    "fields": [
+      {
+        "key": "port",
+        "label": "连接端口（重启插件生效）",
+        "type": "number",
+        "defaultValue": 8091
+      },
+      {
+        "key": "host",
+        "label": "监听地址（重启插件生效）",
+        "type": "string",
+        "defaultValue": "0.0.0.0"
+      },
+      {
+        "key": "upstream",
+        "label": "本机 Artificer API",
+        "type": "string",
+        "defaultValue": "http://127.0.0.1:8080"
+      },
+      {
+        "key": "gatewayToken",
+        "label": "本机 API 网关令牌（如已启用）",
+        "type": "password",
+        "defaultValue": ""
+      }
+    ]
+  }
+}
