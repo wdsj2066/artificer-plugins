@@ -43,4 +43,26 @@ describe('Vue UI 编译器', () => {
     await compiler.build({ sourceDir, entryPath: sourceEntry, outDir })
     expect(readFileSync(join(outDir, 'index.js'), 'utf-8')).toContain('/api/plugin-runtime/vue.js')
   }, 60000)
+
+  it('Remote 产物的 Vue 导入可被宿主导出收集器完整识别', async () => {
+    let compiler
+    register({ registerUiCompiler(value) { compiler = value } })
+    const root = mkdtempSync(join(tmpdir(), 'artificer-ui-remote-'))
+    roots.push(root)
+    writeFileSync(join(root, 'view.vue'), readFileSync(new URL('../../plugins/remote/view.vue', import.meta.url)))
+    const entryPath = join(root, 'entry.mjs')
+    writeFileSync(entryPath, "import View from './view.vue'; export const components = { 'view.vue': View };")
+    await compiler.build({ sourceDir: root, entryPath, outDir: join(root, 'dist') })
+    const output = readFileSync(join(root, 'dist/index.js'), 'utf-8')
+    // 与宿主 collectVueExports 的协议相同：只收集纯命名导入。
+    const pattern = /import\s*\{([^}]+)\}\s*from\s*["']\/api\/plugin-runtime\/vue\.js["']/g
+    const imports = [...output.matchAll(pattern)]
+    expect(imports.length).toBeGreaterThan(0)
+    const remainder = output.replace(pattern, '')
+    expect(remainder).not.toMatch(/from\s*["']\/api\/plugin-runtime\/vue\.js["']/)
+    const names = imports.flatMap(match => match[1].split(',').map(specifier => specifier.trim().split(/\s+as\s+/)[0]))
+    expect(names).toEqual(expect.arrayContaining(['ref', 'computed', 'onMounted', 'onUnmounted', 'createElementVNode']))
+    expect(output).toContain('Remote 远程连接')
+    expect(output).toContain('view.vue')
+  }, 60000)
 })

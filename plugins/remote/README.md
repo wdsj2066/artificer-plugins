@@ -35,7 +35,9 @@
 pwsh -NoProfile -File scripts/package-plugin.ps1 -PluginId remote
 ```
 
-生成 dist/remote-0.1.3.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.3，并自动登记到 registry.json。
+生成 dist/remote-0.1.5.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.5，并自动登记到 registry.json。
+
+界面预编译使用 UI 编译器 1.0.2 或更新版本，优先解析 naive-ui 与图标库的 ESM 入口，保证 Vue 导入可被宿主运行时完整识别，避免加载时白屏。市场安装使用包内预编译产物；源码开发请更新编译器后重新构建。
 
 ### 手机图片与附件访问
 

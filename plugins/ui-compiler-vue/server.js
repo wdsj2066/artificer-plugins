@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { build } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -9,7 +9,14 @@ const require = createRequire(import.meta.url)
 function hostPackageFallback(sourceDir, name) {
   // 优先使用插件自己的依赖；旧插件没有 package.json 时使用编译器所带版本。
   if (existsSync(join(sourceDir, 'node_modules', name))) return null
-  return require.resolve(name)
+  // require.resolve(name) 会选中 CommonJS 的 main，令 Vue 变成默认与命名
+  // 混合导入；宿主的运行时导出收集器只识别命名导入。与宿主 Vite 构建
+  // 一样优先使用浏览器 ESM 入口，避免漏收集 Vue 导出而让插件白屏。
+  const packagePath = require.resolve(`${name}/package.json`)
+  const manifest = JSON.parse(readFileSync(packagePath, 'utf-8'))
+  return manifest.module
+    ? join(dirname(packagePath), manifest.module)
+    : require.resolve(name)
 }
 
 export function register(ctx) {
