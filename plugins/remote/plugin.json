@@ -1,7 +1,7 @@
 {
   "id": "remote",
   "name": "Remote 远程连接",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
   "author": "Artificer",
   "icon": "smartphone",

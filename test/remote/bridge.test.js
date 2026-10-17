@@ -1,12 +1,12 @@
 import { test as runTest, onTestFinished } from "vitest";
-const test = (name, handler) => runTest(name, () => handler({ after: onTestFinished }));
+const test = (name, handler) =>
+  runTest(name, () => handler({ after: onTestFinished }));
 import assert from "node:assert/strict";
 import http from "node:http";
 import { mkdtemp, readdir, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname, basename } from "node:path";
 import { createBridge, allowedPath } from "../../plugins/remote/bridge.js";
-
 
 async function fixture(t, options = {}) {
   const data = new Map();
@@ -185,7 +185,6 @@ test("手机上传文件需认证，文件名不能逃逸上传目录", async (t
   assert.equal(await readFile(result.data.data.path, "utf8"), "hello");
 });
 
-
 test("上游地址留空时自动使用探测到的宿主地址，手动填写优先", async (t) => {
   const auto = http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -233,4 +232,62 @@ test("上游地址留空时自动使用探测到的宿主地址，手动填写�
     origin: "http://127.0.0.1:8080",
     source: "default",
   });
+});
+
+test("产物路径查询允许编码目录和中文，仍拒绝路径与查询逃逸", () => {
+  for (const file of [
+    "images/测试 图.png",
+    "C:\\Workspace\\docs\\指南.pdf",
+    "docs/readme.md",
+  ])
+    for (const action of ["raw", "download", "content", "handlers"])
+      assert.equal(
+        allowedPath(
+          "GET",
+          `/api/sessions/session-1/artifacts/${action}?filePath=${encodeURIComponent(file)}`,
+        ),
+        true,
+        file,
+      );
+  for (const path of [
+    "/api/sessions/session-1/artifacts/raw?filePath=..%2Fsecret.txt",
+    "/api/sessions/session-1/artifacts/raw?filePath=..%5Csecret.txt",
+    "/api/sessions/session-1/artifacts/raw?filePath=%252e%252e%252fsecret.txt",
+    "/api/sessions/session-1/artifacts/raw?filePath=ok.png&filePath=..%2Fsecret",
+    "/api/sessions/session-1/artifacts/raw?filePath=ok.png&target=evil",
+    "/api/sessions/%2e%2e/plugins/remote/pairing",
+  ])
+    assert.equal(allowedPath("GET", path), false, path);
+});
+test("图片和附件通过配对认证转发原始字节与文件名，撤销后无法继续读取", async (t) => {
+  const bytes = new Uint8Array([137, 80, 78, 71, 0, 255]);
+  let received;
+  const f = await fixture(t, {
+    fetchImpl: async (url, options) => {
+      received = { url: String(url), headers: options.headers };
+      return new Response(bytes, {
+        headers: {
+          "Content-Type": "image/png",
+          "Content-Disposition": 'inline; filename="test.png"',
+        },
+      });
+    },
+  });
+  const path =
+    "/api/sessions/session-1/artifacts/raw?filePath=images%2Ftest.png";
+  assert.equal((await fetch(f.base + path)).status, 401);
+  const headers = await f.pair();
+  const response = await fetch(f.base + path, { headers });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "image/png");
+  assert.equal(
+    response.headers.get("content-disposition"),
+    'inline; filename="test.png"',
+  );
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()), bytes);
+  assert.equal(received.url, "http://127.0.0.1:8080" + path);
+  assert.equal(received.headers.Authorization, undefined);
+  assert.ok(!received.url.includes(headers.Authorization.slice(7)));
+  f.bridge.revoke(f.bridge.status().devices[0].id);
+  assert.equal((await fetch(f.base + path, { headers })).status, 401);
 });

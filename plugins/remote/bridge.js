@@ -28,6 +28,28 @@ export function allowedPath(method, path) {
   )
     return false;
   if (/\/config\/(raw|token)(\/|\?|$)/.test(path)) return false;
+  // 编码斜杠在 filePath 查询值中是正常文件路径，不能按路由逃逸误拦截。
+  // 仍由宿主的会话资源接口校验文件归属；插件不直接读取任意电脑文件。
+  const queryAt = path.indexOf("?");
+  const pathname = queryAt < 0 ? path : path.slice(0, queryAt);
+  if (
+    method === "GET" &&
+    /^\/api\/sessions\/[a-zA-Z0-9_-]+\/artifacts\/(raw|download|content|handlers)$/.test(
+      pathname,
+    ) &&
+    queryAt >= 0
+  ) {
+    const params = new URLSearchParams(path.slice(queryAt + 1));
+    const filePath = params.get("filePath");
+    return (
+      !!filePath &&
+      params.getAll("filePath").length === 1 &&
+      [...params.keys()].every((key) => key === "filePath") &&
+      !/[\x00-\x1f]/.test(filePath) &&
+      !filePath.replace(/\\/g, "/").split("/").includes("..") &&
+      !/%2e|%2f|%5c/i.test(filePath)
+    );
+  }
   return !path.includes("..") && !/%2e|%2f|%5c/i.test(path);
 }
 export function createBridge({
@@ -106,6 +128,10 @@ export function createBridge({
     res.setHeader(
       "Access-Control-Allow-Methods",
       "GET, POST, PUT, DELETE, OPTIONS",
+    );
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "Content-Disposition, Content-Type",
     );
     if (req.method === "OPTIONS") {
       res.writeHead(204);
@@ -238,6 +264,14 @@ export function createBridge({
             upstream.headers.get("content-type") || "application/json",
           "Cache-Control": "no-store",
           "X-Accel-Buffering": "no",
+          "X-Content-Type-Options": "nosniff",
+          ...(upstream.headers.get("content-disposition")
+            ? {
+                "Content-Disposition": upstream.headers.get(
+                  "content-disposition",
+                ),
+              }
+            : {}),
         });
         // 手机断线后继续消费电脑流，保持本地订阅；上游终态或插件停用后释放。
         if (upstream.body)

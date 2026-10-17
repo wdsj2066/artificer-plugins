@@ -36,3 +36,7 @@ pwsh -NoProfile -File scripts/package-plugin.ps1 -PluginId remote
 ```
 
 生成 dist/remote-0.1.3.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.3，并自动登记到 registry.json。
+
+### 手机图片与附件访问
+
+已配对设备通过带认证头的业务桥接读取会话图片、附件与产物；客户端转换为临时 Blob URL，图片链接无需携带设备令牌。产物 filePath 查询允许正常的编码目录分隔符、空格和中文，路由路径及查询值仍拒绝路径穿越与重复参数，文件归属由主应用现有会话接口校验。桥接透传 Content-Type 与 Content-Disposition，不新增任意文件读取接口。
