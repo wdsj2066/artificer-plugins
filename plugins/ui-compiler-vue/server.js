@@ -31,6 +31,8 @@ export function register(ctx) {
         configFile: false,
         root: sourceDir,
         plugins: [vue()],
+        // Vite 库模式默认保留 process.env，浏览器会在组件 setup 中抛错。
+        define: { 'process.env.NODE_ENV': JSON.stringify('production') },
         publicDir: false,
         logLevel: 'warn',
         resolve: { alias: aliases },

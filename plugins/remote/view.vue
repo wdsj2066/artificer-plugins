@@ -496,7 +496,7 @@ onUnmounted(() => {
 .remote-view {
   height: 100%;
   overflow-y: auto;
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
   font-size: 13px;
   line-height: 1.5;

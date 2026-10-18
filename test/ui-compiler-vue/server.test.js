@@ -64,5 +64,8 @@ describe('Vue UI 编译器', () => {
     expect(names).toEqual(expect.arrayContaining(['ref', 'computed', 'onMounted', 'onUnmounted', 'createElementVNode']))
     expect(output).toContain('Remote 远程连接')
     expect(output).toContain('view.vue')
+    // 库模式必须消除 Node 环境变量，否则 Naive UI 的 setup 在浏览器中中断，
+    // 表现为 undefined-button、空下拉框和没有绑定的点击事件。
+    expect(output).not.toMatch(/process\.env\.NODE_ENV/)
   }, 60000)
 })
