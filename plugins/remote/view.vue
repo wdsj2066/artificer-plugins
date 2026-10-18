@@ -48,19 +48,19 @@
         <div class="stat-strip">
           <div class="stat">
             <span class="stat-label">监听端口</span>
-            <span class="stat-value mono">{{ port ?? "—" }}</span>
+            <span class="stat-value">{{ port ?? "—" }}</span>
           </div>
           <div class="stat">
             <span class="stat-label">局域网地址</span>
-            <span class="stat-value mono">{{ addresses.length || "—" }}</span>
+            <span class="stat-value">{{ addresses.length || "—" }}</span>
           </div>
           <div class="stat">
             <span class="stat-label">活跃连接</span>
-            <span class="stat-value mono">{{ status?.activeRequests ?? 0 }}</span>
+            <span class="stat-value">{{ status?.activeRequests ?? 0 }}</span>
           </div>
           <div class="stat">
             <span class="stat-label">已配对设备</span>
-            <span class="stat-value mono">{{ devices.length }}</span>
+            <span class="stat-value">{{ devices.length }}</span>
           </div>
         </div>
 
@@ -69,7 +69,7 @@
           <div class="upstream-main">
             <Cloud :size="14" class="upstream-icon" />
             <span class="upstream-label">本机 API</span>
-            <span class="upstream-value mono" :title="upstreamOrigin || '未获取'">
+            <span class="upstream-value" :title="upstreamOrigin || '未获取'">
               {{ upstreamOrigin || "未获取" }}
             </span>
             <span class="source-tag" :class="`is-${upstreamSource}`">{{ sourceLabel }}</span>
@@ -498,6 +498,7 @@ onUnmounted(() => {
   overflow-y: auto;
   background: transparent;
   color: var(--text-primary);
+  font-family: var(--font-body, inherit);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -601,8 +602,10 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-.mono {
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+.remote-view :deep(button),
+.remote-view :deep(input),
+.remote-view :deep(.n-base-selection) {
+  font-family: inherit;
 }
 
 /* 上游 API 来源 */
@@ -868,7 +871,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 0;
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-family: inherit;
   font-size: 22px;
   font-weight: 600;
   letter-spacing: 3px;
