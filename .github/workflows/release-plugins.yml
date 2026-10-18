@@ -156,11 +156,24 @@ jobs:
           echo "published=$published" >> "$GITHUB_ENV"
 
       - name: Regenerate registry.json
-        if: env.published == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node <<'EOF'
           const fs = require('fs');
           const crypto = require('crypto');
+          const { execFileSync } = require('child_process');
+          const releases = new Map();
+          function assetSha(tag, filename, fallback) {
+            if (!releases.has(tag)) {
+              releases.set(tag, JSON.parse(execFileSync('gh', ['api', `repos/wdsj2066/artificer-plugins/releases/tags/${tag}`], { encoding: 'utf8' })));
+            }
+            const asset = releases.get(tag).assets.find(asset => asset.name === filename);
+            if (!asset) throw new Error(`Release asset missing: ${tag}/${filename}`);
+            if (/^sha256:[a-f0-9]{64}$/i.test(asset.digest || '')) return asset.digest.slice(7);
+            if (fallback) return fallback;
+            throw new Error(`Release asset checksum missing: ${tag}/${filename}`);
+          }
           const ids = ['ui-compiler-vue', 'browser-automation', 'channel-feishu', 'channel-wecom', 'token-usage', 'office', 'plugin-builder', 'recipes', 'terminal', 'remote'];
           const previous = JSON.parse(fs.readFileSync('registry.json', 'utf8')).plugins;
           const plugins = ids.map((id) => {
@@ -178,7 +191,7 @@ jobs:
               permissions: manifest.permissions || [],
               repositoryUrl: `https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/${id}`,
               downloadUrl: `https://github.com/wdsj2066/artificer-plugins/releases/download/${tag}/${id}-${version}.zip`,
-              sha256: process.env[`${id}_sha`] || old.sha256 || null
+              sha256: id === 'ui-compiler-vue' ? null : assetSha(tag, `${id}-${version}.zip`, process.env[`${id}_sha`] || (old.version === version ? old.sha256 : null))
             };
             if (id === 'ui-compiler-vue') {
               const platforms = ['linux-x64', 'linux-arm64', 'win32-x64', 'win32-arm64', 'darwin-x64', 'darwin-arm64'];
@@ -187,9 +200,9 @@ jobs:
                 const zip = `dist/${filename}`;
                 return [platform, {
                   downloadUrl: `https://github.com/wdsj2066/artificer-plugins/releases/download/${tag}/${filename}`,
-                  sha256: process.env.compiler_published === 'true' && fs.existsSync(zip)
+                  sha256: assetSha(tag, filename, process.env.compiler_published === 'true' && fs.existsSync(zip)
                     ? crypto.createHash('sha256').update(fs.readFileSync(zip)).digest('hex')
-                    : old.downloads?.[platform]?.sha256 || null
+                    : (old.version === version ? old.downloads?.[platform]?.sha256 : null))
                 }];
               }));
               delete plugin.downloadUrl;
@@ -201,7 +214,6 @@ jobs:
           EOF
 
       - name: Commit registry.json
-        if: env.published == '1'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -210,5 +222,13 @@ jobs:
             echo "registry.json unchanged"
           else
             git commit -m "chore(市场): 同步插件索引 [skip ci]"
-            git push
+            # 打包期间 main 可能收到新提交；保留新提交后重试，不强制覆盖远程。
+            for attempt in 1 2 3; do
+              git pull --rebase origin main
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+            done
+            echo "::error::Unable to push registry after 3 attempts"
+            exit 1
           fi
