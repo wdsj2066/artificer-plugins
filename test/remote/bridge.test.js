@@ -6,7 +6,7 @@ import http from "node:http";
 import { mkdtemp, readdir, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname, basename } from "node:path";
-import { createBridge, allowedPath } from "../../plugins/remote/bridge.js";
+import { createBridge, allowedPath, pageResource } from "../../plugins/remote/bridge.js";
 
 async function fixture(t, options = {}) {
   const data = new Map();
@@ -305,4 +305,17 @@ test("跨域预检允许 ngrok 提示页跳过请求头", async (t) => {
   assert.equal(response.status, 204);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://localhost");
   assert.match(response.headers.get("Access-Control-Allow-Headers"), /ngrok-skip-browser-warning/i);
+});
+
+test("资源分页保留响应结构并在分页前按项目和标题筛选", async (t) => {
+  const payload = { success: true, data: { sessions: [{ id: "a", workspaceId: "one", title: "测试一" }, { id: "b", workspaceId: "two", title: "测试二" }, { id: "c", workspaceId: "one", title: "测试三" }] } };
+  const result = pageResource(payload, "sessions", new URLSearchParams({ remoteLimit: "1", remoteOffset: "1", remoteWorkspace: "one", remoteSearch: "测试" }));
+  assert.deepEqual(result.data.sessions.map(s => s.id), ["c"]);
+  assert.equal(result.data.total, 2);
+  assert.equal(result.data.hasMore, false);
+  const f = await fixture(t, { fetchImpl: async url => { assert.equal(url.searchParams.has("remoteLimit"), false); return Response.json({ success: true, data: { workspaces: [{ id: "1" }, { id: "2" }] } }); } });
+  const headers = await f.pair();
+  const response = await f.call("/api/workspaces?remoteLimit=1&remoteOffset=0", "GET", null, headers);
+  assert.equal(response.data.data.workspaces.length, 1);
+  assert.equal(response.data.data.hasMore, true);
 });

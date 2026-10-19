@@ -11,10 +11,24 @@ import {
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const secret = () => randomBytes(32).toString("base64url");
 const fail = (status, message) => Object.assign(new Error(message), { status });
+// 仅对显式请求分页的列表在桥接层分页，避免向手机传输完整资源。
+export function pageResource(payload, key, params) {
+  const data = payload.data ?? payload;
+  let items = Array.isArray(data) ? data : data[key];
+  if (!Array.isArray(items)) return payload;
+  if (key === "sessions") {
+    const workspace = params.get("remoteWorkspace"), search = params.get("remoteSearch")?.toLowerCase();
+    items = items.filter(item => (!workspace || item.workspaceId === workspace) && (!search || (item.title || "").toLowerCase().includes(search)));
+  }
+  const limit = Math.max(1, Math.min(100, Number(params.get("remoteLimit")) || 30));
+  const offset = Math.max(0, Number(params.get("remoteOffset")) || 0);
+  const result = { ...(Array.isArray(data) ? {} : data), [key]: items.slice(offset, offset + limit), total: items.length, hasMore: offset + limit < items.length };
+  return payload.data ? { ...payload, data: result } : result;
+}
 export function allowedPath(method, path) {
   // 仅代理已审阅业务路由，管理 Remote 的路由不对手机开放。
   if (!["GET", "POST", "PUT", "DELETE"].includes(method)) return false;
-  if (method === "GET" && path === "/api/plugins") return true;
+  if (method === "GET" && path.split("?")[0] === "/api/plugins") return true;
   if (
     ["GET", "PUT"].includes(method) &&
     /^\/api\/plugins\/(?!remote\/)[a-zA-Z0-9_-]+\/settings$/.test(path)
@@ -252,13 +266,23 @@ export function createBridge({
       });
       try {
         entry.streaming = path.split("?")[0] === "/api/chat/stream";
-        const upstream = await fetchImpl(new URL(path, target.origin), {
+        const upstreamUrl = new URL(path, target.origin);
+        const pageKey = req.method === "GET" && upstreamUrl.searchParams.has("remoteLimit")
+          ? ({ "/api/workspaces": "workspaces", "/api/config/tools": "tools", "/api/config/model-providers": "modelProviders", "/api/agents": "agents", "/api/plugins": "plugins", "/api/sessions": "sessions" })[upstreamUrl.pathname] : null;
+        const pageParams = new URLSearchParams(upstreamUrl.searchParams);
+        for (const key of ["remoteLimit", "remoteOffset", "remoteWorkspace", "remoteSearch"]) upstreamUrl.searchParams.delete(key);
+        const upstream = await fetchImpl(upstreamUrl, {
           method: req.method,
           headers,
           body: payload,
           signal: controller.signal,
           redirect: "error",
         });
+        if (pageKey && upstream.ok) {
+          const payload = await upstream.json();
+          json(res, upstream.status, pageResource(payload, pageKey, pageParams));
+          return;
+        }
         res.writeHead(upstream.status, {
           "Content-Type":
             upstream.headers.get("content-type") || "application/json",
