@@ -62,7 +62,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.3/browser-automation-2.4.3.zip",
-      "sha256": "8046a6d3ca4c90c8810a342918620cbecceee9fd7589666fc9d20b86f5ae5575"
+      "sha256": "f6a0e651fdcf86fd89954859e013756616a857765c262f6f3366f6789877df41"
     },
     {
       "id": "channel-feishu",
@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "e97b1e8dae45ad6e08d5321e3d47b99b67f2685bfa6fb5d0da3a60516eec288f"
+      "sha256": "3e76d966e242d5ba7ffe8808451fbb32110f48bd904fd94f135d70799b9dca6c"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "6df749660c7ca8403d20f9944a56f73e671852350c92a0e6a579b70ad72dca98"
+      "sha256": "b934d1fa86f7a2ce108e8ccedb0ee4a2783e3c5cf52db0b48b63961a4c977d54"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "3f83fa2aeccdf53ae9851f1fa933b2b6e61a04f0e0789ae3a2aa3864ec608aa9"
+      "sha256": "69f2f83517bc2bcec210320ee8413e9cbfc8e96b3863ac163340a84ba0b555d1"
     },
     {
       "id": "office",
@@ -124,7 +124,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "42b5cf924ce5c24404b20f7abb2f06c6c52daae5b054b51251e848ccd7cacc2a"
+      "sha256": "94ff72c10c8f803da76fa2725f6f14eb3cba910f38eedd22cd3fc28a557439c2"
     },
     {
       "id": "plugin-builder",
@@ -141,7 +141,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.1/plugin-builder-1.0.1.zip",
-      "sha256": "1ca259c30d3c5bf36afc811c7f0760bbabcb92ebe454f03e971664e18965552d"
+      "sha256": "f14e3091bc1845e072da347d4cedeef37ef88facf4afe8fa024eedfc25f197af"
     },
     {
       "id": "recipes",
@@ -158,7 +158,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "a4b73555c344770da0a5dccab7b40bbe539959b8b66fedf6bd51a565804f4c79"
+      "sha256": "deb7fe728a53f05c5de395a8e2eb51fd494ac212e52a605161bb869d0252df3a"
     },
     {
       "id": "terminal",
@@ -177,13 +177,13 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "14a8e7a5aba19a36cd6829c4b92201cc66003ee5c6bab9a64d8e9053a5238496"
+      "sha256": "f138db106b238c927c5246875ef7ba7c44ea5fcbaf287ff895fdd75af128bb1d"
     },
     {
       "id": "remote",
       "name": "Remote 远程连接",
       "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js"
@@ -195,8 +195,8 @@
         "filesystem"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.8/remote-0.1.8.zip",
-      "sha256": "90a5aee24bad8d24d6f8257e8042d10c998c5f60b8b13d7967967320a29099ff"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.9/remote-0.1.9.zip",
+      "sha256": "5fa5dc564df9cad7f9a811082ed2d33b3f45d5ac932f2816d13138e5d5b3b393"
     }
   ]
 }
