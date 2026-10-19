@@ -303,6 +303,7 @@ test("跨域预检允许 ngrok 提示页跳过请求头", async (t) => {
     },
   });
   assert.equal(response.status, 204);
+  assert.equal(response.headers.get("Access-Control-Max-Age"), "600");
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://localhost");
   assert.match(response.headers.get("Access-Control-Allow-Headers"), /ngrok-skip-browser-warning/i);
 });

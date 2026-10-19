@@ -148,6 +148,7 @@ export function createBridge({
       "Content-Disposition, Content-Type",
     );
     if (req.method === "OPTIONS") {
+      res.setHeader("Access-Control-Max-Age", "600");
       res.writeHead(204);
       return res.end();
     }
