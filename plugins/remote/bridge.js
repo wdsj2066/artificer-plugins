@@ -123,7 +123,7 @@ export function createBridge({
     if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader(
       "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-Artificer-Host",
+      "Content-Type, Authorization, X-Artificer-Host, ngrok-skip-browser-warning",
     );
     res.setHeader(
       "Access-Control-Allow-Methods",

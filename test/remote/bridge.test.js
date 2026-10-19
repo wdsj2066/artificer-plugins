@@ -291,3 +291,18 @@ test("图片和附件通过配对认证转发原始字节与文件名，撤销�
   f.bridge.revoke(f.bridge.status().devices[0].id);
   assert.equal((await fetch(f.base + path, { headers })).status, 401);
 });
+
+test("跨域预检允许 ngrok 提示页跳过请求头", async (t) => {
+  const { base } = await fixture(t);
+  const response = await fetch(`${base}/remote/info`, {
+    method: "OPTIONS",
+    headers: {
+      Origin: "https://localhost",
+      "Access-Control-Request-Method": "GET",
+      "Access-Control-Request-Headers": "ngrok-skip-browser-warning",
+    },
+  });
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://localhost");
+  assert.match(response.headers.get("Access-Control-Allow-Headers"), /ngrok-skip-browser-warning/i);
+});
