@@ -199,6 +199,9 @@ let intersectionObserver = null
 let frameResizeObserver = null
 let visible = true
 let lastActivityId = null
+// 手动打开请求的回执状态：只有调用方显式等待时才需要（activity.requestId）
+let openAckRequestId = ''
+const openedRequestIds = new Set()
 let frameDocumentId = null
 let lastSelectionKey = ''
 
@@ -297,7 +300,11 @@ async function loadStatus() {
   try {
     const payload = await request(`/api/plugins/browser-automation/status?sessionId=${encodeURIComponent(props.sessionId)}`, { cache: 'no-store' })
     const next = payload.data?.status || null
-    if (next?.previewUrl !== status.value?.previewUrl) frameUrl.value = next?.currentUrl || next?.previewUrl || ''
+    if (next?.previewUrl !== status.value?.previewUrl) {
+      // 切换到新预览地址时旧页面的桥接状态失效，等新页面重新 ready 才算加载完成
+      frameReady.value = false
+      frameUrl.value = next?.currentUrl || next?.previewUrl || ''
+    }
     if (next) next.bridgeReady = Boolean(next.bridgeReady && frameReady.value)
     status.value = next
     address.value = next?.upstreamUrl || address.value
@@ -562,15 +569,46 @@ async function clearSelection() {
   } catch {}
 }
 
+function beginOpenAck(requestId) {
+  openAckRequestId = requestId || ''
+}
+
+/**
+ * 回执「面板已展开且预览页可渲染」。
+ * 调用方（start-result.vue）据此结束等待，不要用 activatePanel 的 resolve 当完成信号。
+ */
+function finishOpenAck(extra = {}) {
+  if (!openAckRequestId) return
+  const requestId = openAckRequestId
+  openAckRequestId = ''
+  if (openedRequestIds.size > 50) openedRequestIds.clear()
+  openedRequestIds.add(requestId)
+  window.dispatchEvent(new CustomEvent('artificer:browser-preview-opened', {
+    detail: { requestId, sessionId: props.sessionId, ...extra }
+  }))
+}
+
 function onOpenRequest(event) {
   const activity = event.detail || {}
   if (activity.sessionId !== props.sessionId) return
-  try { sessionStorage.removeItem('artificer_browser_preview_open_request') } catch {}
+  const requestId = activity.requestId || ''
+  // 手动请求会同时经事件与 sessionStorage 消费到达，同一 requestId 只处理一次
+  if (requestId && (requestId === openAckRequestId || openedRequestIds.has(requestId))) return
+  try { sessionStorage.removeItem(OPEN_REQUEST_KEY) } catch {}
+  beginOpenAck(requestId)
   window.dispatchEvent(new CustomEvent('artificer:activate-panel', {
     detail: { region: 'right', panelKey: 'browser-automation/browser', reason: 'browser-preview' }
   }))
   if (activity.upstreamUrl) address.value = activity.upstreamUrl
-  void loadStatus()
+  void loadStatus().then(() => {
+    if (!requestId) return
+    if (!status.value?.previewUrl) {
+      finishOpenAck({ success: false, error: error.value || '没有可用的预览页面' })
+      return
+    }
+    // 页面已加载（同一 URL 再次打开）时不必等 iframe 重新触发 ready
+    if (frameReady.value) finishOpenAck({ success: true, url: frameUrl.value || status.value.previewUrl })
+  })
 }
 
 function consumeOpenRequest() {
@@ -641,6 +679,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (openAckRequestId) finishOpenAck({ success: false, error: '预览面板已关闭' })
   window.removeEventListener('message', onFrameMessage)
   window.removeEventListener('artificer:browser-preview-open', onOpenRequest)
   window.removeEventListener('keydown', onSelectionDialogKeydown)
@@ -665,7 +704,14 @@ watch(frameWrap, (next, previous) => {
   updateFrameViewport()
 }, { flush: 'post' })
 
+// 预览页桥接就绪 = 面板已展开且页面可渲染，此时回执给手动打开请求
+watch(frameReady, ready => {
+  if (!ready || !openAckRequestId) return
+  finishOpenAck({ success: true, url: frameUrl.value || status.value?.previewUrl || '' })
+})
+
 watch(() => props.sessionId, (sessionId, previousSessionId) => {
+  if (openAckRequestId) finishOpenAck({ success: false, error: '会话已切换，预览已取消' })
   const previousToken = status.value?.bridgeToken
   if (previousSessionId && previousToken) {
     void request('/api/plugins/browser-automation/bridge/ready', {
