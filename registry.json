@@ -62,7 +62,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.3/browser-automation-2.4.3.zip",
-      "sha256": "60185c1adfd20d7c5c55a6f5eef21f7cff7a321e89ec191148d0a16bee3d1278"
+      "sha256": "8ab58c67f79f30219df9652cd5e166e28a693e6754e92a93246a80dd77520771"
     },
     {
       "id": "channel-feishu",
@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "a690a8ba477179cfbab31261533bbbceafac76fa12c843ed0ef8f1d97016e906"
+      "sha256": "953131534a623b9e1b08fecbfac49f3d8538310b1d3df313bda1dc777d102c5a"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "1243a28c30d334765dd49054bd6b0ead4c885e74bb20aa6bfd855fba7978dbb2"
+      "sha256": "2d9df2795ca43ab09791e17a40da3b46a01f68c7bb940f50c91374c64e400afd"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "1e8b248e91c12ab43bbe6a784354c7023022cc097ff7cda8843b2ac3dc04c97c"
+      "sha256": "873bf6bfdb4000f54925da80154a642ae28f3f7536a34b02b088192aa6816221"
     },
     {
       "id": "office",
@@ -124,13 +124,13 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "e97f650bd3a228f8a25695d0f9f864652e5b72fe170edd0736092bb07b703e91"
+      "sha256": "2e0adcd9a49859d4bf9c10a1c3840e7558cd7679676e512de49688e0dfcf2b9e"
     },
     {
       "id": "plugin-builder",
       "name": "插件工坊",
       "description": "评估需求可行性，设计并构建受信任运行时插件：支持 Vue UI（状态栏/停靠面板/完整页面）与 Node.js 后端（工具、命令、API 路由、WebSocket、频道、hooks、持久化存储与设置）",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js"
@@ -140,8 +140,8 @@
         "settings"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.1/plugin-builder-1.0.1.zip",
-      "sha256": "65d546e7a2e55c07a3560786727d28413299f9007e2ff640ba557776c80c995d"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.2/plugin-builder-1.0.2.zip",
+      "sha256": "0cb6b879aea94b7e5d589ba57eb3d18be2352ed1cc97cdb30c72eba38f340e1b"
     },
     {
       "id": "recipes",
@@ -158,7 +158,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "eb98b03c64a3a32ce82685fb5cd2bfe37b1736cd238456f34f7c5b61cd25ce15"
+      "sha256": "957aa70c54fe0bde08d0471a86ac71e2e2ec6f46cff5964bd31b123725a09458"
     },
     {
       "id": "terminal",
@@ -177,7 +177,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "f655390d3472ec397006c0dcb82f0d0cb840a13b73085d11d8ca30b225ae1096"
+      "sha256": "1748a1476e3b978e34a39f6187bd6e1fbfce77e0500d16d3c14cc98b2145d61e"
     },
     {
       "id": "remote",
