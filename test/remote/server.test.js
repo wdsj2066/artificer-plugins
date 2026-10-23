@@ -92,4 +92,16 @@ test("从本机管理请求的 Host 头自动获取宿主 API 地址", async (t)
   // 拒绝非本机 Host，避免把上游指向外部地址
   const remote = status.handler(local("evil.example:9999")).data;
   assert.equal(remote.upstream.origin, "http://localhost:9123");
+
+  // 宿主仅监听 IPv6 时，即使管理页面发送 IPv4 Host 也不能切错上游。
+  for (const host of ["127.0.0.1:9090", "localhost:9123", "evil.example:9999"]) {
+    const actual = local(host);
+    actual.req.socket.localAddress = "::1";
+    actual.req.socket.localPort = 45873;
+    assert.equal(status.handler(actual).data.upstream.origin, "http://[::1]:45873");
+  }
+  const ipv4 = local("[::1]:9090");
+  ipv4.req.socket.localAddress = "::ffff:127.0.0.1";
+  ipv4.req.socket.localPort = 45874;
+  assert.equal(status.handler(ipv4).data.upstream.origin, "http://127.0.0.1:45874");
 });
