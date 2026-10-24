@@ -62,7 +62,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.3/browser-automation-2.4.3.zip",
-      "sha256": "bcbccfc3671e1340592823874fcbc0d4712e9c2d44aea73a31150b7b5b249a98"
+      "sha256": "1640ccf65b1ee30e87f76775a316def3c5b3f4a11be034536c49ade03388cb6d"
     },
     {
       "id": "channel-feishu",
@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "a48900db9798cd35716b115c791e0886eb4cc76b9da9e257bc5f6e776cbd8972"
+      "sha256": "7b86d040a270a5430655dabf289f494626414b53dc3ace26949676edf22f518d"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "1951fc560cbb0c8d6e39f4db059a5e56b72e68fda5920caf418801bd68934c55"
+      "sha256": "83e00618190774fb3736d25ea19f81700e8c10765effc2fec9d355e6f172653f"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "71bda3906ea621c381e968e0e40151d92013fde960b04188dbc0f264cee9833e"
+      "sha256": "4e56909fb51d466ee7c2084c3235d8925823e1de4985271d49ecc721cdb78492"
     },
     {
       "id": "office",
@@ -124,13 +124,13 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "8567d9195a208d08fc838634e48847401ffe074813c6c6314e6afa11ddf46285"
+      "sha256": "5797b9ea2ec9d1eb45a6f1dadf323ca07da93d9aa6d1adaacb1441c87f7e4eed"
     },
     {
       "id": "plugin-builder",
       "name": "插件工坊",
       "description": "评估、设计并构建受信任运行时插件：支持 Vue 页面与面板、显式扩展菜单、内置或资源图标，以及 Node.js 工具、命令、API、频道和持久化存储",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js"
@@ -140,8 +140,8 @@
         "settings"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.2/plugin-builder-1.0.2.zip",
-      "sha256": "0cb6b879aea94b7e5d589ba57eb3d18be2352ed1cc97cdb30c72eba38f340e1b"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.3/plugin-builder-1.0.3.zip",
+      "sha256": "d0de6e41b3f386f534cb600f824fb47932d1747c978bb3e9333ec2d9cce8cf4b"
     },
     {
       "id": "recipes",
@@ -158,7 +158,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "69644fb834d67075b2f0ce39456d2f779ab6010d7c587aa5f83a4e9a266dd2b5"
+      "sha256": "99145a10440a599a3c8dc51dad8c0963aeb572772a7a603396442a7ac4ced5b2"
     },
     {
       "id": "terminal",
@@ -177,13 +177,13 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "bf8d41e3335b3d3171466f9de7d6f23ebcb077355f220319d122e85b032e5048"
+      "sha256": "f79808a03f5d17def58b41293bb97687464011b32eaeb69af360fdee93f0b501"
     },
     {
       "id": "remote",
       "name": "Remote 远程连接",
       "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
-      "version": "0.1.11",
+      "version": "0.1.12",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js"
@@ -195,8 +195,8 @@
         "filesystem"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.11/remote-0.1.11.zip",
-      "sha256": "ae5293727783416130c6445f12ed31bc2c1f6ee12a1298ebb7424e8e2d72cc74"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.12/remote-0.1.12.zip",
+      "sha256": "c35387aaa6a4e527ffeabb2c6de50d5b2dfefce99e1a0df33bda6b7cc6c1ca43"
     }
   ]
 }
