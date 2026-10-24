@@ -62,7 +62,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.3/browser-automation-2.4.3.zip",
-      "sha256": "1640ccf65b1ee30e87f76775a316def3c5b3f4a11be034536c49ade03388cb6d"
+      "sha256": "c03c1f9e7d2ff472920d8510ec8ca7716225138b25f797032a43adb712d6b049"
     },
     {
       "id": "channel-feishu",
@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "7b86d040a270a5430655dabf289f494626414b53dc3ace26949676edf22f518d"
+      "sha256": "79fd06af0d99cbaccaa70b06313489d8a7469b6659d431316e0982ec861dcdcb"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "83e00618190774fb3736d25ea19f81700e8c10765effc2fec9d355e6f172653f"
+      "sha256": "596b2938ae8fd4826f93aa70cbea115a1e152de7dbd8371b4e52b09d5bf631a0"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "4e56909fb51d466ee7c2084c3235d8925823e1de4985271d49ecc721cdb78492"
+      "sha256": "a5f9705792ac76acd83835913093bae97a8b0dcd8f72f04f00ee650995445ea1"
     },
     {
       "id": "office",
@@ -124,13 +124,13 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "5797b9ea2ec9d1eb45a6f1dadf323ca07da93d9aa6d1adaacb1441c87f7e4eed"
+      "sha256": "fcdd84eacdb7065cd2f64217acc70740e6e00abc1676c4100baa03e590639a6b"
     },
     {
       "id": "plugin-builder",
       "name": "插件工坊",
       "description": "评估、设计并构建受信任运行时插件：支持 Vue 页面与面板、显式扩展菜单、内置或资源图标，以及 Node.js 工具、命令、API、频道和持久化存储",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js"
@@ -140,8 +140,8 @@
         "settings"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.3/plugin-builder-1.0.3.zip",
-      "sha256": "d0de6e41b3f386f534cb600f824fb47932d1747c978bb3e9333ec2d9cce8cf4b"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.4/plugin-builder-1.0.4.zip",
+      "sha256": "a76cc68de6623babee46e347cac53684aef03a1c914b62d905dd23041fedf62b"
     },
     {
       "id": "recipes",
@@ -158,7 +158,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "99145a10440a599a3c8dc51dad8c0963aeb572772a7a603396442a7ac4ced5b2"
+      "sha256": "bf94f790abd02dee2db9154986a91af50beccb68b48c612ec3711de9ba5aa96d"
     },
     {
       "id": "terminal",
@@ -177,7 +177,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "f79808a03f5d17def58b41293bb97687464011b32eaeb69af360fdee93f0b501"
+      "sha256": "a77c8356fa2303c6228d2c0eb7acb9fdf5d6a01968ede4e58d65ca475aad8df4"
     },
     {
       "id": "remote",
@@ -197,6 +197,41 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.12/remote-0.1.12.zip",
       "sha256": "c35387aaa6a4e527ffeabb2c6de50d5b2dfefce99e1a0df33bda6b7cc6c1ca43"
+    },
+    {
+      "id": "scheduler",
+      "name": "定时任务",
+      "description": "定时执行 Agent 提示词、Shell 命令或 HTTP 请求，支持 cron 表达式与时间间隔调度",
+      "version": "1.0.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js"
+      },
+      "permissions": [
+        "subprocess",
+        "network",
+        "sessions",
+        "workspaces"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/scheduler",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/scheduler-v1.0.1/scheduler-1.0.1.zip",
+      "sha256": "521ebd04ff559b694b4b744843829e3da50333eee7333838c28178758b8b954f"
+    },
+    {
+      "id": "statistics",
+      "name": "统计",
+      "description": "Token 消耗概览、每日活跃热力图与模型用量分析",
+      "version": "1.0.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js"
+      },
+      "permissions": [
+        "usage"
+      ],
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/statistics",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/statistics-v1.0.1/statistics-1.0.1.zip",
+      "sha256": "493b68a9451cf2215129a0887f2739dfff2d236bdb1f7ecbd09e2f5e02d17fa9"
     }
   ]
 }
