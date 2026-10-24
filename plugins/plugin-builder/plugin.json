@@ -1,7 +1,7 @@
 {
   "id": "plugin-builder",
   "name": "插件工坊",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "评估、设计并构建受信任运行时插件：支持 Vue 页面与面板、显式扩展菜单、内置或资源图标，以及 Node.js 工具、命令、API、频道和持久化存储",
   "author": "Artificer",
   "icon": "puzzle",

@@ -84,6 +84,8 @@ artifacts: [{ id, name, icon?, openIn: "panel"|"view"|"window", route?, panelId?
 
 ## 全部 UI 接入点
 
+Artificer 1.1.6 起，后端可用稳定异步宿主服务：`ctx.sessions.exists(id)`、`create(options)`、`delete(id)`、`chat(request)`；`ctx.workspaces.list()`、`create(options)`；`ctx.usage.read(year)`。会话与工作区创建接受对应宿主服务参数，chat 显式传递 approvalMode，用量接口只提供只读聚合结果。使用这些接口时将 engines.artificer 设为 >=1.1.6。定时任务 scheduler 和统计 statistics 已迁入外部插件仓库，保持原插件 ID，不要复制宿主内部模块。
+
 ui 的组件路径必须指向插件内存在的 .vue 文件，不支持目录约定回退。
 - view：完整页面 /plugin/<id>。
 - panels: [{ id, region: "left"|"right"|"bottom", component, title?, icon?, default?, width?, showOnRoutes? }]；面板身份为 pluginId/panelId，activatePanel 使用完整 panelKey。floatingPanels 也可声明浮动面板（内部归并为面板）。

@@ -1,0 +1,58 @@
+{
+  "id": "scheduler",
+  "name": "定时任务",
+  "version": "1.0.1",
+  "description": "定时执行 Agent 提示词、Shell 命令或 HTTP 请求，支持 cron 表达式与时间间隔调度",
+  "author": "Artificer",
+  "icon": "timer",
+  "permissions": ["subprocess", "network", "sessions", "workspaces"],
+  "engines": { "artificer": ">=1.1.6" },
+  "ui": {
+    "view": "view.vue",
+    "navItems": [{ "id": "scheduler", "label": "定时任务", "icon": "timer", "route": "/plugin/scheduler" }],
+    "panels": [{ "region": "right", "component": "panel.vue", "title": "定时任务", "icon": "timer", "default": true }]
+  },
+  "settings": {
+    "title": "定时任务设置",
+    "fields": [
+      {
+        "key": "historyLimit",
+        "label": "执行历史保留条数",
+        "type": "number",
+        "defaultValue": 100,
+        "min": 10,
+        "max": 1000,
+        "description": "每个任务保留的执行历史记录上限"
+      },
+      {
+        "key": "defaultTimeout",
+        "label": "默认执行超时（秒）",
+        "type": "number",
+        "defaultValue": 60,
+        "min": 5,
+        "max": 3600,
+        "description": "Shell 命令与 HTTP 请求的默认超时时间"
+      },
+      {
+        "key": "tickInterval",
+        "label": "调度检查间隔（毫秒）",
+        "type": "number",
+        "defaultValue": 1000,
+        "min": 200,
+        "max": 60000,
+        "description": "调度器检查任务到期的时间间隔"
+      },
+      {
+        "key": "maxConcurrentRuns",
+        "label": "最大并发执行数",
+        "type": "number",
+        "defaultValue": 4,
+        "min": 1,
+        "max": 20,
+        "description": "同时执行的定时任务上限，超过后进入队列"
+      }
+    ]
+  },
+  "entrypoints": { "api": "server.js" },
+  "panelOrder": 30
+}

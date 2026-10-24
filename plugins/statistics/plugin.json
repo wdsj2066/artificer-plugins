@@ -1,0 +1,15 @@
+{
+  "id": "statistics",
+  "name": "统计",
+  "version": "1.0.1",
+  "description": "Token 消耗概览、每日活跃热力图与模型用量分析",
+  "author": "Artificer",
+  "icon": "bar-chart-3",
+  "permissions": ["usage"],
+  "engines": { "artificer": ">=1.1.6" },
+  "entrypoints": { "api": "server.js" },
+  "ui": {
+    "view": "view.vue",
+    "navItems": [{ "id": "statistics", "label": "统计", "icon": "bar-chart-3", "route": "/plugin/statistics" }]
+  }
+}

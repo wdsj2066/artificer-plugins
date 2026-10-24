@@ -23,6 +23,7 @@
   - 禁止使用顶层 `panelDefault` / `panelWidth`，禁止编造 `ui.type`、`ui.entry` 或旧的 `ui.panel` 字段。
 - 插件设置只能写为 `"settings": { "title": "设置", "fields": [...] }`。不要写 `settings` 数组，也不要写 `hasSettings`；是否有设置由 `fields` 自动派生。每个 field 支持 `key`、`label`、`description`、`placeholder`、`defaultValue` 和 `type`；`type` 支持 `text`（默认）、`password`、`number`、`boolean`、`select`（需提供 `options`）。示例：`{ "key": "apiKey", "label": "API Key", "type": "password", "defaultValue": "" }`。
 - 后端 `server.js` 是 ESM，必须导出 `export function register(ctx) { ... }` 或默认导出含 `register` 的对象。不要使用 `require`、`module.exports` 或自定义裸 `handleRequest`。`ctx` 可用的注册与读取接口：
+  - Artificer 1.1.6 起提供异步宿主服务：`ctx.sessions.exists(id)` / `create(options)` / `delete(id)` / `chat(request)`，`ctx.workspaces.list()` / `create(options)`，以及 `ctx.usage.read(year)`。会话执行显式传递 `approvalMode`，用量返回只读聚合数据；使用这些接口时声明 `engines.artificer: ">=1.1.6"`，不要导入宿主存储和 API 服务源码。
   - `ctx.registerTool({ id, name?, description?, parameters?, handler })`：注册 AI 可调用工具。
   - `ctx.registerCommand({ name, description?, usage?, parameters?, handler })`：注册 `/命令`，name 缺 `/` 前缀时自动补齐。
   - `ctx.registerRoute({ method, path, async handler({ query, body }) { ... } })`：注册 HTTP API，路径通常为 `/api/plugins/<pluginId>/...`。
