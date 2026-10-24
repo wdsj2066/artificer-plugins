@@ -17,6 +17,8 @@
   - 停靠面板：`ui.panels[]`，字段为 `id`、`region`、`component`、`title`、`icon`、`default`、`width`（数字或 `"50%"`）、`showOnRoutes`（路由字符串数组），例如 `"ui": { "panels": [{ "id": "example", "region": "bottom", "component": "views/Panel.vue", "title": "标题", "icon": "activity" }] }`；浮动面板用 `ui.floatingPanels[]`（`id` + `component`）。
   - 全局样式：`"styles": ["styles/main.css"]`，前端安装时注入 `<style>`。
   - 声明式扩展：`navItems`（侧边栏菜单项，`{ id, label, icon?, route }`）、`routes`（前端路由注入，`{ path, name, component }`，path 必须以 `/plugin/` 开头）、`shortcuts`（全局快捷键，`{ id, keys, label }`，keys 形如 `mod+shift+t`）、`toolMeta`（工具折叠态 `icon`/`summary`）。
+  - 页面与菜单入口分离：`ui.view` 只声明页面，不会自动加入扩展菜单。用户需要菜单入口时，必须显式声明 `ui.navItems`，例如 `"ui": { "view": "views/App.vue", "navItems": [{ "id": "main", "label": "示例", "icon": "puzzle", "route": "/plugin/example" }] }`，其中 example 必须替换为实际插件 id。辅助页面和已有其他入口的面板不必添加菜单；无菜单的页面仍可从插件详情打开。
+  - 顶层 `icon` 和 `ui.navItems[].icon` 支持内置 Lucide 名称（如 `"puzzle"`）或资源声明 `{"file":"assets/icon.svg"}`。资源路径相对插件目录，支持 SVG / PNG / WebP，单文件最多 1MB；不使用绝对路径、外部 URL、越界路径或手写 `src`。加载失败回退默认图标。其他位置（面板、工具元数据、频道）仍使用图标名。资源必须事先存在；当前源码写入工具不支持图片资源文件，不得只声明不存在的图片或把二进制内容当成文本写入，缺少可用资源时选内置图标。
   - 自定义渲染：`toolRenderers` / `commandResults` / `messageRenderers` / `roundRenderers` / `components`，均为 `{ key: 组件路径 }` 映射。
   - 禁止使用顶层 `panelDefault` / `panelWidth`，禁止编造 `ui.type`、`ui.entry` 或旧的 `ui.panel` 字段。
 - 插件设置只能写为 `"settings": { "title": "设置", "fields": [...] }`。不要写 `settings` 数组，也不要写 `hasSettings`；是否有设置由 `fields` 自动派生。每个 field 支持 `key`、`label`、`description`、`placeholder`、`defaultValue` 和 `type`；`type` 支持 `text`（默认）、`password`、`number`、`boolean`、`select`（需提供 `options`）。示例：`{ "key": "apiKey", "label": "API Key", "type": "password", "defaultValue": "" }`。

@@ -1,7 +1,7 @@
 ---
 id: plugin-builder-integration
 name: 插件底座接入契约
-description: Artificer 1.1.3 六运行域、声明式能力、UI 插槽、通信与资源生命周期的接入指南；创建或修改插件前必读。
+description: Artificer 六运行域、声明式能力、显式菜单入口、插件图标资源、UI 插槽及资源生命周期接入指南；创建或修改插件前必读。
 ---
 
 # 多运行域插件入口
@@ -95,6 +95,8 @@ ui 的组件路径必须指向插件内存在的 .vue 文件，不支持目录�
 - roundRenderers: { roundType: path }，类型 default/plan，props { workMessages, startTime, roundElapsed, isComplete, roundStatus, artifactStats, sessionId, toolDisplayName }；emit copy/regenerate/approvePlan/rejectPlan。roundStatus 包括 checking/starting/reconnecting/streaming/waiting_confirmation/waiting_question/waiting_plan/finalizing/completed/failed/cancelled/interrupted。
 - components: { hostComponentName: path } 整体替换注册的宿主组件，props/events 透传；替换 ChatInput/ChatMessages 需用 defineExpose 暴露调用方需要的方法。
 - navItems: [{ id, label, icon?, route }]；routes: [{ path, name, component }]（path 必须 /plugin/ 开头）。
+- `ui.view` 只声明页面，不会自动加入扩展菜单。要展示入口必须显式声明 `ui.navItems`，默认页面地址为 `/plugin/<pluginId>`；无菜单入口时仍可从插件详情打开。按用户需要配置入口，不要给所有辅助页面和面板机械添加菜单。
+- 顶层 `icon` 和 `ui.navItems[].icon` 兼容 Lucide 名称，也支持 `{ "file": "assets/icon.svg" }`。资源相对插件目录，仅支持 SVG / PNG / WebP，单文件最多 1MB；宿主校验文件并生成资源地址，加载失败回退默认图标。禁止绝对路径、外部 URL、越界路径和手填 `src`；面板、toolMeta、频道等其他位置仍用图标名。资源须事先存在，当前工坊源码写入工具不支持图片资源，不得声明不存在的文件或通过文本写入二进制图片；缺少资源时使用内置图标。
 - shortcuts: [{ id, keys, label }]，触发 artificer:shortcut:<id>；toolMeta: { toolId: { icon?, summary?, summaryExtra? } }，模板支持 {{args.x}}/{{result.x}}。
 - styles: ["styles/main.css"] 注入全局样式；theme: { light?: { cssVars?, overrides? }, dark?: { cssVars?, overrides? } }，cssVars 键以 -- 开头，overrides 是 naive-ui themeOverrides。组件覆盖首个插件胜出；主题深合并后者胜出。ui.compiler 可指定编译器 id。
 

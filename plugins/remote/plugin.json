@@ -1,7 +1,7 @@
 {
   "id": "remote",
   "name": "Remote 远程连接",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
   "author": "Artificer",
   "icon": "smartphone",
@@ -15,7 +15,8 @@
     "api": "server.js"
   },
   "ui": {
-    "view": "view.vue"
+    "view": "view.vue",
+    "navItems": [{ "id": "remote", "label": "Remote 远程连接", "icon": "smartphone", "route": "/plugin/remote" }]
   },
   "settings": {
     "title": "Remote 连接",
