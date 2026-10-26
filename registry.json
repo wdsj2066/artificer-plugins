@@ -46,7 +46,7 @@
       "id": "browser-automation",
       "name": "网页预览与控制",
       "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图",
-      "version": "2.4.3",
+      "version": "2.4.4",
       "author": "Artificer",
       "entrypoints": {
         "bootstrap": "bootstrap.js",
@@ -61,8 +61,8 @@
         "desktop-capture"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.3/browser-automation-2.4.3.zip",
-      "sha256": "c03c1f9e7d2ff472920d8510ec8ca7716225138b25f797032a43adb712d6b049"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.4/browser-automation-2.4.4.zip",
+      "sha256": "a8e48118736d4643e267cc791a0be3ac2b55e9b1f75d010abcb02c5fe2a663c3"
     },
     {
       "id": "channel-feishu",
@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "79fd06af0d99cbaccaa70b06313489d8a7469b6659d431316e0982ec861dcdcb"
+      "sha256": "b6b06b40740343e4cedad175a35362ca7c3ff4ceac1b1c19661a1cdaf6c3803c"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "596b2938ae8fd4826f93aa70cbea115a1e152de7dbd8371b4e52b09d5bf631a0"
+      "sha256": "ea2b5e4fc13ec0df71f29aad425ebbb1590af2e9626d6e876014ae8a0b129253"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "a5f9705792ac76acd83835913093bae97a8b0dcd8f72f04f00ee650995445ea1"
+      "sha256": "34caff5433e6fec83ad885a0a3663dc543a0ca1d0d84a177cf17b8d50b966fbb"
     },
     {
       "id": "office",
@@ -124,7 +124,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "fcdd84eacdb7065cd2f64217acc70740e6e00abc1676c4100baa03e590639a6b"
+      "sha256": "62ef4e3ec9dcca19f0fa3101d60a6a1100d41808ff6d8b898b98271afc7fff8a"
     },
     {
       "id": "plugin-builder",
@@ -158,7 +158,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "bf94f790abd02dee2db9154986a91af50beccb68b48c612ec3711de9ba5aa96d"
+      "sha256": "d6dca7ffc67d94c61c7a5592d74882221e627b9877b9bff3f82816915076b75f"
     },
     {
       "id": "terminal",
@@ -177,7 +177,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "a77c8356fa2303c6228d2c0eb7acb9fdf5d6a01968ede4e58d65ca475aad8df4"
+      "sha256": "53e886990a09a2c7b750b5d037d77aaa2c1f3656aeecc76168beb8884021b45d"
     },
     {
       "id": "remote",
