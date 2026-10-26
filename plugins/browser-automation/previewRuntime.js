@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url'
 const MAX_OUTPUT_BYTES = 64 * 1024
 const MAX_HTML_BYTES = 2 * 1024 * 1024
 const DEFAULT_COMMAND_TIMEOUT = 20_000
+const ATTACH_RETRY_MS = 3_000
 const COMMAND_RETRY_MS = 800
 const MAX_SCREENSHOT_DATA_URL = 7_000_000
 const HTML2CANVAS_SCRIPT = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'node_modules', 'html2canvas', 'dist', 'html2canvas.min.js'), 'utf8')
@@ -28,6 +29,10 @@ function loopbackUrl(input) {
     throw new Error('预览代理只连接本机 HTTP 开发服务（localhost、127.0.0.1 或 ::1）。')
   }
   if (url.username || url.password) throw new Error('开发服务地址不能包含用户名或密码。')
+  // 面板“刷新页面”会在地址上追加以 _artificer_reload 开头的时间戳；
+  // 它只用于让 iframe 重新请求，不能进入上游地址，否则每次刷新都会产生新 URL，
+  // 让预览地址漂移并反复重载。
+  url.searchParams.delete('_artificer_reload')
   return url
 }
 
@@ -328,18 +333,22 @@ export class BrowserPreviewRuntime {
   _appendOutput(state, chunk) {
     state.output = (state.output + stripAnsi(String(chunk))).slice(-MAX_OUTPUT_BYTES)
     const match = state.output.match(/https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/[^\s]*)?/i)
-    if (match && !state.upstreamUrl && !state.connectingUrl) {
-      const candidate = match[0].replace(/[),.;]+$/, '')
-      state.connectingUrl = candidate
-      void this.attach(state.sessionId, candidate)
-        .catch(error => { state.output += `\n预览连接失败：${error.message}` })
-        .finally(() => { state.connectingUrl = '' })
-    }
+    if (!match || state.upstreamUrl || state.connectingUrl) return
+    const candidate = match[0].replace(/[),.;]+$/, '')
+    // 开发服务反复输出同一个监听地址时（重启或日志重复打印）退避一段时间再连，
+    // 否则每次都会关闭并重建代理、分配新端口，预览 iframe 就会不停重载。
+    const now = Date.now()
+    if (state.lastAttachCandidate === candidate && now - (state.lastAttachAt || 0) < ATTACH_RETRY_MS) return
+    state.lastAttachCandidate = candidate
+    state.lastAttachAt = now
+    state.connectingUrl = candidate
+    void this.attach(state.sessionId, candidate)
+      .catch(error => { state.output += `\n预览连接失败：${error.message}` })
+      .finally(() => { state.connectingUrl = '' })
   }
 
   async start(sessionId, { command = 'npm run dev', cwd, workspaceRoot, timeoutMs = 45_000 } = {}) {
     if (!workspaceRoot || !existsSync(workspaceRoot)) throw new Error('当前会话没有可用的工作区目录。')
-    await this.stop(sessionId)
     const root = realpathSync(workspaceRoot)
     const requestedCwd = path.resolve(root, cwd || '.')
     const workingDirectory = realpathSync(requestedCwd)
@@ -349,6 +358,16 @@ export class BrowserPreviewRuntime {
     }
     if (typeof command !== 'string' || !command.trim()) throw new Error('启动命令不能为空。')
 
+    const running = this.sessions.get(sessionId)
+    // 同一会话、同一目录和同一命令的开发服务仍在运行时直接复用。
+    // 重复调用启动工具会杀掉进程再拉起，新进程重新占用端口后代理也要重建，
+    // 预览 iframe 就会被反复重载。
+    if (running?.process && running.process.exitCode == null && !running.process.killed
+      && running.cwd === workingDirectory && running.command === command.trim() && running.previewUrl) {
+      return { ...this.getStatus(sessionId), output: running.output }
+    }
+
+    await this.stop(sessionId)
     const state = this._session(sessionId)
     state.command = command.trim()
     state.cwd = workingDirectory
@@ -587,11 +606,15 @@ export class BrowserPreviewRuntime {
         state.html = source.slice(0, MAX_HTML_BYTES)
         state.htmlTruncated = source.length > MAX_HTML_BYTES
         const script = '<script src="/__artificer_browser_bridge.js"></script>'
-        const transformed = source
+        const stripped = source
           .replace(/<meta\b[^>]*http-equiv=["']?content-security-policy["']?[^>]*>/ig, '')
-          .replace(/<head\b[^>]*>/i, match => `${match}${script}`)
-          .replace(/<\/head\s*>/i, match => `${match}`)
-        const body = transformed === source ? `${script}${source}` : transformed
+        // 有 head 时插到 head 开头，没有 head 时插到 body 开头；
+        // 直接拼在文档最前面会跑到 doctype 之前，改变文档模式。
+        const body = /<head\b[^>]*>/i.test(stripped)
+          ? stripped.replace(/<head\b[^>]*>/i, match => `${match}${script}`)
+          : /<body\b[^>]*>/i.test(stripped)
+            ? stripped.replace(/<body\b[^>]*>/i, match => `${match}${script}`)
+            : `${script}${stripped}`
         responseHeaders['content-length'] = Buffer.byteLength(body)
         res.writeHead(response.statusCode || 200, response.statusMessage, responseHeaders)
         res.end(body)
@@ -621,7 +644,11 @@ export class BrowserPreviewRuntime {
       upstreamSocket.pipe(socket)
       socket.pipe(upstreamSocket)
     })
-    upstreamSocket.on('error', () => socket.destroy())
+    upstreamSocket.on('error', error => {
+      // 热更新连接失败会让 dev server 的 HMR 断线，页面只能整页重载；把原因写进输出便于排查。
+      state.output = `${state.output}\n热更新连接失败：${error.message}`.slice(-MAX_OUTPUT_BYTES)
+      socket.destroy()
+    })
     socket.on('error', () => upstreamSocket.destroy())
   }
 
