@@ -1,0 +1,53 @@
+{
+  "id": "context-inspector",
+  "name": "上下文查看",
+  "version": "0.1.0",
+  "description": "查看每次 AI 请求的上下文占用、分类构成与提示词缓存命中情况",
+  "author": "Artificer",
+  "icon": "gauge",
+  "entrypoints": {
+    "api": "server.js"
+  },
+  "ui": {
+    "view": "views/App.vue",
+    "navItems": [
+      {
+        "id": "main",
+        "label": "上下文查看",
+        "icon": "gauge",
+        "route": "/plugin/context-inspector"
+      }
+    ]
+  },
+  "settings": {
+    "title": "上下文查看设置",
+    "fields": [
+      {
+        "key": "defaultLimit",
+        "label": "默认上下文上限（token）",
+        "description": "无法按模型匹配时使用的上下文窗口大小",
+        "type": "number",
+        "defaultValue": 128000
+      },
+      {
+        "key": "modelLimits",
+        "label": "按模型上限",
+        "description": "每行一条，格式 模型关键字=上限，例如 deepseek=128000 或 gpt-4o=128k",
+        "type": "text",
+        "defaultValue": ""
+      },
+      {
+        "key": "keep",
+        "label": "每个会话保留的请求数",
+        "type": "number",
+        "defaultValue": 10
+      }
+    ]
+  },
+  "permissions": [
+    "hooks",
+    "routes",
+    "settings",
+    "storage"
+  ]
+}
