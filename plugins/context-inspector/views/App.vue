@@ -594,7 +594,7 @@ onUnmounted(() => {
 }
 
 .ci-inner {
-  max-width: 1180px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
