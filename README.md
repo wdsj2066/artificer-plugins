@@ -16,6 +16,7 @@ A single repository can maintain multiple plugins, but each plugin is published,
 - `ui-compiler-vue`
 - `scheduler`
 - `statistics`
+- `session-search`
 
 Backend plugins must be manually reviewed to confirm that their declared `permissions` match their actual capabilities before installation or release.
 
@@ -36,6 +37,7 @@ Each plugin must be packaged into an independent ZIP file and uploaded to a GitH
 .\scripts\package-plugin.ps1 -PluginId ui-compiler-vue
 .\scripts\package-plugin.ps1 -PluginId scheduler
 .\scripts\package-plugin.ps1 -PluginId statistics
+.\scripts\package-plugin.ps1 -PluginId session-search
 ```
 
 The package script creates `dist/<PluginId>-<version>.zip`. Each archive has exactly one top-level directory named after its plugin ID and prints its SHA-256 hash.

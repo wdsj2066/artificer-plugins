@@ -1,0 +1,47 @@
+{
+  "id": "session-search",
+  "name": "会话全文搜索",
+  "version": "0.1.0",
+  "description": "为历史会话建立本地全文索引，跨会话搜索关键词、定位消息并一键跳转；同时向 Agent 提供会话检索工具",
+  "author": "Artificer",
+  "icon": "search",
+  "engines": { "artificer": ">=1.1.6" },
+  "entrypoints": { "api": "server.js" },
+  "permissions": [
+    "读取本地会话数据库",
+    "写入插件本地索引",
+    "本地 HTTP 路由"
+  ],
+  "settings": {
+    "title": "会话搜索设置",
+    "fields": [
+      {
+        "key": "includeToolResults",
+        "label": "索引工具执行结果",
+        "type": "boolean",
+        "defaultValue": false,
+        "description": "开启后可搜索工具输出与命令结果，索引体积会明显增大"
+      },
+      {
+        "key": "maxResults",
+        "label": "单次返回结果数",
+        "type": "number",
+        "defaultValue": 30,
+        "description": "页面搜索默认返回上限，范围 10-100"
+      },
+      {
+        "key": "autoIndex",
+        "label": "启用后自动建索引",
+        "type": "boolean",
+        "defaultValue": true,
+        "description": "关闭后仅在你手动点击重建索引时更新"
+      }
+    ]
+  },
+  "ui": {
+    "view": "views/App.vue",
+    "navItems": [
+      { "id": "session-search", "label": "会话全文搜索", "icon": "search", "route": "/plugin/session-search" }
+    ]
+  }
+}
