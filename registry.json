@@ -45,8 +45,8 @@
     {
       "id": "browser-automation",
       "name": "网页预览与控制",
-      "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图",
-      "version": "2.4.4",
+      "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图；截图可临时提供给视觉模型，自动化操作在预览中显示指针",
+      "version": "2.5.0",
       "author": "Artificer",
       "entrypoints": {
         "bootstrap": "bootstrap.js",
@@ -61,8 +61,8 @@
         "desktop-capture"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.4.4/browser-automation-2.4.4.zip",
-      "sha256": "a8e48118736d4643e267cc791a0be3ac2b55e9b1f75d010abcb02c5fe2a663c3"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.5.0/browser-automation-2.5.0.zip",
+      "sha256": "63eb33f504d9ec2670ce840df08278aa1b2f9abf9c2dd1de774a4f4c14178880"
     },
     {
       "id": "channel-feishu",
@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "616e2159a379f319a6e8a9c38c7dffea0d229f03faaf721cf006c3162db2a908"
+      "sha256": "cfc4ba1769e05438f9ced443146c15d1becafa319347d98c01828f4d04aee2c4"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "619d14686e96ac03bb060ec19878965e98b30e2dfbfa1cdd2a84ed172cd484a3"
+      "sha256": "cce4b4ffce7a7c63a98d2f31a6f65476be8a41f52acf41c44281d3b2a5109fbd"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "05080ee7e98974da29d9908edf038e4845be1576a3dfdbfa6d2b2e2cf2883e94"
+      "sha256": "368a5eeaa387fa7bfe75b892363550e66353a624440fff3cbc0b59390549a248"
     },
     {
       "id": "context-inspector",
@@ -127,7 +127,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/context-inspector",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/context-inspector-v0.1.0/context-inspector-0.1.0.zip",
-      "sha256": "338ad73145986b02a7511e05efbf58cfd9413875cfc36e9a352beed2ead4069e"
+      "sha256": "91cb18b3b6b57403176d418be76b4c8969c92d87f6f410f5d88b38bd4529d64c"
     },
     {
       "id": "office",
@@ -143,7 +143,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "5377534833f19de02f0136317fd347f7534b73abdbcf35c2c9118775f02194eb"
+      "sha256": "0d0b22a807942525c641921d692dac90881854006f1eda17bf9539eeac77692e"
     },
     {
       "id": "plugin-builder",
@@ -177,7 +177,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "3d0b4725cf8fd2d788119be85eaa258714d09844fea68dfb63b6128e578198a9"
+      "sha256": "0b5053a20b582f3eab26752ea96c0f71bb207326720fa2010811d5c17390c5d3"
     },
     {
       "id": "terminal",
@@ -196,7 +196,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "af9996f9f91ef9b6146b7bd32464bae2e5e2d0b16c78cec3ee7cfdb609c47e7f"
+      "sha256": "4caa717a60c3ef12e1e85223c027a164463d4342785d530a374760cde2aa2a88"
     },
     {
       "id": "remote",
