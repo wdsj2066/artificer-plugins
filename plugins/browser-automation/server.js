@@ -1,5 +1,10 @@
-import { BrowserPreviewRuntime } from './previewRuntime.js'
-import { CdpAutomationRuntime } from './cdpRuntime.js'
+// 跟随入口模块的热重载版本刷新内部依赖，避免重载后继续使用旧实现。
+const moduleVersion = new URL(import.meta.url).search
+const [{ BrowserPreviewRuntime }, { CdpAutomationRuntime }, { addScreenshotToModelMessages }] = await Promise.all([
+  import(`./previewRuntime.js${moduleVersion}`),
+  import(`./cdpRuntime.js${moduleVersion}`),
+  import(`./screenshotModelContext.js${moduleVersion}`)
+])
 
 let runtime = null
 let cdp = null
@@ -16,6 +21,7 @@ export function register(ctx) {
   runtime = new BrowserPreviewRuntime()
   cdp = new CdpAutomationRuntime({ rpc: ctx.rpc, previewRuntime: runtime, logger: ctx.logger })
   cdp.start()
+  ctx.host.on('buildMessages', (runContext, messages) => addScreenshotToModelMessages(runtime, runContext, messages), { type: 'pipeline', priority: -100 })
 
   ctx.registerTool({
     id: 'browserStartPreview',
@@ -91,7 +97,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserScreenshot',
     name: '网页截图',
-    description: '截取当前预览 iframe 中的网页当前视口或完整页面。截图会显示在工具结果卡片中，可另存为 JPG；它不包含 Artificer 外层界面。',
+    description: '截取当前预览网页。根据截图确定点击位置时优先使用 viewport；截图像素坐标需按 cssWidth/width、cssHeight/height 换算为 CSS 像素。完整页面截图还需减去 scrollX/scrollY 才能得到视口坐标。',
     parameters: {
       type: 'object',
       properties: { mode: { type: 'string', enum: ['viewport', 'fullPage'], description: 'viewport 截取当前可视区域；fullPage 截取完整网页，默认 viewport' } }
@@ -104,7 +110,10 @@ export function register(ctx) {
         const screenshotId = runtime.storeScreenshot(sessionId, screenshot)
         return {
           success: true, sessionId, screenshotId, title: screenshot.title, url: screenshot.url,
-          width: screenshot.width, height: screenshot.height, mode: screenshot.mode
+          width: screenshot.width, height: screenshot.height, cssWidth: screenshot.cssWidth, cssHeight: screenshot.cssHeight,
+          viewportWidth: screenshot.viewportWidth, viewportHeight: screenshot.viewportHeight,
+          scrollX: screenshot.scrollX, scrollY: screenshot.scrollY, mode: screenshot.mode,
+          imageAvailableToModel: executionContext?.runContext?.state?.modelCapabilities?.support_image === true
         }
       } catch (error) { return failure(error, { sessionId }) }
     }
@@ -201,7 +210,7 @@ export function register(ctx) {
   ctx.registerTool({
     id: 'browserMouse',
     name: '控制预览页鼠标',
-    description: '按预览 iframe 的 CSS 像素坐标移动 Chromium 鼠标、单击、双击、右击或滚动。滚动可只传 action 和 deltaY；其他动作需要 x/y。',
+    description: '按预览网页视口的 CSS 像素坐标移动鼠标、单击、双击、右击或滚动，预览面板会显示模拟指针。可先用 browserScreenshot 截取 viewport，并按截图返回的尺寸换算坐标；视觉模型可直接查看截图；不支持视觉的模型可使用 browserInspect 辅助定位。滚动只需 action 和 deltaY；其他动作需要 x/y。',
     parameters: {
       type: 'object',
       properties: {

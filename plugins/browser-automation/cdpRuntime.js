@@ -386,6 +386,46 @@ export class CdpAutomationRuntime {
     return { selection }
   }
 
+  // 仅在自动化动作期间转发实际鼠标事件，指针绘制在宿主面板而非被测页面中。
+  async _withPointerFeedback(target, sessionId, operation) {
+    let installed = false
+    try {
+      await target.frame.evaluate(({ token }) => {
+        const key = '__artificerPointerFeedbackCleanup'
+        window[key]?.()
+        const forward = event => {
+          if (!event.isTrusted) return
+          window.parent.postMessage({
+            source: 'artificer-browser-preview', token, type: 'automation-pointer',
+            x: event.clientX, y: event.clientY,
+            action: event.type === 'mousedown' ? 'click' : 'move', button: event.button
+          }, '*')
+        }
+        const cleanup = () => {
+          window.removeEventListener('mousemove', forward, true)
+          window.removeEventListener('mousedown', forward, true)
+          clearTimeout(timer)
+          if (window[key] === cleanup) delete window[key]
+        }
+        window.addEventListener('mousemove', forward, true)
+        window.addEventListener('mousedown', forward, true)
+        const timer = setTimeout(cleanup, 30000)
+        window[key] = cleanup
+      }, { token: target.status.bridgeToken })
+      installed = true
+    } catch (error) {
+      this.logger.warn?.(`无法显示模拟鼠标：${error.message}`)
+    }
+    try {
+      return await operation()
+    } finally {
+      // 原生对话框会暂停页面脚本；让页面内的定时器在对话框关闭后清理。
+      if (installed && !this._pendingDialogs(sessionId).length) {
+        try { await target.frame.evaluate(() => window.__artificerPointerFeedbackCleanup?.()) } catch {}
+      }
+    }
+  }
+
   async act(sessionId, args = {}) {
     const target = await this._findPreview(sessionId)
     const selector = String(args.selector || '').trim()
@@ -393,14 +433,14 @@ export class CdpAutomationRuntime {
     const locator = target.frame.locator(selector).setTimeout(ACTION_TIMEOUT_MS)
     const action = args.action
     if (action === 'click' || action === 'doubleClick') {
-      await locator.click({ clickCount: action === 'doubleClick' ? 2 : 1 })
+      await this._withPointerFeedback(target, sessionId, () => locator.click({ clickCount: action === 'doubleClick' ? 2 : 1 }))
     } else if (action === 'type') {
       await locator.fill(String(args.value ?? ''))
     } else if (action === 'select') {
       const selected = await target.frame.select(selector, String(args.value ?? ''))
       return { action, selector, selected }
     } else if (action === 'hover') {
-      await locator.hover()
+      await this._withPointerFeedback(target, sessionId, () => locator.hover())
     } else if (action === 'press') {
       const element = await target.frame.waitForSelector(selector, { visible: true, timeout: ACTION_TIMEOUT_MS })
       if (!element) throw new Error(`未找到可见元素：${selector}`)
@@ -430,20 +470,24 @@ export class CdpAutomationRuntime {
     const frameElement = await target.frame.frameElement()
     const bounds = await frameElement.evaluate(element => {
       const rect = element.getBoundingClientRect()
-      return { x: rect.x + element.clientLeft, y: rect.y + element.clientTop }
+      const scaleX = rect.width / element.offsetWidth || 1
+      const scaleY = rect.height / element.offsetHeight || 1
+      return { x: rect.x + element.clientLeft * scaleX, y: rect.y + element.clientTop * scaleY, scaleX, scaleY }
     })
-    const point = { x: bounds.x + x, y: bounds.y + y }
+    const point = { x: bounds.x + x * bounds.scaleX, y: bounds.y + y * bounds.scaleY }
     const element = await target.frame.evaluate(({ x: pointX, y: pointY }) => {
       const node = document.elementFromPoint(pointX, pointY)
       if (!node) return null
       return { tag: node.tagName.toLowerCase(), text: (node.innerText || node.getAttribute('aria-label') || '').trim().slice(0, 200) }
     }, { x, y })
     if (!element) throw new Error('坐标上没有网页元素。')
-    if (action === 'move') await target.page.mouse.move(point.x, point.y)
-    else if (action === 'click') await target.page.mouse.click(point.x, point.y)
-    else if (action === 'doubleClick') await target.page.mouse.click(point.x, point.y, { clickCount: 2 })
-    else if (action === 'rightClick') await target.page.mouse.click(point.x, point.y, { button: 'right' })
-    else throw new Error('鼠标 action 仅支持 move、click、doubleClick、rightClick 或 scroll。')
+    await this._withPointerFeedback(target, sessionId, async () => {
+      if (action === 'move') await target.page.mouse.move(point.x, point.y)
+      else if (action === 'click') await target.page.mouse.click(point.x, point.y)
+      else if (action === 'doubleClick') await target.page.mouse.click(point.x, point.y, { clickCount: 2 })
+      else if (action === 'rightClick') await target.page.mouse.click(point.x, point.y, { button: 'right' })
+      else throw new Error('鼠标 action 仅支持 move、click、doubleClick、rightClick 或 scroll。')
+    })
     return { action, x, y, element, nativeDialogs: this._pendingDialogs(sessionId) }
   }
 

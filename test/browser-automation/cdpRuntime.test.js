@@ -127,6 +127,19 @@ describe('CDP automation runtime', () => {
     expect(previewRuntime.recordSelection).toHaveBeenCalledWith('chat-1', 'token', result.selection)
   })
 
+  it('maps viewport coordinates through a scaled iframe and keeps pointer feedback optional', async () => {
+    const { runtime, frame, page } = fixture()
+    frame.frameElement = vi.fn(async () => ({ evaluate: vi.fn(async () => ({ x: 20, y: 30, scaleX: 0.5, scaleY: 0.5 })) }))
+    frame.evaluate.mockImplementation(async (fn) => {
+      if (String(fn).includes('elementFromPoint')) return { tag: 'button', text: '提交' }
+      if (String(fn).includes('__artificerPointerFeedbackCleanup')) throw new Error('页面暂不可访问')
+    })
+    await expect(runtime.mouse('chat-1', { action: 'click', x: 100, y: 80 })).resolves.toMatchObject({
+      x: 100, y: 80, element: { tag: 'button' }
+    })
+    expect(page.mouse.click).toHaveBeenCalledWith(70, 70)
+  })
+
   it('reports a missing preview frame instead of hanging', async () => {
     const { runtime, page, frame } = fixture()
     frame.url = () => 'http://localhost:5173/'

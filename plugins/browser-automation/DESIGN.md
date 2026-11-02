@@ -32,7 +32,8 @@ Agent 工具
 4. API 插件通过主应用令牌保护的 RPC 向 Electron 插件请求 CDP browser URL。Puppeteer Core 连接后按会话代理 origin 找到对应 BrowserWindow 里的 iframe frame。Agent 的页面检查、HTML 读取、选择器操作和坐标鼠标操作直接运行在该 frame，不再靠面板轮询或手工拼有限控件列表。
 5. Puppeteer 监听页面的原生 dialog 事件。browserInspect 返回普通 DOM 模态框、可见正文、语义控件和未处理的 JS 原生对话框；Agent 使用 browserResolveDialog 显式接受或取消 alert、confirm 和 prompt。接受操作受 sensitive 工具确认流程保护。
 6. 网页截图保留当前视口/完整页面功能；全桌面截图由 browserDesktopScreenshot 调用 Electron 主进程 desktopCapturer，默认捕获主显示器，也可先用 browserListScreens 选择其他显示器。截图缩放到最长边 3200 像素后编码为 JPG。
-7. 用户框选功能仍使用页面桥接脚本：鼠标高亮目标、生成脱敏元素详情并写入插件状态。Agent 工具的 DOM 检查与操作不依赖该桥接。截图图像使用短期缓存 ID，避免 Base64 图像进入对话记录。
+7. 用户框选功能仍使用页面桥接脚本：鼠标高亮目标、生成脱敏元素详情并写入插件状态。Agent 工具的 DOM 检查与操作不依赖该桥接。截图图像使用短期缓存 ID，避免 Base64 图像进入对话记录；支持视觉的模型在截图工具调用后的模型请求中临时收到图像，可换算 CSS 视口坐标并使用 browserMouse。
+8. 自动化鼠标事件在操作期间转发给面板，指针和点击反馈绘制在 iframe 外，跟随预览缩放且不会影响网页事件或网页截图。
 ## 工具接口
 
 | 工具 | 用途 |

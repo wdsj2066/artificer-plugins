@@ -195,7 +195,7 @@ function bridgeScript(token) {
             dataUrl = canvas.toDataURL('image/jpeg', 0.78);
           }
           if (dataUrl.length > MAX_SCREENSHOT_DATA_URL) throw new Error('网页截图过大，请改截当前视口。');
-          return { dataUrl, width: canvas.width, height: canvas.height, mode: fullPage ? 'fullPage' : 'viewport', url: location.href, title: document.title };
+          return { dataUrl, width: canvas.width, height: canvas.height, cssWidth: width, cssHeight: height, viewportWidth: window.innerWidth, viewportHeight: window.innerHeight, scrollX: window.scrollX, scrollY: window.scrollY, mode: fullPage ? 'fullPage' : 'viewport', url: location.href, title: document.title };
         }
         case 'inspect': {
           const visible = element => !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);

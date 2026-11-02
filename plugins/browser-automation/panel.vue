@@ -51,6 +51,10 @@
           sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin"
           allow="clipboard-read; clipboard-write; fullscreen"
         ></iframe>
+        <div v-if="automationPointer" class="automation-pointer" :style="automationPointerStyle" aria-hidden="true">
+          <span v-if="automationPointer.clickId" :key="automationPointer.clickId" class="automation-pointer-pulse"></span>
+          <svg viewBox="0 0 24 28" width="24" height="28"><path d="M2 1.5 3.8 22l5.2-5 3.4 8.7 3.6-1.5-3.5-8.6 7.1-.3Z" fill="#fff" stroke="#16181c" stroke-width="1.8" stroke-linejoin="round" /></svg>
+        </div>
       </div>
     </div>
 
@@ -164,6 +168,9 @@ const root = ref(null)
 const frame = ref(null)
 const frameWrap = ref(null)
 const frameUrl = ref('')
+const automationPointer = ref(null)
+let pointerHideTimer = null
+let pointerClickId = 0
 const initialViewport = {
   width: Math.max(1, window.innerWidth),
   height: Math.max(1, window.innerHeight)
@@ -224,7 +231,28 @@ const frameStageStyle = computed(() => ({
   height: `${viewportSize.value.height}px`,
   transform: `translate(-50%, -50%) scale(${previewScale.value})`
 }))
+const automationPointerStyle = computed(() => ({
+  left: `${automationPointer.value?.x || 0}px`,
+  top: `${automationPointer.value?.y || 0}px`,
+  transform: `scale(${1 / Math.max(previewScale.value, 0.01)})`
+}))
 let selectionDialogDrag = null
+
+function clearAutomationPointer() {
+  clearTimeout(pointerHideTimer)
+  pointerHideTimer = null
+  automationPointer.value = null
+}
+
+function showAutomationPointer(data) {
+  if (!Number.isFinite(data.x) || !Number.isFinite(data.y)) return
+  automationPointer.value = {
+    x: data.x, y: data.y,
+    clickId: data.action === 'click' ? ++pointerClickId : 0
+  }
+  clearTimeout(pointerHideTimer)
+  pointerHideTimer = setTimeout(clearAutomationPointer, 2500)
+}
 
 function readViewportMode() {
   try { return localStorage.getItem('artificer-browser-preview-viewport-mode') === 'panel' ? 'panel' : 'initial' }
@@ -301,6 +329,7 @@ async function loadStatus() {
     const payload = await request(`/api/plugins/browser-automation/status?sessionId=${encodeURIComponent(props.sessionId)}`, { cache: 'no-store' })
     const next = payload.data?.status || null
     if (next?.previewUrl !== status.value?.previewUrl) {
+      clearAutomationPointer()
       // 切换到新预览地址时旧页面的桥接状态失效，等新页面重新 ready 才算加载完成
       frameReady.value = false
       frameUrl.value = next?.currentUrl || next?.previewUrl || ''
@@ -416,10 +445,13 @@ async function onFrameMessage(event) {
   } catch { return }
   if (data?.source !== 'artificer-browser-preview' || data.token !== status.value.bridgeToken) return
 
-  if (data.type === 'unloading') {
+  if (data.type === 'automation-pointer') {
+    showAutomationPointer(data)
+  } else if (data.type === 'unloading') {
     if (frameDocumentId && data.documentId !== frameDocumentId) return
     frameDocumentId = null
     frameReady.value = false
+    clearAutomationPointer()
     status.value.bridgeReady = false
     try {
       await request('/api/plugins/browser-automation/bridge/ready', {
@@ -684,6 +716,7 @@ onUnmounted(() => {
   window.removeEventListener('artificer:browser-preview-open', onOpenRequest)
   window.removeEventListener('keydown', onSelectionDialogKeydown)
   endSelectionDialogDrag()
+  clearAutomationPointer()
   document.removeEventListener('visibilitychange', updatePolling)
   window.removeEventListener('resize', updateFrameViewport)
   intersectionObserver?.disconnect()
@@ -719,6 +752,7 @@ watch(() => props.sessionId, (sessionId, previousSessionId) => {
       body: JSON.stringify({ sessionId: previousSessionId, token: previousToken, ready: false })
     }).catch(() => {})
   }
+  clearAutomationPointer()
   status.value = null
   frameUrl.value = ''
   bridgeError.value = ''
@@ -756,6 +790,11 @@ button:disabled { opacity:.45; cursor:default; }
 .browser-frame-stage { position:absolute; top:50%; left:50%; max-width:none; border-radius:var(--radius-md,8px); overflow:hidden; transform-origin:center; box-shadow:0 2px 18px rgba(0,0,0,.18); }
 .browser-frame { display:block; width:100%; height:100%; border:0; background:var(--bg-primary); }
 .browser-frame:focus { outline:none !important; }
+.automation-pointer { position:absolute; z-index:2; width:24px; height:28px; pointer-events:none; transform-origin:0 0; filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)); }
+.automation-pointer svg { display:block; position:relative; }
+.automation-pointer-pulse { position:absolute; left:2px; top:2px; width:18px; height:18px; margin:-9px; border:2px solid #1677ff; border-radius:50%; animation:automation-pointer-click .45s ease-out forwards; }
+@keyframes automation-pointer-click { from { opacity:.9; transform:scale(.35); } to { opacity:0; transform:scale(2); } }
+@media (prefers-reduced-motion: reduce) { .automation-pointer-pulse { animation-duration:.01ms; } }
 .browser-empty { display:flex; flex:1; min-height:200px; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:20px; color:var(--text-muted); text-align:center; }
 .browser-empty strong { color:var(--text-primary); font-size:13px; }
 .browser-empty p { max-width:360px; margin:0; font-size:12px; line-height:1.6; }
