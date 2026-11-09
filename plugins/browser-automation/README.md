@@ -1,4 +1,4 @@
-# 网页预览与控制
+﻿# 网页预览与控制
 
 Artificer 外置插件：在右侧信息面板中预览本机网页，并通过 Chromium CDP 提供 DOM 检查、元素操作和浏览器原生确认框处理。支持网页截图与整个屏幕截图。框选元素的详情使用独立悬浮窗展示；插件不修改底部聊天输入栏的 UI。
 
@@ -7,9 +7,10 @@ Artificer 外置插件：在右侧信息面板中预览本机网页，并通过 
 1. 首次安装或启用插件后，重启 Artificer 一次。插件的 `bootstrap` 入口会在 Electron 启动前将 Chromium CDP 服务绑定到 `127.0.0.1`，并让 Chromium 随机分配端口。
 2. 在聊天中让 Agent 调用“启动网页预览”。可直接传 HTML 文件路径，也可启动开发服务；默认执行 `npm run dev`。插件会从开发服务输出中识别本机 URL，并自动切换到右侧信息面板的“网页预览”页签。也可在面板中连接已运行的 `http://localhost:<端口>/` 地址。
 3. 信息面板中的页面可直接点击和输入；开发服务器模式会转发热更新，直接 HTML 模式可手动刷新。相机按钮截取 iframe 网页，显示器按钮截取整个主屏幕；两种截图都可以预览并保存为 JPG。
-4. Agent 的 `browserInspect`、`browserReadHtml`、`browserSelectElement`、`browserAct` 和 `browserMouse` 通过 Puppeteer Core 连接 Artificer Chromium 的 CDP browser endpoint，再按预览代理 origin 找到当前会话的 iframe。读取和交互面向 Chromium 的 frame，避免把页面转换成一组不完整的自制结构。
-5. `browserInspect` 会返回实际 DOM、HTML、可访问性树、页面正文、控件和语义对话框。浏览器原生 `window.alert`、`window.confirm` 和 `window.prompt` 会作为原生对话框状态返回；Agent 使用 `browserResolveDialog` 接受或取消。接受确认框会继续执行页面动作，并经过敏感工具确认流程。
-6. 用户手动框选元素后会在应用上方打开独立详情悬浮窗；“放入聊天框”和“围绕元素提问”会将网页元素引用加入当前会话。此 UI 框选功能仍使用页面桥接，Agent 的 DOM 检查与操作不依赖它。
+4. 启动预览时插件会在宿主 Chromium 里创建一个隐藏窗口加载同一地址，Agent 的 inspect/act/截图直接作用于这个后台页面，因此不需要打开右侧面板也能操作；面板只是可视化窗口，打开后会同步显示同一页面。
+5. Agent 的 `browserInspect`、`browserReadHtml`、`browserSelectElement`、`browserAct` 和 `browserMouse` 通过 Puppeteer Core 连接 Artificer Chromium 的 CDP browser endpoint，再按预览代理 origin 找到当前会话的 iframe。读取和交互面向 Chromium 的 frame，避免把页面转换成一组不完整的自制结构。
+6. `browserInspect` 会返回实际 DOM、HTML、可访问性树、页面正文、控件和语义对话框。浏览器原生 `window.alert`、`window.confirm` 和 `window.prompt` 会作为原生对话框状态返回；Agent 使用 `browserResolveDialog` 接受或取消。接受确认框会继续执行页面动作，并经过敏感工具确认流程。
+7. 用户手动框选元素后会在应用上方打开独立详情悬浮窗；“放入聊天框”和“围绕元素提问”会将网页元素引用加入当前会话。此 UI 框选功能仍使用页面桥接，Agent 的 DOM 检查与操作不依赖它。
 
 独立信息面板窗口通过同源消息通道将元素引用送达聊天页；需要包含引用标签接收功能的 Artificer 版本。
 

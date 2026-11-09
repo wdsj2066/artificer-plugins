@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   msg: { type: Object, required: true },
@@ -24,17 +24,33 @@ const PANEL_KEY = 'browser-automation/browser'
 
 /**
  * 直接请求宿主展开右侧信息面板。
- * 「网页预览」面板被关闭（hidden）时组件未挂载，artificer:browser-preview-open
- * 没有任何监听者，因此必须由来源侧显式激活 dock，不能只依赖面板自己的 onOpenRequest。
+ * 宿主 activatePanel 内部会先把面板加回 dock 再激活，面板被关闭时同样有效；
+ * 旧版本只派发 artificer:activate-panel 事件，而宿主没有该事件的监听者，
+ * 面板被关闭后就再也拉不起来，因此这里必须优先走 activatePanel。
  */
 function activatePanel() {
   if (window.artificer?.activatePanel) {
-    window.artificer.activatePanel('right', PANEL_KEY)
-    return
+    try { window.artificer.activatePanel('right', PANEL_KEY) } catch {}
+    return true
   }
   window.dispatchEvent(new CustomEvent('artificer:activate-panel', {
     detail: { region: 'right', panelKey: PANEL_KEY, reason: 'browser-preview' }
   }))
+  return false
+}
+
+/**
+ * 激活可能早于面板组件注册：宿主要先加载插件 UI 再挂载面板，
+ * 首次调用可能落空，因此短暂重试几次，不阻塞工具结果展示。
+ */
+function activatePanelWithRetry(attempts = 6, delayMs = 400) {
+  let remaining = attempts
+  const tick = () => {
+    const viaHost = activatePanel()
+    if (viaHost) return
+    if (--remaining > 0) setTimeout(tick, delayMs)
+  }
+  tick()
 }
 
 const OPEN_ACK_EVENT = 'artificer:browser-preview-opened'
@@ -85,6 +101,17 @@ async function openPreview() {
   if (outcome.timedOut) window.artificer?.toast?.('预览面板已展开，页面仍在加载', 'warning')
   else if (!outcome.success) window.artificer?.toast?.(outcome.error || '预览打开失败', 'error')
 }
+
+// Agent 启动预览后自动展开面板：用户不必再手动点卡片按钮。
+// 只在工具成功返回预览地址时触发一次，错误结果不打扰用户。
+let autoOpenedFor = ''
+watch(() => [result.value.sessionId, result.value.previewUrl], ([sessionId, previewUrl]) => {
+  if (!sessionId || !previewUrl) return
+  const key = `${sessionId}::${previewUrl}`
+  if (autoOpenedFor === key) return
+  autoOpenedFor = key
+  activatePanelWithRetry()
+}, { immediate: true })
 </script>
 
 <style scoped>

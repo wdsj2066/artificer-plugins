@@ -6,10 +6,15 @@ class FakePage extends EventEmitter {
   constructor(frame) {
     super()
     this.frame = frame
+    this.topFrame = { url: () => 'http://localhost:3000/' }
     this.keyboard = { press: vi.fn() }
     this.mouse = { move: vi.fn(), click: vi.fn() }
+    this.screenshot = vi.fn(async () => Buffer.from('jpeg-bytes'))
+    this.viewport = vi.fn(() => ({ width: 1280, height: 800 }))
   }
   frames() { return [this.frame] }
+  mainFrame() { return this.topFrame }
+  url() { return this.topFrame.url() }
   async createCDPSession() {
     return {
       send: vi.fn(async (method) => {
@@ -144,6 +149,60 @@ describe('CDP automation runtime', () => {
     const { runtime, page, frame } = fixture()
     frame.url = () => 'http://localhost:5173/'
     page.frames = () => [frame]
-    await expect(runtime._findPreview('chat-1', 0)).rejects.toThrow('没有找到当前会话的预览 iframe')
+    await expect(runtime._findPreview('chat-1', 0)).rejects.toThrow('没有找到当前会话的预览页面')
+  })
+
+  it('prefers the background top-level page over the panel iframe', async () => {
+    const { runtime, page } = fixture()
+    const backgroundFrame = {
+      url: () => 'http://127.0.0.1:41001/',
+      evaluate: vi.fn(async () => ({ title: 'Background', text: 'ok' })),
+      content: vi.fn(async () => '<main>background</main>')
+    }
+    page.topFrame = backgroundFrame
+
+    const target = await runtime._findPreview('chat-1', 0)
+    expect(target.mode).toBe('background')
+    expect(target.frame).toBe(backgroundFrame)
+
+    // 第二次解析应命中缓存，不再重新遍历页面。
+    const framesSpy = vi.spyOn(page, 'frames')
+    const again = await runtime._findPreview('chat-1', 0)
+    expect(again.mode).toBe('background')
+    expect(framesSpy).not.toHaveBeenCalled()
+  })
+
+  it('drops the cached target when the preview URL changes', async () => {
+    const { runtime, page, previewRuntime } = fixture()
+    const backgroundFrame = { url: () => 'http://127.0.0.1:41001/', evaluate: vi.fn(), content: vi.fn() }
+    page.topFrame = backgroundFrame
+    await runtime._findPreview('chat-1', 0)
+
+    previewRuntime.getStatus.mockReturnValue({ previewUrl: 'http://127.0.0.1:42002/', bridgeToken: 'token2', currentUrl: '' })
+    page.topFrame = { url: () => 'http://127.0.0.1:42002/', evaluate: vi.fn(), content: vi.fn() }
+    const target = await runtime._findPreview('chat-1', 0)
+    expect(target.frame).toBe(page.topFrame)
+    expect(runtime.targets.get('chat-1').previewUrl).toBe('http://127.0.0.1:42002/')
+  })
+
+  it('captures screenshots through CDP instead of in-page html2canvas', async () => {
+    const { runtime, page } = fixture()
+    page.topFrame = {
+      url: () => 'http://127.0.0.1:41001/',
+      evaluate: vi.fn(async () => ({
+        width: 1280, height: 2400, scrollX: 0, scrollY: 0,
+        viewportWidth: 1280, viewportHeight: 800, title: 'Preview', url: 'http://127.0.0.1:41001/'
+      }))
+    }
+
+    const result = await runtime.screenshot('chat-1', { mode: 'fullPage' })
+    expect(page.screenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'jpeg', fullPage: true }))
+    expect(result).toMatchObject({
+      source: 'cdp',
+      mode: 'fullPage',
+      cssWidth: 1280,
+      cssHeight: 2400,
+      dataUrl: `data:image/jpeg;base64,${Buffer.from('jpeg-bytes').toString('base64')}`
+    })
   })
 })

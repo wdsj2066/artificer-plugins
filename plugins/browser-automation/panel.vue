@@ -606,6 +606,30 @@ function beginOpenAck(requestId) {
 }
 
 /**
+ * 请求宿主把「网页预览」面板展开到右侧 dock。
+ * 宿主 activatePanel 在面板被关闭时会先加回 dock，比事件通知可靠；
+ * 旧宿主没有该接口时退回 artificer:activate-panel 事件。
+ */
+function activateHostPanel(attempts = 3, delayMs = 350) {
+  const activate = () => {
+    if (window.artificer?.activatePanel) {
+      try { window.artificer.activatePanel('right', 'browser-automation/browser') } catch {}
+      return true
+    }
+    window.dispatchEvent(new CustomEvent('artificer:activate-panel', {
+      detail: { region: 'right', panelKey: 'browser-automation/browser', reason: 'browser-preview' }
+    }))
+    return false
+  }
+  let remaining = attempts
+  const tick = () => {
+    if (activate()) return
+    if (--remaining > 0) setTimeout(tick, delayMs)
+  }
+  tick()
+}
+
+/**
  * 回执「面板已展开且预览页可渲染」。
  * 调用方（start-result.vue）据此结束等待，不要用 activatePanel 的 resolve 当完成信号。
  */
@@ -628,9 +652,9 @@ function onOpenRequest(event) {
   if (requestId && (requestId === openAckRequestId || openedRequestIds.has(requestId))) return
   try { sessionStorage.removeItem(OPEN_REQUEST_KEY) } catch {}
   beginOpenAck(requestId)
-  window.dispatchEvent(new CustomEvent('artificer:activate-panel', {
-    detail: { region: 'right', panelKey: 'browser-automation/browser', reason: 'browser-preview' }
-  }))
+  // 宿主 activatePanel 会先把面板加回 dock 再激活；没有该接口时退回事件通知。
+  // 面板首次挂载时宿主可能还没注册好面板实例，因此再补几次重试。
+  activateHostPanel()
   if (activity.upstreamUrl) address.value = activity.upstreamUrl
   void loadStatus().then(() => {
     if (!requestId) return

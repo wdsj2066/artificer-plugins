@@ -17,6 +17,43 @@ function failure(error, extra = {}) {
   return { success: false, ...extra, error: error?.message || '浏览器预览操作失败。' }
 }
 
+// 后台隐藏窗口让 Agent 不必等面板展开就能操作页面；
+// 窗口起不来时（例如宿主未提供 BrowserWindow）回落到面板 iframe。
+async function ensureBackgroundWindow(sessionId, status, logger) {
+  if (!status?.previewUrl) return { opened: false, reason: '还没有预览地址' }
+  try {
+    return await cdp.rpc.call('browserAutomation.ensurePreviewWindow', {
+      sessionId,
+      url: status.previewUrl
+    })
+  } catch (error) {
+    logger?.warn?.(`后台预览窗口不可用，改用面板预览：${error?.message || error}`)
+    return { opened: false, reason: error?.message || String(error) }
+  }
+}
+
+async function closeBackgroundWindow(sessionId) {
+  cdp.forget?.(sessionId)
+  try { return await cdp.rpc.call('browserAutomation.closePreviewWindow', { sessionId }) }
+  catch { return { closed: false } }
+}
+
+// CDP 不可用时，面板桥接只有在 iframe 真的连上后才值得等待；
+// 否则 runInPage 会一直等到 60 秒超时才报错，看起来就像“卡住”。
+function canFallbackToPanel(sessionId) {
+  return runtime.getStatus(sessionId)?.bridgeReady === true
+}
+
+async function captureScreenshot(sessionId, mode) {
+  try {
+    return await cdp.screenshot(sessionId, { mode })
+  } catch (cdpError) {
+    if (!canFallbackToPanel(sessionId)) throw cdpError
+    try { return await runtime.runInPage(sessionId, 'screenshot', { mode }, 20_000) }
+    catch { throw cdpError }
+  }
+}
+
 export function register(ctx) {
   runtime = new BrowserPreviewRuntime()
   cdp = new CdpAutomationRuntime({ rpc: ctx.rpc, previewRuntime: runtime, logger: ctx.logger })
@@ -51,7 +88,8 @@ export function register(ctx) {
               workspaceRoot: args._workspaceDir?.root,
               timeoutMs: args.timeoutMs
             })
-        return { success: true, ...status }
+        const background = await ensureBackgroundWindow(sessionId, status, ctx.logger)
+        return { success: true, ...status, background }
       } catch (error) { return failure(error, { sessionId }) }
     }
   })
@@ -64,7 +102,10 @@ export function register(ctx) {
     tags: ['browser', 'sensitive'],
     async handler(_args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
-      try { return { success: true, sessionId, ...(await runtime.stop(sessionId)) } }
+      try {
+        const background = await closeBackgroundWindow(sessionId)
+        return { success: true, sessionId, background, ...(await runtime.stop(sessionId)) }
+      }
       catch (error) { return failure(error, { sessionId }) }
     }
   })
@@ -77,7 +118,10 @@ export function register(ctx) {
     tags: ['browser', 'readonly'],
     async handler(_args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
-      return { success: true, sessionId, status: runtime.getStatus(sessionId), cdp: cdp.status() }
+      const status = runtime.getStatus(sessionId)
+      let background = { open: false }
+      try { background = await cdp.rpc.call('browserAutomation.previewWindowStatus', { sessionId }) } catch {}
+      return { success: true, sessionId, status, background, cdp: cdp.status() }
     }
   })
 
@@ -106,13 +150,16 @@ export function register(ctx) {
     async handler(args, executionContext) {
       const sessionId = sessionIdOf(executionContext)
       try {
-        const screenshot = await runtime.runInPage(sessionId, 'screenshot', { mode: args.mode === 'fullPage' ? 'fullPage' : 'viewport' }, 60_000)
+        const mode = args.mode === 'fullPage' ? 'fullPage' : 'viewport'
+        // 优先用 Chromium 合成器截图：几十毫秒返回，不需要面板打开；
+        // 页面有跨域限制或 CDP 不可用时才回落到面板桥接的 html2canvas。
+        const screenshot = await captureScreenshot(sessionId, mode)
         const screenshotId = runtime.storeScreenshot(sessionId, screenshot)
         return {
           success: true, sessionId, screenshotId, title: screenshot.title, url: screenshot.url,
           width: screenshot.width, height: screenshot.height, cssWidth: screenshot.cssWidth, cssHeight: screenshot.cssHeight,
           viewportWidth: screenshot.viewportWidth, viewportHeight: screenshot.viewportHeight,
-          scrollX: screenshot.scrollX, scrollY: screenshot.scrollY, mode: screenshot.mode,
+          scrollX: screenshot.scrollX, scrollY: screenshot.scrollY, mode: screenshot.mode, source: screenshot.source || 'panel',
           imageAvailableToModel: executionContext?.runContext?.state?.modelCapabilities?.support_image === true
         }
       } catch (error) { return failure(error, { sessionId }) }
@@ -283,7 +330,11 @@ export function register(ctx) {
     async handler({ body }) {
       const sessionId = String(body?.sessionId || '')
       if (!sessionId || !body?.url) return { success: false, error: '需要会话 ID 和本机开发服务地址。' }
-      try { return { success: true, data: await runtime.attach(sessionId, body.url) } }
+      try {
+        const status = await runtime.attach(sessionId, body.url)
+        const background = await ensureBackgroundWindow(sessionId, status, ctx.logger)
+        return { success: true, data: { ...status, background } }
+      }
       catch (error) { return failure(error) }
     }
   })
@@ -311,8 +362,7 @@ export function register(ctx) {
       }
       const mode = body?.mode === 'fullPage' ? 'fullPage' : 'viewport'
       try {
-        const screenshot = await runtime.runInPage(sessionId, 'screenshot', { mode }, 60_000)
-        return { success: true, data: screenshot }
+        return { success: true, data: await captureScreenshot(sessionId, mode) }
       } catch (error) { return failure(error) }
     }
   })

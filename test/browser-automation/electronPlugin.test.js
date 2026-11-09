@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { register as registerBootstrap } from '../../plugins/browser-automation/bootstrap.js'
-import { captureDesktop, dimensionsFor, getBrowserEndpoint } from '../../plugins/browser-automation/electron.js'
+import { captureDesktop, dimensionsFor, ensurePreviewWindow, getBrowserEndpoint, previewWindowStatus } from '../../plugins/browser-automation/electron.js'
 
 const tempRoots = []
 afterEach(() => {
@@ -72,4 +72,66 @@ describe('Electron browser automation bridge', () => {
     })
     expect(image.resize).toHaveBeenCalledWith({ width: 3200, height: 1800, quality: 'best' })
   })
+
+  it('creates one hidden background window per session and reuses it', async () => {
+    const { BrowserWindow } = fakeBrowserWindowModule()
+    const electron = { app: { isReady: () => true }, BrowserWindow }
+    const first = await ensurePreviewWindow(electron, { sessionId: 'chat-1', url: 'http://127.0.0.1:41001/' })
+    expect(first).toMatchObject({ sessionId: 'chat-1', loaded: true, visible: false })
+    expect(BrowserWindow.instances).toHaveLength(1)
+
+    const win = BrowserWindow.instances[0]
+    expect(win.options.show).toBe(false)
+    expect(win.options.skipTaskbar).toBe(true)
+    expect(win.options.webPreferences.backgroundThrottling).toBe(false)
+    expect(win.loadURL).toHaveBeenCalledWith('http://127.0.0.1:41001/')
+
+    const again = await ensurePreviewWindow(electron, { sessionId: 'chat-1', url: 'http://127.0.0.1:41001/' })
+    expect(again.reused).toBe(true)
+    expect(BrowserWindow.instances).toHaveLength(1)
+    expect(previewWindowStatus('chat-1')).toMatchObject({ open: true, url: 'http://127.0.0.1:41001/' })
+  })
+
+  it('rejects non-loopback URLs for the background window', async () => {
+    const { BrowserWindow } = fakeBrowserWindowModule()
+    await expect(ensurePreviewWindow({ app: {}, BrowserWindow }, { sessionId: 'chat-1', url: 'https://example.com/' }))
+      .rejects.toThrow('后台预览只接受本机回环地址')
+  })
 })
+
+function fakeBrowserWindowModule() {
+  class FakeWebContents {
+    constructor(win) { this.win = win; this.url = ''; this.listeners = new Map() }
+    getURL() { return this.url }
+    isLoading() { return false }
+    on(event, handler) { this.listeners.set(event, handler); return this }
+    off(event) { this.listeners.delete(event); return this }
+    once() { return this }
+    setAudioMuted() {}
+    setWindowOpenHandler() {}
+    isDevToolsOpened() { return false }
+  }
+  class BrowserWindow {
+    static instances = []
+    constructor(options) {
+      this.options = options
+      this.webContents = new FakeWebContents(this)
+      this.destroyed = false
+      this.handlers = new Map()
+      this.loadURL = vi.fn(async url => {
+        this.webContents.url = url
+        this.webContents.listeners.get('did-finish-load')?.()
+      })
+      BrowserWindow.instances.push(this)
+    }
+    static reset() { BrowserWindow.instances = [] }
+    isDestroyed() { return this.destroyed }
+    isVisible() { return false }
+    setMenuBarVisibility() {}
+    setContentSize() {}
+    getContentBounds() { return { width: 1280, height: 800 } }
+    destroy() { this.destroyed = true }
+    once(event, handler) { this.handlers.set(event, handler); return this }
+  }
+  return { BrowserWindow }
+}

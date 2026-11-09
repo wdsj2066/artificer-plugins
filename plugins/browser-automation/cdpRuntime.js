@@ -7,6 +7,7 @@ const ACTION_TIMEOUT_MS = 15_000
 const INSPECT_HTML_LIMIT = 12_000
 const AX_TREE_LIMIT = 10_000
 const HTML_LIMIT = 60_000
+const SCREENSHOT_MAX_DIMENSION = 3200
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -167,6 +168,7 @@ export class CdpAutomationRuntime {
     this.browser = null
     this.connecting = null
     this.pages = new WeakMap()
+    this.targets = new Map()
     this.dialogs = new Map()
     this.lastError = ''
     this.started = false
@@ -253,8 +255,14 @@ export class CdpAutomationRuntime {
   _trackPage(page) {
     if (this.pages.has(page)) return
     const binding = { dialogListener: null, frameListener: null, closeListener: null }
-    binding.frameListener = () => this._syncDialogListener(page, binding)
+    binding.frameListener = () => {
+      // 页面结构变化后缓存的 frame 可能已经失效，交给 _resolveCached 重新校验。
+      this._syncDialogListener(page, binding)
+    }
     binding.closeListener = () => {
+      for (const [sessionId, cached] of this.targets) {
+        if (cached.page === page) this.targets.delete(sessionId)
+      }
       for (const [sessionId, items] of this.dialogs) {
         const remaining = items.filter(item => item.page !== page)
         if (remaining.length) this.dialogs.set(sessionId, remaining)
@@ -308,17 +316,74 @@ export class CdpAutomationRuntime {
     const requestedWait = Number(waitMs)
     const timeout = Number.isFinite(requestedWait) ? Math.min(Math.max(requestedWait, 0), FRAME_WAIT_MS) : FRAME_WAIT_MS
     const deadline = Date.now() + timeout
+    let lastError = null
     do {
+      // 命中缓存的页面/框架时直接复用，避免每个动作都遍历全部 target 和 frame。
+      const cached = await this._resolveCached(sessionId, status)
+      if (cached) return cached
       const pages = await browser.pages()
+      let background = null
+      let fallback = null
       for (const page of pages) {
         this._trackPage(page)
-        const frame = page.frames().find(item => sameOrigin(item.url(), status.previewUrl))
-        if (frame) return { browser, page, frame, status }
+        // 后台预览窗口是独立的顶层页面，整页就是预览内容；
+        // 面板模式则是宿主页面里的同源 iframe。优先后台页，少一层 frame 与缩放换算。
+        const topFrame = page.mainFrame?.()
+        if (sameOrigin(topFrame.url(), status.previewUrl)) {
+          background = { browser, page, frame: topFrame, status, mode: 'background' }
+          break
+        }
+        if (!fallback) {
+          const frame = page.frames().find(item => sameOrigin(item.url(), status.previewUrl))
+          if (frame) fallback = { browser, page, frame, status, mode: 'panel' }
+        }
+      }
+      const found = background || fallback
+      if (found) {
+        this._cacheTarget(sessionId, found, status.previewUrl)
+        return found
       }
       if (Date.now() >= deadline) break
       await delay(FRAME_POLL_MS)
     } while (true)
-    throw new Error('CDP 已连接，但没有找到当前会话的预览 iframe。请打开“网页预览”面板并等待页面加载。')
+    if (lastError) throw lastError
+    throw new Error('CDP 已连接，但没有找到当前会话的预览页面。请确认预览已启动，或打开“网页预览”面板。')
+  }
+
+  _cacheTarget(sessionId, target, previewUrl) {
+    const key = `${target.page.url()}::${target.frame.url()}`
+    this.targets.set(sessionId, {
+      page: target.page,
+      frame: target.frame,
+      mode: target.mode,
+      previewUrl,
+      key,
+      cachedAt: Date.now()
+    })
+  }
+
+  async _resolveCached(sessionId, status) {
+    const cached = this.targets.get(sessionId)
+    if (!cached) return null
+    if (cached.page.isClosed?.() === true) {
+      this.targets.delete(sessionId)
+      return null
+    }
+    if (!sameOrigin(cached.previewUrl, status.previewUrl)) {
+      this.targets.delete(sessionId)
+      return null
+    }
+    const frame = cached.frame
+    // 页面导航或 frame 脱离后缓存失效，需要重新扫描。
+    if (!frame || frame.detached || !sameOrigin(frame.url(), status.previewUrl)) {
+      this.targets.delete(sessionId)
+      return null
+    }
+    return { browser: this.browser, page: cached.page, frame, status, mode: cached.mode }
+  }
+
+  forget(sessionId) {
+    this.targets.delete(sessionId)
   }
 
   _pendingDialogs(sessionId) {
@@ -378,6 +443,52 @@ export class CdpAutomationRuntime {
     return { html: html.slice(0, limit), truncated: html.length > limit, url: target.frame.url(), title: await target.frame.title() }
   }
 
+  // 用 Chromium 自身的合成器截图：不需要 html2canvas 在页面里重排一遍 DOM，
+  // 通常几十毫秒完成，也不受跨域图片与字体限制。
+  async screenshot(sessionId, { mode = 'viewport', fullPage = false } = {}) {
+    const target = await this._findPreview(sessionId, 4_000)
+    const nativeDialogs = this._pendingDialogs(sessionId)
+    if (nativeDialogs.length) throw new Error('页面存在浏览器原生对话框，请先用 browserResolveDialog 处理后再截图。')
+    const isFullPage = mode === 'fullPage' || fullPage === true
+    const [metrics, viewport] = await Promise.all([
+      target.frame.evaluate(() => ({
+        width: Math.max(document.documentElement?.scrollWidth || 0, document.body?.scrollWidth || 0, innerWidth),
+        height: Math.max(document.documentElement?.scrollHeight || 0, document.body?.scrollHeight || 0, innerHeight),
+        scrollX, scrollY,
+        viewportWidth: innerWidth, viewportHeight: innerHeight,
+        title: document.title,
+        url: location.href
+      })).catch(() => null),
+      target.page.viewport?.() || null
+    ])
+    const cssWidth = isFullPage ? (metrics?.width || viewport?.width || 1280) : (metrics?.viewportWidth || viewport?.width || 1280)
+    const cssHeight = isFullPage ? (metrics?.height || viewport?.height || 800) : (metrics?.viewportHeight || viewport?.height || 800)
+    const ratio = Math.min(1, SCREENSHOT_MAX_DIMENSION / Math.max(cssWidth, cssHeight))
+    const buffer = await target.page.screenshot({
+      type: 'jpeg',
+      quality: 82,
+      fullPage: isFullPage,
+      captureBeyondViewport: isFullPage,
+      // 后台隐藏窗口没有可见视口尺寸，显式给出视口才能拿到稳定像素。
+      ...(target.mode === 'background' ? { clip: { x: 0, y: isFullPage ? 0 : (metrics?.scrollY || 0), width: cssWidth, height: cssHeight, scale: ratio } } : {})
+    })
+    return {
+      dataUrl: `data:image/jpeg;base64,${Buffer.from(buffer).toString('base64')}`,
+      width: Math.round(cssWidth * ratio),
+      height: Math.round(cssHeight * ratio),
+      cssWidth,
+      cssHeight,
+      viewportWidth: metrics?.viewportWidth || cssWidth,
+      viewportHeight: metrics?.viewportHeight || cssHeight,
+      scrollX: metrics?.scrollX || 0,
+      scrollY: metrics?.scrollY || 0,
+      mode: isFullPage ? 'fullPage' : 'viewport',
+      source: 'cdp',
+      url: metrics?.url || target.frame.url(),
+      title: metrics?.title || ''
+    }
+  }
+
   async selectElement(sessionId, selector) {
     const target = await this._findPreview(sessionId)
     const selection = await target.frame.$eval(selector, describeElement)
@@ -387,7 +498,9 @@ export class CdpAutomationRuntime {
   }
 
   // 仅在自动化动作期间转发实际鼠标事件，指针绘制在宿主面板而非被测页面中。
+  // 后台窗口模式下没有面板可绘制指针，跳过注入以省掉两次 frame.evaluate。
   async _withPointerFeedback(target, sessionId, operation) {
+    if (target.mode !== 'panel') return operation()
     let installed = false
     try {
       await target.frame.evaluate(({ token }) => {
@@ -467,14 +580,19 @@ export class CdpAutomationRuntime {
     const x = Number(args.x)
     const y = Number(args.y)
     if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error('鼠标坐标无效。')
-    const frameElement = await target.frame.frameElement()
-    const bounds = await frameElement.evaluate(element => {
-      const rect = element.getBoundingClientRect()
-      const scaleX = rect.width / element.offsetWidth || 1
-      const scaleY = rect.height / element.offsetHeight || 1
-      return { x: rect.x + element.clientLeft * scaleX, y: rect.y + element.clientTop * scaleY, scaleX, scaleY }
-    })
-    const point = { x: bounds.x + x * bounds.scaleX, y: bounds.y + y * bounds.scaleY }
+    // 后台窗口模式下页面就是顶层文档，视口坐标可直接交给 CDP；
+    // 面板模式还要把 iframe 在宿主页里的位置与缩放换算进去。
+    let point = { x, y }
+    if (target.mode === 'panel') {
+      const frameElement = await target.frame.frameElement()
+      const bounds = await frameElement.evaluate(element => {
+        const rect = element.getBoundingClientRect()
+        const scaleX = rect.width / element.offsetWidth || 1
+        const scaleY = rect.height / element.offsetHeight || 1
+        return { x: rect.x + element.clientLeft * scaleX, y: rect.y + element.clientTop * scaleY, scaleX, scaleY }
+      })
+      point = { x: bounds.x + x * bounds.scaleX, y: bounds.y + y * bounds.scaleY }
+    }
     const element = await target.frame.evaluate(({ x: pointX, y: pointY }) => {
       const node = document.elementFromPoint(pointX, pointY)
       if (!node) return null
@@ -532,6 +650,7 @@ export class CdpAutomationRuntime {
     this.browser = null
     this.connecting = null
     this.dialogs.clear()
+    this.targets.clear()
     if (browser?.connected) await browser.disconnect()
   }
 }
