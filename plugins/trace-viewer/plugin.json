@@ -1,0 +1,59 @@
+{
+  "id": "trace-viewer",
+  "name": "运行时轨迹",
+  "version": "1.0.0",
+  "description": "实时查看 Agent 运行时的调用轨迹：轮次、AI 调用、工具调用、hook 触发与异常。",
+  "icon": "route",
+  "engines": {
+    "artificer": ">=1.1.0"
+  },
+  "entrypoints": {
+    "api": "server.js"
+  },
+  "permissions": [
+    "读取运行时 hook 事件",
+    "本地 HTTP 路由",
+    "进程内存缓冲"
+  ],
+  "settings": {
+    "title": "轨迹设置",
+    "fields": [
+      {
+        "key": "maxEvents",
+        "label": "最多保留条数",
+        "type": "number",
+        "defaultValue": 1000,
+        "description": "内存环形缓冲区容量，范围 100-20000"
+      },
+      {
+        "key": "capturePayload",
+        "label": "记录载荷摘要",
+        "type": "boolean",
+        "defaultValue": true,
+        "description": "关闭后只记录事件名与耗时，不记录载荷"
+      }
+    ]
+  },
+  "ui": {
+    "view": "views/App.vue",
+    "navItems": [
+      {
+        "id": "traces",
+        "label": "运行时轨迹",
+        "icon": "route",
+        "route": "/plugin/trace-viewer"
+      }
+    ],
+    "panels": [
+      {
+        "id": "trace-feed",
+        "region": "bottom",
+        "component": "views/Panel.vue",
+        "title": "运行时轨迹",
+        "icon": "route",
+        "default": true
+      }
+    ]
+  },
+  "author": "Artificer"
+}
