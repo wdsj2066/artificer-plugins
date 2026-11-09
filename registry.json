@@ -46,7 +46,7 @@
       "id": "browser-automation",
       "name": "网页预览与控制",
       "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图；截图可临时提供给视觉模型，自动化操作在预览中显示指针",
-      "version": "2.5.0",
+      "version": "2.5.1",
       "author": "Artificer",
       "entrypoints": {
         "bootstrap": "bootstrap.js",
@@ -61,8 +61,8 @@
         "desktop-capture"
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.5.0/browser-automation-2.5.0.zip",
-      "sha256": "63eb33f504d9ec2670ce840df08278aa1b2f9abf9c2dd1de774a4f4c14178880"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.5.1/browser-automation-2.5.1.zip",
+      "sha256": "2e04d5162dabd89ae76fbc0acfc51399277c5acfa4cc633e7e2a625fa71a93d7"
     },
     {
       "id": "channel-feishu",
@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "bb38697f6f7586dca30fd9a542c9db86ff2d91710bbf52b08f67199d29618208"
+      "sha256": "48288f0a30de11d8ca1a89a1236fcda8f61d391d1de0c3a8d7394a469bb53070"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "13a83efc230cf4e7c2b95839ac5b090bf127b5041565960bf0750c39066b8098"
+      "sha256": "3a5d1acbadb9618e2532c26c41be8ea17420e18e7523cdc19e46f77b8ebf6898"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "b7b593b18fec80eb5627d5e35c54a1341f7ca4589c7db2b73cb3bf5eb56aa129"
+      "sha256": "8816560fa797ad43ec16c086040eac8c627a9c3ca9eb9e831d2b028e32603232"
     },
     {
       "id": "context-inspector",
@@ -127,7 +127,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/context-inspector",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/context-inspector-v0.1.0/context-inspector-0.1.0.zip",
-      "sha256": "3816e03311b04bfe2380944490ece35c3cc85f293107f30fefc55ac35a9eae08"
+      "sha256": "1d8c44f07fb63fcc221f332b36702b8875d89b6d069432196e7f4d41b59b17ab"
     },
     {
       "id": "office",
@@ -143,7 +143,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "dce2b90bbcd05765a395e157988f8414a20fe909f305c2c96b0a014f7fcb8e7a"
+      "sha256": "e53bc544cb53f31a601a4735ef042752d8934fab0b468ed2ae6f98f66cea7800"
     },
     {
       "id": "plugin-builder",
@@ -177,7 +177,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "7fba7eaf18c54f8d974c7d0843aabad40a6fb77d0df3415ab1d9e5cda583afc3"
+      "sha256": "47193f63c798c1a6324ca0f72c5f378b6b72be7419473bad401294be5259532e"
     },
     {
       "id": "terminal",
@@ -196,7 +196,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "01008a862f369dc07d5f212fd3ea61992f6359fe8e3ccf6d1c485506fe6e7fa0"
+      "sha256": "f61a2ef02aeea5b569b40f2a6d8a079bf4b871a11efd0696fc63586ede4f7e2e"
     },
     {
       "id": "remote",
