@@ -79,7 +79,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "cfc4ba1769e05438f9ced443146c15d1becafa319347d98c01828f4d04aee2c4"
+      "sha256": "bb38697f6f7586dca30fd9a542c9db86ff2d91710bbf52b08f67199d29618208"
     },
     {
       "id": "channel-wecom",
@@ -97,7 +97,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "cce4b4ffce7a7c63a98d2f31a6f65476be8a41f52acf41c44281d3b2a5109fbd"
+      "sha256": "13a83efc230cf4e7c2b95839ac5b090bf127b5041565960bf0750c39066b8098"
     },
     {
       "id": "token-usage",
@@ -108,7 +108,7 @@
       "permissions": [],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "368a5eeaa387fa7bfe75b892363550e66353a624440fff3cbc0b59390549a248"
+      "sha256": "b7b593b18fec80eb5627d5e35c54a1341f7ca4589c7db2b73cb3bf5eb56aa129"
     },
     {
       "id": "context-inspector",
@@ -127,7 +127,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/context-inspector",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/context-inspector-v0.1.0/context-inspector-0.1.0.zip",
-      "sha256": "91cb18b3b6b57403176d418be76b4c8969c92d87f6f410f5d88b38bd4529d64c"
+      "sha256": "3816e03311b04bfe2380944490ece35c3cc85f293107f30fefc55ac35a9eae08"
     },
     {
       "id": "office",
@@ -143,7 +143,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "0d0b22a807942525c641921d692dac90881854006f1eda17bf9539eeac77692e"
+      "sha256": "dce2b90bbcd05765a395e157988f8414a20fe909f305c2c96b0a014f7fcb8e7a"
     },
     {
       "id": "plugin-builder",
@@ -177,7 +177,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "0b5053a20b582f3eab26752ea96c0f71bb207326720fa2010811d5c17390c5d3"
+      "sha256": "7fba7eaf18c54f8d974c7d0843aabad40a6fb77d0df3415ab1d9e5cda583afc3"
     },
     {
       "id": "terminal",
@@ -196,7 +196,7 @@
       ],
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "4caa717a60c3ef12e1e85223c027a164463d4342785d530a374760cde2aa2a88"
+      "sha256": "01008a862f369dc07d5f212fd3ea61992f6359fe8e3ccf6d1c485506fe6e7fa0"
     },
     {
       "id": "remote",
