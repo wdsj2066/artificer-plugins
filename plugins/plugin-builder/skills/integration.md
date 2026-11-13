@@ -1,8 +1,198 @@
 ---
 id: plugin-builder-integration
-name: 插件底座接入契约
-description: Artificer 六运行域、声明式能力、显式菜单入口、插件图标资源、UI 插槽及资源生命周期接入指南；创建或修改插件前必读。
+name: 插件工坊接入与操作手册
+description: 插件工坊操作手册与 Artificer 插件底座契约：五个工坊工具的入参/返回/调用顺序、写入硬约束、构建验收清单、完整最小示例、失败排查、交付后使用方式，以及六运行域、声明式能力、菜单入口、图标资源、UI 插槽与资源生命周期。创建或修改任何插件前必读。
 ---
+
+# 插件工坊操作手册
+
+工坊只向你提供下面五个工具。没有 `executeCommand`、`readFile`、`writeFile`，不要尝试用其他方式访问插件目录；插件源码只能通过本手册的工具读写。用户说“做个插件”“改一下那个插件”时，按本手册执行。
+
+## 一、工具速查
+
+| 工具 | 用途 | 入参 | 成功返回 | 失败返回 |
+|---|---|---|---|---|
+| `listRuntimeUiPlugins` | 列出已安装外部插件与未构建完成的源码目录 | 无（`{}`） | `{ success, plugins: [{ id, name, built, sourceDir }] }` | `{ success: false, error }` |
+| `readRuntimeUiPluginFile` | 读取单个源码文件 | `pluginId`、`filePath`（相对插件目录） | `{ success, sourceDir, filePath, content }` | `{ success: false, error }` |
+| `writeRuntimeUiPluginFiles` | 批量写入源码文件 | `pluginId`、`files: [{ path, content }]` | `{ success, sourceDir, files: ["..."], bytesWritten, message }` | `{ success: false, error }` |
+| `buildRuntimeUiPlugin` | 编译并加载插件（写入不会自动生效） | `pluginId` | `{ success, plugin, sourceDir, message }` | `{ success: false, error }` |
+| `removeRuntimeUiPlugin` | 卸载并删除源码、产物和设置 | `pluginId` | `{ success, id, sourceDir }` | `{ success: false, error }` |
+
+`listRuntimeUiPlugins` 的 `built: false` 表示源码目录存在但尚未构建成功，这类插件同样可以继续修改，不要因为看到它就新建一个带版本后缀的副本。
+
+## 二、标准工作流
+
+### 新建插件
+
+1. `listRuntimeUiPlugins` 查重，确认 id 未被占用（也要避开内置插件 id）。
+2. `askUser` 确认方案：插件 id、用户入口（页面/面板/命令/工具）、数据来源、需要注册的能力、将新增的文件。用户已明确说“直接做”时可省略这一步。
+3. `writeRuntimeUiPluginFiles` 一次写完 `plugin.json` 与全部入口文件、组件、样式。首批就要完整，不要先写一个残缺清单再补。
+4. `buildRuntimeUiPlugin` 构建。
+5. 按第五节的验收清单检查返回的 `plugin` DTO，然后告诉用户在哪里启用、入口在哪里。
+
+### 修改插件
+
+1. `listRuntimeUiPlugins` 定位目标 id；有多个候选且用户指向不明时用 `askUser` 确认。
+2. `readRuntimeUiPluginFile` 读 `plugin.json`，再读与需求相关的 `web.js`、`.vue`、`server.js`。不要凭记忆改。
+3. `writeRuntimeUiPluginFiles` 只写发生变化的文件：写入是**覆盖所列文件**，未列出的旧文件保留；被省略的文件不会删除，需要删文件只能整插件 `removeRuntimeUiPlugin` 后重建。
+4. `buildRuntimeUiPlugin` 重新构建，写入后不构建等于没改。
+
+### 删除插件
+
+仅在用户明确要求删除时调用 `removeRuntimeUiPlugin`。它不可恢复，会同时删除源码、构建产物和插件设置；不能删除内置插件。修改插件不需要先卸载。
+
+## 三、写入硬约束（在写入阶段就会报错）
+
+- `pluginId` 必须匹配 `^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$`，同时是目录名和 `plugin.json.id`。
+- 只允许 `plugin.json`、`.vue`、`.css`、`.js`、`.mjs`、`.md`。禁止 `package.json`、`node_modules`、图片等二进制文件。
+- `path` 必须是相对路径：不能以 `/` 或盘符开头，不能出现 `..`、`.` 或空段，不能用反斜杠拼接。不要写绝对路径。
+- 单批最多 32 个文件，单文件不超过 256KB，单批总量不超过 1MB。超出时拆成多批写入。
+- `plugin.json` 必须是有效 JSON，且 `id` 与 `pluginId` 完全一致；必须有 `ui` 对象或 `entrypoints`；二者都没有会直接拒绝。
+- `ui` 的键只能是 `styles`、`navItems`、`routes`、`toolMeta`、`shortcuts`、`theme`。出现 `type`、`entry`、`panel` 等旧键直接拒绝。
+- `ui.navItems[].route` 与 `ui.routes[].path` 必须以 `/plugin/` 开头，且不能正好是 `/plugin/`；`navItems` 每项为 `{ id, label, icon?, route }`。
+- `ui.styles` 里列出的每个 CSS 文件必须真实存在，且扩展名是 `.css`。
+- `settings` 必须是 `{ title?, fields: [...] }`；`fields` 是数组，每项含 `key`、`label`、可选 `type`（`text`/`password`/`number`/`boolean`/`select`，`select` 必须带 `options`）。不能写 `hasSettings`。
+- `entrypoints` 里声明的入口文件必须真实存在，且是 `.js`；API 入口使用 `"entrypoints": { "api": "server.js" }`，禁止 `hasBackend`。
+- 图标只能用 Lucide 名称，或引用**已写入**的 SVG：`{ "file": "assets/icon.svg" }`。写入工具只能写文本，因此 SVG 必须以文本 `.svg` 内容写入，且路径真实存在。
+
+## 四、构建返回怎么读
+
+`buildRuntimeUiPlugin` 成功时返回：
+
+```
+{ success: true, sourceDir, message, plugin: { ... } }
+```
+
+`plugin` 是清单与运行时注册表合并后的 DTO，关键字段：
+
+- `plugin.id` / `plugin.name` / `plugin.version`：来自清单，`version` 缺省为 `0.0.0`。
+- `plugin.ui.runtime.entry`：UI 产物入口。**界面插件必须非空**；纯后端插件为 `null` 属正常。
+- `plugin.ui.runtime.buildId`、`plugin.ui.runtime.styles`：本次构建标识与产物样式地址。
+- `plugin.entrypoints`：清单声明的运行域入口。
+- `plugin.capabilities`：本插件实际注册成功的 tools / skills / commands / adapters。
+- `plugin.settingsSchema`：清单 `settings` 的原始结构。
+- `plugin.runtime`：运行时插件恒为 `true`。
+
+失败时返回 `{ success: false, error }`，`error` 是中文原因，直接按第六节定位，不要跳过。
+
+## 五、验收清单
+
+构建成功后逐项确认，再向用户汇报：
+
+- [ ] 界面插件：`plugin.ui.runtime.entry` 非空，且 `entrypoints.web` 指向已写入的文件。
+- [ ] 纯后端插件：`entrypoints.api` 存在，`ui.runtime.entry` 为 `null` 可接受，不要为了非空伪造 UI。
+- [ ] 你注册的每个 tool / command 都出现在 `plugin.capabilities` 里；缺失说明 `server.js` 的 `register(ctx)` 没执行、id 重复被拒，或清单 `entrypoints` 没声明。
+- [ ] 清单声明了 `ui.navItems` 的，用户才能在侧边栏看到入口；只注册页面不会自动生成菜单。
+- [ ] `ui.navItems[].route` 与 `ctx.ui.registerRoute` 的 `path` 一致。
+- [ ] 配置了 `settings.fields` 的，面板能读到对应键。
+
+## 六、常见失败与处理
+
+| 报错或现象 | 原因 | 正确处理 |
+|---|---|---|
+| `UI 编译器未安装或未启用: vue-vite` | 宿主缺少 UI 编译器插件 | 告知用户安装/启用 `ui-compiler-vue`；不要改成纯后端来掩盖，也不要手工伪造 `index.js` |
+| `plugin.json 的 id 必须为: xxx` | 清单 id 与 `pluginId` 不一致 | 统一成目标 id，沿用已有插件 id，不要加版本后缀 |
+| `插件源码仅允许 ... 且路径不能越界` | 扩展名不支持或路径含 `..`/绝对路径 | 改成相对路径与允许的扩展名 |
+| `插件源码文件不存在: xxx` | `readRuntimeUiPluginFile` 路径写错 | 先用 `listRuntimeUiPlugins` 拿 `sourceDir`，再按相对路径读 `plugin.json` |
+| `一次最多写入 32 个插件源码文件` / `文件过大` / `总大小不能超过 1MB` | 单批超限 | 拆批写入 |
+| `plugin.json 必须声明 ui 对象或 entrypoints` | 清单没有任何入口 | 补 `entrypoints` 或 `ui` |
+| `plugin.json 的 ui.xxx 已不受支持` | 用了旧组件字段 | 改为 `entrypoints.web` + `ctx.ui` 注册组件 |
+| `插件 id 已被内置插件占用` | 与内置插件重名 | 换 id，并告知用户 |
+| `运行时插件不存在: xxx` | `remove` 的目标没有源码目录 | 先 `list` 确认 |
+| `不能删除内置插件: xxx` | 目标是内置插件 | 停止，告知用户只能禁用 |
+| 构建成功但 `ui.runtime.entry` 为 `null` | 没声明 `entrypoints.web` | 界面插件补 Web 入口后重建 |
+
+## 七、完整最小示例（UI 页面 + 自定义工具）
+
+`listRuntimeUiPlugins` → `writeRuntimeUiPluginFiles` → `buildRuntimeUiPlugin`，四个文件一次写完。
+
+`plugin.json`：
+
+```json
+{
+  "id": "demo-greeter",
+  "name": "示例问候",
+  "version": "0.1.0",
+  "description": "演示页面、面板与自定义工具的最小插件",
+  "entrypoints": { "web": "web.js", "api": "server.js" },
+  "engines": { "artificer": ">=1.1.22" },
+  "ui": {
+    "navItems": [{ "id": "demo-greeter.page", "label": "示例问候", "icon": "sparkles", "route": "/plugin/demo-greeter" }]
+  }
+}
+```
+
+`web.js`：
+
+```js
+import Page from './page.vue'
+
+export function register(ctx) {
+  if (ctx.ui.getService('ui.router@1')) {
+    ctx.ui.registerRoute({ id: 'demo-greeter.route', name: 'plugin-demo-greeter', path: '/plugin/demo-greeter', component: Page })
+  }
+}
+```
+
+`page.vue`：
+
+```vue
+<template>
+  <div class="demo-greeter">
+    <h2>示例问候</h2>
+    <input v-model="name" placeholder="输入名字" />
+    <button @click="greet">问候</button>
+    <p v-if="message">{{ message }}</p>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+
+const name = ref('')
+const message = ref('')
+
+function greet() {
+  message.value = `你好，${name.value || '陌生人'}`
+}
+</script>
+
+<style scoped>
+.demo-greeter { display: flex; flex-direction: column; gap: 8px; padding: 16px; color: var(--text-color); }
+</style>
+```
+
+`server.js`：
+
+```js
+export function register(ctx) {
+  ctx.registerTool({
+    id: 'demoGreet',
+    description: '按名字生成问候语',
+    parameters: {
+      type: 'object',
+      properties: { name: { type: 'string', description: '用户名字' } },
+      required: ['name']
+    },
+    handler: ({ name }) => ({ success: true, message: `你好，${name}` })
+  })
+}
+```
+
+构建后应看到 `plugin.ui.runtime.entry` 非空，`plugin.capabilities.tools` 包含 `demoGreet`。
+
+## 八、交付后用户怎么用
+
+- 启用/禁用：用户进入“设置 → 插件”，找到对应插件切换开关；禁用会撤销它注册的页面、菜单、工具和资源。
+- 页面入口：只有清单 `ui.navItems` 声明过的条目才会出现在左侧导航；路由为 `/plugin/<id>`。
+- 面板入口：`ctx.ui.registerPanel` 注册的面板出现在对应 dock（`left`/`right`/`bottom`/`floating`），标识为 `pluginId/panelId`。
+- 命令：`server.js` 用 `ctx.registerCommand` 注册的命令以 `/命令名` 出现在命令面板。
+- 工具：注册的工具在允许其 id 的场景下对模型可见；场景 `access.tools` 未授权时不会出现。
+- 生效时机：只有 `buildRuntimeUiPlugin` 成功后才生效；单纯写入文件不影响正在运行的插件。
+
+---
+
+以下为实现插件时必须遵循的宿主底座契约。
 
 # 多运行域插件入口
 

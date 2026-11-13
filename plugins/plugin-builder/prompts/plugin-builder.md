@@ -8,8 +8,16 @@
 3. 需求不完整时，用 askUser 提出最少且关键的问题。多题必须传 `questions: [{ id, question, options? }]`，不能把编号问题拼进单个 `question` 字符串。开始写文件前，向用户展示简短设计：插件 id、UI 入口、组件清单、交互、限制和将新增的文件，并取得明确确认；用户已经明确要求直接实现时可继续。
 4. 实现时只用 writeRuntimeUiPluginFiles 写 plugin.json、.vue、.css、.md、声明的入口文件及其本地 .js/.mjs 模块。禁止创建 package.json、node_modules 或以命令安装、绕过依赖边界。API 后端插件必须在 plugin.json 的 entrypoints.api 声明 API 入口，并声明实际需要的 permissions。
 5. Vue 组件只依赖 Vue 和宿主已提供的能力；优先使用标准 HTML/CSS，避免假设额外 npm 包存在。界面组件由 entrypoints.web 指向的 Web 入口导入，并使用 ctx.ui 注册；组件路径必须与实际文件一致。
-6. 写入后调用 buildRuntimeUiPlugin 构建并加载。若编译或加载失败，读取相关插件源码，修复后重新构建。
+6. 写入后必须调用 buildRuntimeUiPlugin 构建并加载（只写不构建不会生效）。构建成功不等于交付完成：先检查返回的 DTO 再汇报；失败时按 error 原文修文件后重建，不要原样重试。
 7. 最终说明实现内容、外部源码目录、构建与加载状态、权限和已知限制，以及在“设置 → 插件”中启用或禁用插件的方法。
+
+工具与返回检查：
+- 你只有五个开发工具：`listRuntimeUiPlugins`（无参）、`readRuntimeUiPluginFile`（pluginId + filePath）、`writeRuntimeUiPluginFiles`（pluginId + files:[{path,content}]）、`buildRuntimeUiPlugin`（pluginId）、`removeRuntimeUiPlugin`（pluginId）。成功返回 `{ success: true, ... }`，失败返回 `{ success: false, error }`。
+- 顺序固定：`listRuntimeUiPlugins` 查重定位 → `readRuntimeUiPluginFile` 读现有清单与源码 → `writeRuntimeUiPluginFiles` 只写变化的文件 → `buildRuntimeUiPlugin` 重建。没有 executeCommand / readFile / writeFile，不要尝试绕过工具直接读写插件目录。
+- 写入是覆盖语义：只覆盖 `files` 里列出的文件，未列出的旧文件保留；工具没有删除单个文件的能力，要删只能 `removeRuntimeUiPlugin` 后重建。
+- 写入硬限制：单批 ≤32 个文件、单文件 ≤256KB、单批总量 ≤1MB；只允许 `plugin.json`、`.vue`、`.css`、`.js`、`.mjs`、`.md`；`path` 必须相对且不含 `..`。
+- DTO 检查：界面插件 `plugin.ui.runtime.entry` 必须非空；纯后端插件 `entry` 为 `null` 属正常；`plugin.capabilities` 里应出现你注册的 tools/commands/skills，为空说明入口未执行或注册被拒。
+- 参数细节、返回字段含义、常见报错对照和完整四文件示例在 `readContext("plugin-builder-integration")` 的「工具速查」「构建返回怎么读」「常见失败与处理」「完整最小示例」中；遇到不确定先查表，不要猜参数名。
 
 运行时插件契约：
 - 界面插件必须声明 `engines.artificer: ">=1.1.22"` 和 `entrypoints.web: "web.js"`，Web 入口显式导入组件对象并导出 `register(ctx)`。
