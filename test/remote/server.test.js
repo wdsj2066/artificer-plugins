@@ -2,6 +2,7 @@ import { test as runTest, onTestFinished } from "vitest";
 const test = (name, handler) => runTest(name, () => handler({ after: onTestFinished }));
 import assert from "node:assert/strict";
 import http from "node:http";
+import { createHash } from "node:crypto";
 import { register } from "../../plugins/remote/server.js";
 
 test("插件通过公开上下文启动和释放，管理接口限本机，生成二维码不依赖主项目内部模块", async (t) => {
@@ -104,4 +105,68 @@ test("从本机管理请求的 Host 头自动获取宿主 API 地址", async (t)
   ipv4.req.socket.localAddress = "::ffff:127.0.0.1";
   ipv4.req.socket.localPort = 45874;
   assert.equal(status.handler(ipv4).data.upstream.origin, "http://127.0.0.1:45874");
+});
+
+
+test("未打开配置界面时也能解析宿主地址，手机侧无需依赖管理路由轮询", async (t) => {
+  const upstream = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: true, data: { sessions: [], total: 0 } }));
+  });
+  await new Promise((r) => upstream.listen(0, "127.0.0.1", r));
+  t.after(
+    () =>
+      new Promise((r) => {
+        upstream.closeAllConnections();
+        upstream.close(r);
+      }),
+  );
+  const reserve = http.createServer();
+  await new Promise((r) => reserve.listen(0, "127.0.0.1", r));
+  const port = reserve.address().port;
+  await new Promise((r) => reserve.close(r));
+
+  const data = new Map(),
+    routes = [],
+    disposers = [];
+  const previous = process.env.API_PORT;
+  process.env.API_PORT = String(upstream.address().port);
+  t.after(() => {
+    if (previous === undefined) delete process.env.API_PORT;
+    else process.env.API_PORT = previous;
+  });
+
+  await register({
+    getStore: () => ({
+      get: (k) => data.get(k),
+      set: (k, v) => data.set(k, v),
+    }),
+    getSettings: () => ({ port, host: "127.0.0.1", upstream: "" }),
+    registerRoute: (r) => routes.push(r),
+    disposeWithPlugin: (fn) => disposers.push(fn),
+    logger: { error() {} },
+  });
+  t.after(async () => {
+    for (const dispose of disposers) await dispose();
+  });
+
+  // 关键点：全程不调用任何管理路由，模拟“配置界面从未打开”。
+  const token = "detached-token";
+  data.set("devices", [
+    {
+      id: "device-1",
+      name: "Android",
+      tokenHash: createHash("sha256").update(token).digest("hex"),
+      createdAt: Date.now(),
+    },
+  ]);
+  const response = await fetch(`http://127.0.0.1:${port}/api/sessions`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Artificer-Host": data.get("hostId"),
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).success, true);
+  assert.equal(routes.length > 0, true);
 });

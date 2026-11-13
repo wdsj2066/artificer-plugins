@@ -4,3 +4,4 @@ dist/
 node_modules/
 .artificer-runtime-entry.mjs
 plugins/**/.artificer-dist/
+.config/
