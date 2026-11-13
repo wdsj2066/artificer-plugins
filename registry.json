@@ -1,10 +1,313 @@
 {
   "plugins": [
     {
+      "id": "browser-automation",
+      "name": "网页预览与控制",
+      "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图；截图可临时提供给视觉模型，自动化操作在预览中显示指针",
+      "version": "2.5.2",
+      "author": "Artificer",
+      "entrypoints": {
+        "bootstrap": "bootstrap.js",
+        "electron": "electron.js",
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "filesystem",
+        "network",
+        "subprocess",
+        "electron",
+        "desktop-capture"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.5.2/browser-automation-2.5.2.zip",
+      "sha256": "858f652d78e0e9718f979a76579f51af6e0186226aba758a1e1c0a5f91722f9e"
+    },
+    {
+      "id": "channel-feishu",
+      "name": "飞书频道",
+      "description": "飞书机器人频道集成：接收/发送消息，支持独立频道会话与主会话挂载",
+      "version": "1.2.2",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "network",
+        "channels"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.2/channel-feishu-1.2.2.zip",
+      "sha256": "5cc1699e375996dcaa22e60d0c6f57104555cfdce02bec0a6c9d646080801f6c"
+    },
+    {
+      "id": "channel-wecom",
+      "name": "企业微信频道",
+      "description": "企业微信智能机器人频道集成：长连接收发消息，支持独立频道会话与主会话挂载",
+      "version": "1.2.2",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "network",
+        "channels",
+        "settings"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.2/channel-wecom-1.2.2.zip",
+      "sha256": "59bd0643330b6ad5bfeadaea607ab412a9eddf6481c9272d0305806da4453efd"
+    },
+    {
+      "id": "context-inspector",
+      "name": "上下文查看",
+      "description": "查看每次 AI 请求的上下文占用、分类构成与提示词缓存命中情况",
+      "version": "0.1.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "hooks",
+        "routes",
+        "settings",
+        "storage"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/context-inspector",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/context-inspector-v0.1.1/context-inspector-0.1.1.zip",
+      "sha256": "fdd7b98ada38f90532fed576ef822e3ddb721e49c5bc8d17a50e134375696c8c"
+    },
+    {
+      "id": "office",
+      "name": "Office 办公",
+      "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
+      "version": "1.0.3",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "filesystem"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.3/office-1.0.3.zip",
+      "sha256": "025dff3712ca5cda0539ee77c8f0ad1edd0ef73d53a91bf11c917b10d692529e"
+    },
+    {
+      "id": "plugin-builder",
+      "name": "插件工坊",
+      "description": "评估、设计并构建受信任运行时插件：支持 Vue 页面与面板、显式扩展菜单、内置或资源图标，以及 Node.js 工具、命令、API、频道和持久化存储",
+      "version": "1.0.5",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js"
+      },
+      "permissions": [
+        "filesystem",
+        "settings"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.5/plugin-builder-1.0.5.zip",
+      "sha256": "b32a173e0394d2b1eb71cafe9ccc0250a527ec29b5370fab89def7d75704bcb2"
+    },
+    {
+      "id": "recipes",
+      "name": "对话转 Skill",
+      "description": "把已完成的对话提炼成原生 Markdown Context Skill，保存到 Artificer 用户技能库",
+      "version": "1.0.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "llm",
+        "routes"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.1/recipes-1.0.1.zip",
+      "sha256": "6d4424df10013a4705ccdacf5066808ec2f386270573285f29538481dcab6253"
+    },
+    {
+      "id": "remote",
+      "name": "Remote 远程连接",
+      "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
+      "version": "0.1.13",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "network",
+        "routes",
+        "settings",
+        "filesystem"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.13/remote-0.1.13.zip",
+      "sha256": "59e9b231b1d2865e0b8e73232b21f88f751efc6b8ebf9f278f212716fbdf4512"
+    },
+    {
+      "id": "scheduler",
+      "name": "定时任务",
+      "description": "定时执行 Agent 提示词、Shell 命令或 HTTP 请求，支持 cron 表达式与时间间隔调度",
+      "version": "1.0.2",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "subprocess",
+        "network",
+        "sessions",
+        "workspaces"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/scheduler",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/scheduler-v1.0.2/scheduler-1.0.2.zip",
+      "sha256": "f2d49358338c5649b2337dd0200b0254f7d38bb2aee1b95f8295a042df450b49"
+    },
+    {
+      "id": "session-search",
+      "name": "会话全文搜索",
+      "description": "为历史会话建立本地全文索引，跨会话搜索关键词、定位消息并一键跳转；同时向 Agent 提供会话检索工具",
+      "version": "0.1.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "读取本地会话数据库",
+        "写入插件本地索引",
+        "本地 HTTP 路由"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/session-search",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/session-search-v0.1.1/session-search-0.1.1.zip",
+      "sha256": "c31412be6eaa319f3819cefd99b47e6aeaff60e1f3c1bbe0c083c231660db202"
+    },
+    {
+      "id": "statistics",
+      "name": "统计",
+      "description": "Token 消耗概览、每日活跃热力图与模型用量分析",
+      "version": "1.0.2",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "usage"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/statistics",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/statistics-v1.0.2/statistics-1.0.2.zip",
+      "sha256": "d46a42106e83bcc49c6f9ed8fac08b7a36a681e3c6ed4f581b0705159dcb560c"
+    },
+    {
+      "id": "terminal",
+      "name": "终端",
+      "description": "PTY 终端模拟器，支持交互式命令、实时流式输出和会话管理",
+      "version": "1.0.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "filesystem",
+        "subprocess",
+        "routes",
+        "settings"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.1/terminal-1.0.1.zip",
+      "sha256": "f1a18c9e07f7e068d93ab3d4d394512f476d2c401cc5e447fcb80775eb463411"
+    },
+    {
+      "id": "token-usage",
+      "name": "Token 用量",
+      "description": "在聊天输入框下方显示本会话的模型 token 用量和缓存命中情况",
+      "version": "1.1.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "web": "web.js"
+      },
+      "permissions": [],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.1/token-usage-1.1.1.zip",
+      "sha256": "db8e3f497396818bfd0da03bce923e5f9f9af2c6f537df31953ff7d22e5b977c"
+    },
+    {
+      "id": "trace-viewer",
+      "name": "运行时轨迹",
+      "description": "实时查看 Agent 运行时的调用轨迹：轮次、AI 调用、工具调用、hook 触发与异常。",
+      "version": "1.0.1",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "读取运行时 hook 事件",
+        "本地 HTTP 路由",
+        "进程内存缓冲"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/trace-viewer",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/trace-viewer-v1.0.1/trace-viewer-1.0.1.zip",
+      "sha256": "f908bd23d8b63abd55a813d9f53c05dad6fafef2f13df05a99c81475838f6b9b"
+    },
+    {
       "id": "ui-compiler-vue",
       "name": "Vue UI 编译器",
       "description": "为外部插件编译 Vue 组件和样式",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js"
@@ -14,243 +317,36 @@
         "subprocess",
         "compiler"
       ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/ui-compiler-vue",
       "downloads": {
         "linux-x64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.3/ui-compiler-vue-1.0.3-linux-x64.zip",
-          "sha256": "e87c7c419a01ccc704c181558feeba85f1e460cb1371084f267976e3db9f1816"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.4/ui-compiler-vue-1.0.4-linux-x64.zip",
+          "sha256": "0224367c20fae696f9f32f110596fb128890a6921150bb576d71185386b8029b"
         },
         "linux-arm64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.3/ui-compiler-vue-1.0.3-linux-arm64.zip",
-          "sha256": "1877a25df73ee4f1ce836ed59c8ce9d525f880c1b73768c8f1900c08543c305b"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.4/ui-compiler-vue-1.0.4-linux-arm64.zip",
+          "sha256": "72128f516fb73f0c015eb840a3dc926dacd5d25487360a05488de1ecd7ea6a83"
         },
         "win32-x64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.3/ui-compiler-vue-1.0.3-win32-x64.zip",
-          "sha256": "89b5a440d3cd3631d8db2705fe7f4a96487426d5b6d00794fdbd884f3daeae58"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.4/ui-compiler-vue-1.0.4-win32-x64.zip",
+          "sha256": "3909b7230abe8403310354771fd774bcb9e53f7992df6bc48a32f9cb594eee71"
         },
         "win32-arm64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.3/ui-compiler-vue-1.0.3-win32-arm64.zip",
-          "sha256": "015c111edf90da846ab9dc2692d9dffa0a11e861e0a601e8b37ca5ed707f916a"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.4/ui-compiler-vue-1.0.4-win32-arm64.zip",
+          "sha256": "0b031fe266c1b7df3be22936ee0289812a870446319f8fbfa8fb83f328d75abd"
         },
         "darwin-x64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.3/ui-compiler-vue-1.0.3-darwin-x64.zip",
-          "sha256": "81bc175c843cdc071aca69cc2191589ae03038d0072d1bdb76775df23eaf23b3"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.4/ui-compiler-vue-1.0.4-darwin-x64.zip",
+          "sha256": "6a6a3295d524f6653a14c0cbdf27ee53f8dd6d0bd41d82e26a87790510d89712"
         },
         "darwin-arm64": {
-          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.3/ui-compiler-vue-1.0.3-darwin-arm64.zip",
-          "sha256": "44bfe9216f76275dc1a80d2694f22caeb90f50aaec6559b17276586c211752e8"
+          "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/ui-compiler-vue-v1.0.4/ui-compiler-vue-1.0.4-darwin-arm64.zip",
+          "sha256": "8bcf5d7f97dea444536fb6d356f63d8659db9a9df24cd5ace055ecaf0e1c5ace"
         }
       }
-    },
-    {
-      "id": "browser-automation",
-      "name": "网页预览与控制",
-      "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图；截图可临时提供给视觉模型，自动化操作在预览中显示指针",
-      "version": "2.5.1",
-      "author": "Artificer",
-      "entrypoints": {
-        "bootstrap": "bootstrap.js",
-        "electron": "electron.js",
-        "api": "server.js"
-      },
-      "permissions": [
-        "filesystem",
-        "network",
-        "subprocess",
-        "electron",
-        "desktop-capture"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.5.1/browser-automation-2.5.1.zip",
-      "sha256": "2e04d5162dabd89ae76fbc0acfc51399277c5acfa4cc633e7e2a625fa71a93d7"
-    },
-    {
-      "id": "channel-feishu",
-      "name": "飞书频道",
-      "description": "飞书机器人频道集成：接收/发送消息，支持独立频道会话与主会话挂载",
-      "version": "1.2.1",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "network",
-        "channels"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-feishu",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-feishu-v1.2.1/channel-feishu-1.2.1.zip",
-      "sha256": "48288f0a30de11d8ca1a89a1236fcda8f61d391d1de0c3a8d7394a469bb53070"
-    },
-    {
-      "id": "channel-wecom",
-      "name": "企业微信频道",
-      "description": "企业微信智能机器人频道集成：长连接收发消息，支持独立频道会话与主会话挂载",
-      "version": "1.2.1",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "network",
-        "channels",
-        "settings"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.1/channel-wecom-1.2.1.zip",
-      "sha256": "3a5d1acbadb9618e2532c26c41be8ea17420e18e7523cdc19e46f77b8ebf6898"
-    },
-    {
-      "id": "token-usage",
-      "name": "Token 用量",
-      "description": "在聊天输入框下方显示本会话的模型 token 用量和缓存命中情况",
-      "version": "1.1.0",
-      "author": "Artificer",
-      "permissions": [],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.0/token-usage-1.1.0.zip",
-      "sha256": "8816560fa797ad43ec16c086040eac8c627a9c3ca9eb9e831d2b028e32603232"
-    },
-    {
-      "id": "context-inspector",
-      "name": "上下文查看",
-      "description": "查看每次 AI 请求的上下文占用、分类构成与提示词缓存命中情况",
-      "version": "0.1.0",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "hooks",
-        "routes",
-        "settings",
-        "storage"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/context-inspector",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/context-inspector-v0.1.0/context-inspector-0.1.0.zip",
-      "sha256": "1d8c44f07fb63fcc221f332b36702b8875d89b6d069432196e7f4d41b59b17ab"
-    },
-    {
-      "id": "office",
-      "name": "Office 办公",
-      "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
-      "version": "1.0.2",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "filesystem"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/office",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/office-v1.0.2/office-1.0.2.zip",
-      "sha256": "e53bc544cb53f31a601a4735ef042752d8934fab0b468ed2ae6f98f66cea7800"
-    },
-    {
-      "id": "plugin-builder",
-      "name": "插件工坊",
-      "description": "评估、设计并构建受信任运行时插件：支持 Vue 页面与面板、显式扩展菜单、内置或资源图标，以及 Node.js 工具、命令、API、频道和持久化存储",
-      "version": "1.0.4",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "filesystem",
-        "settings"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.4/plugin-builder-1.0.4.zip",
-      "sha256": "a76cc68de6623babee46e347cac53684aef03a1c914b62d905dd23041fedf62b"
-    },
-    {
-      "id": "recipes",
-      "name": "对话转 Skill",
-      "description": "把已完成的对话提炼成原生 Markdown Context Skill，保存到 Artificer 用户技能库",
-      "version": "1.0.0",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "llm",
-        "routes"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/recipes",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/recipes-v1.0.0/recipes-1.0.0.zip",
-      "sha256": "47193f63c798c1a6324ca0f72c5f378b6b72be7419473bad401294be5259532e"
-    },
-    {
-      "id": "terminal",
-      "name": "终端",
-      "description": "PTY 终端模拟器，支持交互式命令、实时流式输出和会话管理",
-      "version": "1.0.0",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "filesystem",
-        "subprocess",
-        "routes",
-        "settings"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/terminal",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/terminal-v1.0.0/terminal-1.0.0.zip",
-      "sha256": "f61a2ef02aeea5b569b40f2a6d8a079bf4b871a11efd0696fc63586ede4f7e2e"
-    },
-    {
-      "id": "remote",
-      "name": "Remote 远程连接",
-      "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
-      "version": "0.1.12",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "network",
-        "routes",
-        "settings",
-        "filesystem"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.12/remote-0.1.12.zip",
-      "sha256": "c35387aaa6a4e527ffeabb2c6de50d5b2dfefce99e1a0df33bda6b7cc6c1ca43"
-    },
-    {
-      "id": "scheduler",
-      "name": "定时任务",
-      "description": "定时执行 Agent 提示词、Shell 命令或 HTTP 请求，支持 cron 表达式与时间间隔调度",
-      "version": "1.0.1",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "subprocess",
-        "network",
-        "sessions",
-        "workspaces"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/scheduler",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/scheduler-v1.0.1/scheduler-1.0.1.zip",
-      "sha256": "521ebd04ff559b694b4b744843829e3da50333eee7333838c28178758b8b954f"
-    },
-    {
-      "id": "statistics",
-      "name": "统计",
-      "description": "Token 消耗概览、每日活跃热力图与模型用量分析",
-      "version": "1.0.1",
-      "author": "Artificer",
-      "entrypoints": {
-        "api": "server.js"
-      },
-      "permissions": [
-        "usage"
-      ],
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/statistics",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/statistics-v1.0.1/statistics-1.0.1.zip",
-      "sha256": "493b68a9451cf2215129a0887f2739dfff2d236bdb1f7ecbd09e2f5e02d17fa9"
     }
   ]
 }
