@@ -116,7 +116,7 @@
       "id": "plugin-builder",
       "name": "插件工坊",
       "description": "评估、设计并构建受信任运行时插件：支持 Vue 页面与面板、显式扩展菜单、内置或资源图标，以及 Node.js 工具、命令、API、频道和持久化存储",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js"
@@ -129,8 +129,8 @@
         "artificer": ">=1.1.22"
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/plugin-builder",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.5/plugin-builder-1.0.5.zip",
-      "sha256": "b32a173e0394d2b1eb71cafe9ccc0250a527ec29b5370fab89def7d75704bcb2"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/plugin-builder-v1.0.6/plugin-builder-1.0.6.zip",
+      "sha256": "ecb55d641428542288afc58f10306a6081f588832a40110765ec6e3c16186448"
     },
     {
       "id": "recipes",
@@ -220,6 +220,28 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/session-search",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/session-search-v0.1.1/session-search-0.1.1.zip",
       "sha256": "c31412be6eaa319f3819cefd99b47e6aeaff60e1f3c1bbe0c083c231660db202"
+    },
+    {
+      "id": "skillhub-market",
+      "name": "Skill 市场",
+      "description": "在技能管理页提供 Skill 市场入口：分页浏览、关键词搜索并整包安装 SkillHub 社区技能",
+      "version": "1.2.0",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "filesystem",
+        "network",
+        "settings"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/skillhub-market",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/skillhub-market-v1.2.0/skillhub-market-1.2.0.zip",
+      "sha256": "7baab6886d785bc882f7c72c7547667f546c57d7a9db5e49e6c79e2b63349aa1"
     },
     {
       "id": "statistics",
