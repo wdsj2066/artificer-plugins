@@ -1,15 +1,19 @@
 {
   "id": "terminal",
   "name": "终端",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PTY 终端模拟器，支持交互式命令、实时流式输出和会话管理",
   "author": "Artificer",
   "icon": "terminal",
-  "permissions": ["filesystem", "subprocess", "routes", "settings"],
-  "entrypoints": { "api": "server.js" },
-  "ui": {
-    "view": "view.vue",
-    "panels": [{ "id": "terminal", "region": "bottom", "component": "view.vue", "title": "终端", "icon": "terminal" }]
+  "permissions": [
+    "filesystem",
+    "subprocess",
+    "routes",
+    "settings"
+  ],
+  "entrypoints": {
+    "api": "server.js",
+    "web": "web.js"
   },
   "settings": {
     "title": "终端设置",
@@ -49,5 +53,8 @@
         "description": "是否启用终端光标闪烁效果"
       }
     ]
+  },
+  "engines": {
+    "artificer": ">=1.1.22"
   }
 }

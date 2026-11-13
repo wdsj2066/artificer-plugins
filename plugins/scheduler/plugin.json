@@ -1,16 +1,28 @@
 {
   "id": "scheduler",
   "name": "定时任务",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "定时执行 Agent 提示词、Shell 命令或 HTTP 请求，支持 cron 表达式与时间间隔调度",
   "author": "Artificer",
   "icon": "timer",
-  "permissions": ["subprocess", "network", "sessions", "workspaces"],
-  "engines": { "artificer": ">=1.1.6" },
+  "permissions": [
+    "subprocess",
+    "network",
+    "sessions",
+    "workspaces"
+  ],
+  "engines": {
+    "artificer": ">=1.1.22"
+  },
   "ui": {
-    "view": "view.vue",
-    "navItems": [{ "id": "scheduler", "label": "定时任务", "icon": "timer", "route": "/plugin/scheduler" }],
-    "panels": [{ "region": "right", "component": "panel.vue", "title": "定时任务", "icon": "timer", "default": true }]
+    "navItems": [
+      {
+        "id": "scheduler",
+        "label": "定时任务",
+        "icon": "timer",
+        "route": "/plugin/scheduler"
+      }
+    ]
   },
   "settings": {
     "title": "定时任务设置",
@@ -53,6 +65,9 @@
       }
     ]
   },
-  "entrypoints": { "api": "server.js" },
+  "entrypoints": {
+    "api": "server.js",
+    "web": "web.js"
+  },
   "panelOrder": 30
 }

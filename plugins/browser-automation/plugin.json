@@ -1,32 +1,24 @@
 {
   "id": "browser-automation",
   "name": "网页预览与控制",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "通过 Chromium CDP 和 Puppeteer 控制预览网页，处理原生确认框，并支持网页与整个桌面截图；截图可临时提供给视觉模型，自动化操作在预览中显示指针",
   "author": "Artificer",
   "icon": "globe-2",
-  "permissions": ["filesystem", "network", "subprocess", "electron", "desktop-capture"],
+  "permissions": [
+    "filesystem",
+    "network",
+    "subprocess",
+    "electron",
+    "desktop-capture"
+  ],
   "entrypoints": {
     "bootstrap": "bootstrap.js",
     "electron": "electron.js",
-    "api": "server.js"
+    "api": "server.js",
+    "web": "web.js"
   },
-  "ui": {
-    "panels": [
-      {
-        "id": "browser",
-        "region": "right",
-        "component": "panel.vue",
-        "title": "网页预览",
-        "icon": "globe-2",
-        "default": true,
-        "width": "40%"
-      }
-    ],
-    "toolRenderers": {
-      "browserStartPreview": "start-result.vue",
-      "browserScreenshot": "screenshot-result.vue",
-      "browserDesktopScreenshot": "screenshot-result.vue"
-    }
+  "engines": {
+    "artificer": ">=1.1.22"
   }
 }

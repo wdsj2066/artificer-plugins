@@ -407,7 +407,7 @@ async function loadSessions() {
   try {
     const res = await fetch('/api/sessions')
     const json = await res.json()
-    const list = (json.success && json.data) || []
+    const list = (json.success && json.data?.sessions) || []
     sessionOptions.value = list
       .filter(s => s && s.id)
       .map(s => ({ label: s.title || s.id, value: s.id }))
@@ -879,7 +879,7 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 4px 6px;
   cursor: pointer;
-  border-radius: var(--radius-xs, 4px);
+  border-radius: var(--radius-xs);
   transition: background 0.12s ease;
   flex-shrink: 0;
   font-weight: 600;
@@ -932,7 +932,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
-  border-radius: var(--radius-xs, 4px);
+  border-radius: var(--radius-xs);
   font-size: 11px;
   cursor: pointer;
   transition: background 0.12s ease;
@@ -958,7 +958,7 @@ onUnmounted(() => {
   font-size: 10px;
   flex-shrink: 0;
   padding: 1px 5px;
-  border-radius: var(--radius-xs, 4px);
+  border-radius: var(--radius-xs);
   color: var(--text-secondary, #666);
   background: var(--bg-tertiary, rgba(128, 128, 128, 0.12));
 }
@@ -1022,7 +1022,7 @@ onUnmounted(() => {
   font-size: 11px;
   color: var(--text-secondary, #666);
   background: var(--bg-tertiary, rgba(128, 128, 128, 0.06));
-  border-radius: var(--radius-xs, 4px);
+  border-radius: var(--radius-xs);
   padding: 6px 8px;
   margin-top: 2px;
   white-space: pre-wrap;

@@ -63,9 +63,9 @@ describe('会话全文搜索插件', () => {
   it('声明独立插件身份、显式菜单入口与设置项', () => {
     expect(manifest.id).toBe('session-search')
     expect(manifest.entrypoints.api).toBe('server.js')
-    expect(manifest.ui.view).toBe('views/App.vue')
+    expect(manifest.entrypoints.web).toBe('web.js')
     expect(manifest.ui.navItems[0].route).toBe('/plugin/session-search')
-    expect(manifest.engines.artificer).toBe('>=1.1.6')
+    expect(manifest.engines.artificer).toBe('>=1.1.22')
     expect(manifest.settings.fields.map((field) => field.key)).toEqual(['includeToolResults', 'maxResults', 'autoIndex'])
   })
 

@@ -30,10 +30,9 @@ describe('外部定时任务插件', () => {
 
   it('保留插件身份、显式菜单和右侧面板声明', () => {
     expect(manifest.id).toBe('scheduler')
-    expect(manifest.ui.view).toBe('view.vue')
+    expect(manifest.entrypoints.web).toBe('web.js')
     expect(manifest.ui.navItems[0].route).toBe('/plugin/scheduler')
-    expect(manifest.ui.panels[0]).toMatchObject({ region: 'right', component: 'panel.vue' })
-    expect(manifest.engines.artificer).toBe('>=1.1.6')
+    expect(manifest.engines.artificer).toBe('>=1.1.22')
   })
   it('注册全部工具与路由，创建任务并使用宿主会话 SDK 执行', async () => {
     expect([...tools.keys()]).toEqual(['createScheduledTask', 'listScheduledTasks', 'updateScheduledTask', 'deleteScheduledTask', 'runScheduledTask'])

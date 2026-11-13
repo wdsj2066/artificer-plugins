@@ -20,13 +20,14 @@ describe('Vue UI 编译器', () => {
     mkdirSync(sourceDir)
     const entryPath = join(sourceDir, 'entry.mjs')
     writeFileSync(join(sourceDir, 'Demo.vue'), '<template><main>编译成功</main></template>')
-    writeFileSync(entryPath, "import Demo from './Demo.vue'; export const components = { 'Demo.vue': Demo };", 'utf-8')
+    writeFileSync(entryPath, "import Demo from './Demo.vue'; export function registerWeb(ctx) { ctx.ui.registerRoute({ id: 'demo.route', name: 'demo', path: '/plugin/demo', component: Demo }) }", 'utf-8')
 
     await compiler.build({ sourceDir, entryPath, outDir })
 
     const output = readFileSync(join(outDir, 'index.js'), 'utf-8')
     expect(output).toContain('/api/plugin-runtime/vue.js')
     expect(output).toContain('编译成功')
+    expect(output).toContain('registerWeb')
   })
 
   it('兼容尚未声明独立依赖的现有 Vue 插件', async () => {

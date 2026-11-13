@@ -7,20 +7,22 @@
 2. 先做可行性评估，明确给出“可行 / 部分可行 / 不适合运行时插件”及原因。涉及后端能力、系统权限、私密数据、远程服务或复杂状态时，要说明权限、数据流和风险。
 3. 需求不完整时，用 askUser 提出最少且关键的问题。多题必须传 `questions: [{ id, question, options? }]`，不能把编号问题拼进单个 `question` 字符串。开始写文件前，向用户展示简短设计：插件 id、UI 入口、组件清单、交互、限制和将新增的文件，并取得明确确认；用户已经明确要求直接实现时可继续。
 4. 实现时只用 writeRuntimeUiPluginFiles 写 plugin.json、.vue、.css、.md、声明的入口文件及其本地 .js/.mjs 模块。禁止创建 package.json、node_modules 或以命令安装、绕过依赖边界。API 后端插件必须在 plugin.json 的 entrypoints.api 声明 API 入口，并声明实际需要的 permissions。
-5. Vue 组件只依赖 Vue 和宿主已提供的能力；优先使用标准 HTML/CSS，避免假设额外 npm 包存在。plugin.json 的 ui 路径必须与实际文件一致。
+5. Vue 组件只依赖 Vue 和宿主已提供的能力；优先使用标准 HTML/CSS，避免假设额外 npm 包存在。界面组件由 entrypoints.web 指向的 Web 入口导入，并使用 ctx.ui 注册；组件路径必须与实际文件一致。
 6. 写入后调用 buildRuntimeUiPlugin 构建并加载。若编译或加载失败，读取相关插件源码，修复后重新构建。
-7. 最终说明实现内容、外部源码目录、构建与加载状态、权限和已知限制，以及在“能力管理”中启用或禁用插件的方法。
+7. 最终说明实现内容、外部源码目录、构建与加载状态、权限和已知限制，以及在“设置 → 插件”中启用或禁用插件的方法。
 
 运行时插件契约：
-- `plugin.json` 的 `ui` 只能使用宿主支持的字段，组件路径均相对插件目录且必须是存在的 `.vue` 文件：
-  - 单组件插槽：`view`（完整页面）、`statusBar`（输入区下方全局状态栏）、`toolbar`（顶栏动作）、`inputActions`（输入工具栏）、`inputFooter`（输入框底部）、`contextMenu`、`msgActions`、`sessionActions`，均为字符串路径，如 `"ui": { "view": "views/App.vue" }`。
-  - 停靠面板：`ui.panels[]`，字段为 `id`、`region`、`component`、`title`、`icon`、`default`、`width`（数字或 `"50%"`）、`showOnRoutes`（路由字符串数组），例如 `"ui": { "panels": [{ "id": "example", "region": "bottom", "component": "views/Panel.vue", "title": "标题", "icon": "activity" }] }`；浮动面板用 `ui.floatingPanels[]`（`id` + `component`）。
-  - 全局样式：`"styles": ["styles/main.css"]`，前端安装时注入 `<style>`。
-  - 声明式扩展：`navItems`（侧边栏菜单项，`{ id, label, icon?, route }`）、`routes`（前端路由注入，`{ path, name, component }`，path 必须以 `/plugin/` 开头）、`shortcuts`（全局快捷键，`{ id, keys, label }`，keys 形如 `mod+shift+t`）、`toolMeta`（工具折叠态 `icon`/`summary`）。
-  - 页面与菜单入口分离：`ui.view` 只声明页面，不会自动加入扩展菜单。用户需要菜单入口时，必须显式声明 `ui.navItems`，例如 `"ui": { "view": "views/App.vue", "navItems": [{ "id": "main", "label": "示例", "icon": "puzzle", "route": "/plugin/example" }] }`，其中 example 必须替换为实际插件 id。辅助页面和已有其他入口的面板不必添加菜单；无菜单的页面仍可从插件详情打开。
-  - 顶层 `icon` 和 `ui.navItems[].icon` 支持内置 Lucide 名称（如 `"puzzle"`）或资源声明 `{"file":"assets/icon.svg"}`。资源路径相对插件目录，支持 SVG / PNG / WebP，单文件最多 1MB；不使用绝对路径、外部 URL、越界路径或手写 `src`。加载失败回退默认图标。其他位置（面板、工具元数据、频道）仍使用图标名。资源必须事先存在；当前源码写入工具不支持图片资源文件，不得只声明不存在的图片或把二进制内容当成文本写入，缺少可用资源时选内置图标。
-  - 自定义渲染：`toolRenderers` / `commandResults` / `messageRenderers` / `roundRenderers` / `components`，均为 `{ key: 组件路径 }` 映射。
-  - 禁止使用顶层 `panelDefault` / `panelWidth`，禁止编造 `ui.type`、`ui.entry` 或旧的 `ui.panel` 字段。
+- 界面插件必须声明 `engines.artificer: ">=1.1.22"` 和 `entrypoints.web: "web.js"`，Web 入口显式导入组件对象并导出 `register(ctx)`。
+- 页面通过 `ctx.ui.registerRoute({ id, name, path, component })` 注册，path 必须在 /plugin/ 下；独立面板窗口无路由服务，先检查 `ctx.ui.getService('ui.router@1')`。
+- 停靠/浮动面板通过 `ctx.ui.registerPanel({ id, region, title, icon, component, order?, width?, default?, showOnRoutes? })` 注册，region 为 left/right/bottom/floating。面板注册不依赖路由服务，标识为 pluginId/panelId。
+- UI 替换/插入通过 `ctx.ui.registerRule({ op, target, node, when })`；node 必须为 `{ id, type: 'component', component: 导入的组件对象, props: (services, scope) => ({...}) }`。不得用字符串代替组件对象。
+- 消息动作插入 chat.messages.actions，传 msg/sessionId；输入底部插入 chat.input.footer，传 tokenCount/promptTokens/completionTokens/cachedTokens/lastPromptTokens/contextWindow。
+- 工具结果按 scope.msg.name 条件替换 chat.messages.tool.result，传 msg/sessionId/toolDisplayName；完整工具消息用 chat.messages.tool；整回合用 chat.messages.round；命令结果按 scope.renderType 替换 chat.input.command-palette.result.fallback。不要用无条件工具结果替换覆盖其他插件。
+- 清单 ui 仅保存 styles/navItems/routes/toolMeta/shortcuts/theme 纯数据。navItems 为 `{id,label,icon?,route}`；routes 仅元数据 `{path,name}`，不携带组件。真实页面由 Web 入口注册，菜单必须显式声明。
+- 禁止旧组件路径字段：ui.view/ui.panels/ui.floatingPanels/ui.toolbar/ui.inputActions/ui.inputFooter/ui.statusBar/ui.contextMenu/ui.msgActions/ui.sessionActions/ui.toolRenderers/ui.commandResults/ui.messageRenderers/ui.roundRenderers/ui.components。禁止 hasBackend、ui.type/ui.entry/ui.panel、panelDefault/panelWidth。
+- 清单图标可用 Lucide 名称或已存在的资源 `{file:"assets/icon.svg"}`。当前源码写入工具不支持写二进制图片，不得声明不存在的资源。
+- 服务通过 ctx.ui.registerService 发布，并随插件卸载清理；读取职责明确的 ui.shell@1、ui.sessionNavigation@1、ui.sidebarLayout@1、ui.panelLayout@1，不得恢复旧 ui.shellState@1。定时器、监听器用组件生命周期或 disposeWithPlugin 释放。
+- 所有控件使用主题颜色与 --radius-* 圆角变量。工作区标题栏使用 --workspace-header-height，标签和栏内控件保持直角、中性下划线，不覆盖宿主统一栏高。
 - 插件设置只能写为 `"settings": { "title": "设置", "fields": [...] }`。不要写 `settings` 数组，也不要写 `hasSettings`；是否有设置由 `fields` 自动派生。每个 field 支持 `key`、`label`、`description`、`placeholder`、`defaultValue` 和 `type`；`type` 支持 `text`（默认）、`password`、`number`、`boolean`、`select`（需提供 `options`）。示例：`{ "key": "apiKey", "label": "API Key", "type": "password", "defaultValue": "" }`。
 - 后端 `server.js` 是 ESM，必须导出 `export function register(ctx) { ... }` 或默认导出含 `register` 的对象。不要使用 `require`、`module.exports` 或自定义裸 `handleRequest`。`ctx` 可用的注册与读取接口：
   - Artificer 1.1.6 起提供异步宿主服务：`ctx.sessions.exists(id)` / `create(options)` / `delete(id)` / `chat(request)`，`ctx.workspaces.list()` / `create(options)`，以及 `ctx.usage.read(year)`。会话执行显式传递 `approvalMode`，用量返回只读聚合数据；使用这些接口时声明 `engines.artificer: ">=1.1.6"`，不要导入宿主存储和 API 服务源码。
@@ -36,7 +38,7 @@
 - 需要插件设置的后端用 `ctx.getSettings()` 读取；不要从前端 localStorage 读取宿主设置，也不要把 API Key 放进 URL 查询参数。前端调用插件路由只传非敏感参数。
 - 运行时 hooks 用 `ctx.host.on(point, fn, { priority?, type? })` 挂载，禁用插件时宿主自动摘除。官方扩展点：`beforeRun`、`runOutcome`、`afterRun`、`beforeAiCall`、`afterAiCall`、`buildMessages`、`buildTools`、`toolCall`、`aiCall`、`decideFinish`、`dispatchEvent`、`rollbackCheckpoint`、`tryRecover`、`onClear`；未声明的点也允许自定义。
 - 生命周期：`server.js` 可额外导出 `onEnable` / `onDisable` / `onReload` / `onDestroy`，签名同为 `(ctx) => ...`，宿主在启用、禁用、热重载和销毁时调用。
-- 写入后必须检查 `buildRuntimeUiPlugin` 返回的 DTO：只要目标是 UI，`plugin.ui.runtime.entry` 必须非空；设置插件必须 `hasSettings: true`。若 DTO 已显示 `entry: null`、`hasSettings: false` 或 UI 为空，先读取并修复 manifest，不要向用户索要与该错误无关的信息。
+- 写入后必须检查 `buildRuntimeUiPlugin` 返回的 DTO：只要目标是 UI，`plugin.ui.runtime.entry` 必须非空，且 entrypoints.web 指向存在的入口；设置使用 settings.fields。若 UI DTO 已显示 `entry: null` 或 UI 为空，先读取并修复 manifest 和 Web 入口，不要向用户索要与该错误无关的信息。
 - 修改已有插件前先读 `plugin.json` 和相关 Vue/server 源码；不确定字段时遵循本契约，不能靠猜测或在 manifest 中添加无效的 `hasView` / `hasPanel` / `hasSettings` 标志。
 
 质量要求：

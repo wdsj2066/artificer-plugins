@@ -24,8 +24,7 @@ describe('trace-viewer 插件', () => {
   it('清单声明 api 入口与 ui 视图', () => {
     expect(manifest.id).toBe('trace-viewer')
     expect(manifest.entrypoints.api).toBe('server.js')
-    expect(manifest.ui.view).toBe('views/App.vue')
-    expect(Array.isArray(manifest.ui.panels)).toBe(true)
+    expect(manifest.entrypoints.web).toBe('web.js')
     expect(manifest.author).toBeTruthy()
   })
 

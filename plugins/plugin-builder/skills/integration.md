@@ -32,7 +32,7 @@ description: Artificer 六运行域、声明式能力、显式菜单入口、插
 `agent` 在 API 进程注册 Agent hooks，使用与 API 入口相同的插件生命周期；`worker` 在独立 Node worker 线程执行耗时逻辑。API 入口通过 `ctx.worker.call(method, args)` 调用 worker，worker 通过 `ctx.handle(method, fn)` 暴露方法，可用 `ctx.callApi(method, args)` 调用同一插件在 API 入口注册的 RPC 处理器。worker 是执行隔离，不是安全沙箱。
 已有 AgentRuntime 会动态读取插件 hook，因此禁用和热重载会作用于现存运行时。API 退出时会给插件至多三秒释放资源。
 
-`web` 在浏览器渲染进程执行 `register(ctx)`，上下文包含 `artificer`、`Vue`、`window`、`document`、`logger` 和 `disposeWithPlugin`。禁用、更新或移除插件时会调用返回的清理函数并释放登记的资源。内置插件的 Web 入口须位于 `web.js` 或 `web/` 目录，供 Vite 在构建时收集；运行时插件的 Web 入口会并入其编译产物。原有 `ui` 声明继续负责组件、路由、样式等纯数据扩展。
+`web` 在浏览器渲染进程执行 `register(ctx)`，上下文包含 `artificer`、`Vue`、`window`、`document`、`logger` 和 `disposeWithPlugin`。禁用、更新或移除插件时会调用返回的清理函数并释放登记的资源。内置插件的 Web 入口须位于 `web.js` 或 `web/` 目录，供 Vite 在构建时收集；运行时插件的 Web 入口会并入其编译产物。`ui` 只声明样式、菜单、路由元数据、工具元数据、快捷键和主题；组件必须在 Web 入口通过 `ctx.ui` 注册。
 
 API 插件工具可以用 `security: { kind: 'safe'|'risky'|'file'|'command', targetArg?: '参数名' }` 声明执行风险。确认中间件按此元数据处理插件工具，不需要将其 ID 加进宿主风险表。未声明时保留原有内置风险表与敏感标签兜底。
 这个字段控制 Agent 调用工具时的用户确认和目标围栏；它不限制已安装插件代码自身的 Node/Electron 权限。
@@ -67,7 +67,7 @@ API 与 Electron 入口通过仅绑定 `127.0.0.1` 的本地 RPC 端点通信。
 API/Agent 上下文支持 pluginId、pluginDir、logger、aiServiceManager、modelRequestService、modeRegistry；registerTool、registerCommand、registerRoute、registerWebSocket、registerChannel、processChannelInbound、registerProviderAdapter、registerArtifactHandler、registerUiCompiler、getStore、getSettings、importModule、host、worker、rpc、extensions、disposeWithPlugin、runtimePlugins。不能将这些 API 假定为其他运行域上下文也拥有。
 - runtimePlugins.list/readSourceFile/writeSourceFiles/build/remove 用于开发维护外部插件。保持 id，修改后 build 热加载，remove 仅在用户明确要求删除时使用。
 - importModule 只支持在 runtimeDependencies 声明的 ws、jszip、pptxgenjs、docx。
-- 工具必须有 handler；security 可声明 safe/risky/file/command 与 targetArg。命令 handler(args, context) 可返回 { success: true, data: { renderType, ...payload } }，由 ui.commandResults 提供渲染器。
+- 工具必须有 handler；security 可声明 safe/risky/file/command 与 targetArg。命令 handler(args, context) 可返回 { success: true, data: { renderType, ...payload } }，通过 chat.input.command-palette.result.fallback 的条件替换规则提供渲染器。
 - registerRoute({ method, path, handler }) 的 handler 接收含 query/body 的请求上下文；registerWebSocket 声明 WebSocket 路由。优先在 /api/plugins/<id>/ 命名空间组织业务路由。
 - 频道用普通 ProviderClass 注册，通过 processChannelInbound 交给宿主会话管线；static getMetadata() 返回 { label, icon?, color? }。
 - getStore() 是当前插件的 get/set/delete/list/clear 持久化 KV；getSettings() 读取宿主保存的声明设置。不要自行读写宿主配置或泄漏密钥。
@@ -82,31 +82,59 @@ artifacts: [{ id, name, icon?, openIn: "panel"|"view"|"window", route?, panelId?
 
 工坊源码写入允许 plugin.json、.vue、.css、.js、.mjs、.md；入口必须是存在的 .js 文件；单批最多 32 文件、1MB，单文件最多 256KB。纯声明插件如需通过当前运行时构建流程安装，可增加导出空 register(ctx) 的 API 入口，不要伪造 UI。
 
-## 全部 UI 接入点
+## 组件优先的 UI 契约（Artificer >=1.1.22）
 
-Artificer 1.1.6 起，后端可用稳定异步宿主服务：`ctx.sessions.exists(id)`、`create(options)`、`delete(id)`、`chat(request)`；`ctx.workspaces.list()`、`create(options)`；`ctx.usage.read(year)`。会话与工作区创建接受对应宿主服务参数，chat 显式传递 approvalMode，用量接口只提供只读聚合结果。使用这些接口时将 engines.artificer 设为 >=1.1.6。定时任务 scheduler 和统计 statistics 已迁入外部插件仓库，保持原插件 ID，不要复制宿主内部模块。
+界面插件必须声明 `entrypoints.web: "web.js"`。Web 入口导入 Vue 组件对象并导出 `register(ctx)`，所有 `ctx.ui` 注册随插件禁用、卸载和热重载自动撤销。不得在清单中声明组件路径。
 
-ui 的组件路径必须指向插件内存在的 .vue 文件，不支持目录约定回退。
-- view：完整页面 /plugin/<id>。
-- panels: [{ id, region: "left"|"right"|"bottom", component, title?, icon?, default?, width?, showOnRoutes? }]；面板身份为 pluginId/panelId，activatePanel 使用完整 panelKey。floatingPanels 也可声明浮动面板（内部归并为面板）。
-- toolbar props { isDark, online }；inputActions props { disabled, sessionId, insertText, setText, addReference, composeDraft }；inputFooter 提供输入框底部内容；statusBar props { isOnline }。
-- contextMenu props { x, y, close, context }；msgActions props { msg, sessionId, toolDisplayName }；sessionActions props { session, active }。
-- toolRenderers: { toolId: path }，props { msg, toolDisplayName }。
-- commandResults: { renderType: path }，props { data, renderType }。
-- messageRenderers: { role: path }，props { msg, sessionId, toolDisplayName }；WorkRound 内部消息不经过该分支。
-- roundRenderers: { roundType: path }，类型 default/plan，props { workMessages, startTime, roundElapsed, isComplete, roundStatus, artifactStats, sessionId, toolDisplayName }；emit copy/regenerate/approvePlan/rejectPlan。roundStatus 包括 checking/starting/reconnecting/streaming/waiting_confirmation/waiting_question/waiting_plan/finalizing/completed/failed/cancelled/interrupted。
-- components: { hostComponentName: path } 整体替换注册的宿主组件，props/events 透传；替换 ChatInput/ChatMessages 需用 defineExpose 暴露调用方需要的方法。
-- navItems: [{ id, label, icon?, route }]；routes: [{ path, name, component }]（path 必须 /plugin/ 开头）。
-- `ui.view` 只声明页面，不会自动加入扩展菜单。要展示入口必须显式声明 `ui.navItems`，默认页面地址为 `/plugin/<pluginId>`；无菜单入口时仍可从插件详情打开。按用户需要配置入口，不要给所有辅助页面和面板机械添加菜单。
-- 顶层 `icon` 和 `ui.navItems[].icon` 兼容 Lucide 名称，也支持 `{ "file": "assets/icon.svg" }`。资源相对插件目录，仅支持 SVG / PNG / WebP，单文件最多 1MB；宿主校验文件并生成资源地址，加载失败回退默认图标。禁止绝对路径、外部 URL、越界路径和手填 `src`；面板、toolMeta、频道等其他位置仍用图标名。资源须事先存在，当前工坊源码写入工具不支持图片资源，不得声明不存在的文件或通过文本写入二进制图片；缺少资源时使用内置图标。
-- shortcuts: [{ id, keys, label }]，触发 artificer:shortcut:<id>；toolMeta: { toolId: { icon?, summary?, summaryExtra? } }，模板支持 {{args.x}}/{{result.x}}。
-- styles: ["styles/main.css"] 注入全局样式；theme: { light?: { cssVars?, overrides? }, dark?: { cssVars?, overrides? } }，cssVars 键以 -- 开头，overrides 是 naive-ui themeOverrides。组件覆盖首个插件胜出；主题深合并后者胜出。ui.compiler 可指定编译器 id。
+```js
+import Page from './view.vue'
+import Panel from './panel.vue'
+
+export function register(ctx) {
+  if (ctx.ui.getService('ui.router@1')) {
+    ctx.ui.registerRoute({ id: 'example.route', name: 'plugin-example', path: '/plugin/example', component: Page })
+  }
+  ctx.ui.registerPanel({ id: 'main', region: 'right', title: '示例', icon: 'puzzle', component: Panel })
+}
+```
+
+独立面板窗口没有路由服务，所以页面注册须检查 `ui.router@1`；面板注册不要放进这个判断内。面板身份是全局唯一的 `pluginId/panelId`，调用 activatePanel 时使用完整 panelKey。registerPanel 支持 region=left/right/bottom/floating、order、width、default、showOnRoutes。
+
+组件树用 `ctx.ui.registerTree(tree, { priority, detached })` 注册。节点类型是 component/fragment/route/route-switch，component 必须是导入的 Vue 组件对象，不能写字符串或路径。`ctx.ui.registerRule({ op, target, node, props, index, when })` 支持 replace/insert/props/remove 等规则；插入和替换的 node 必须是组件节点。
+
+稳定节点：
+- `chat.input.footer`：插入组件，scope 包含 tokenCount/promptTokens/completionTokens/cachedTokens/lastPromptTokens/contextWindow。
+- `chat.messages.actions`：插入消息动作，scope 包含 msg/sessionId。
+- `chat.messages.tool.result`：按 scope.msg.name 条件替换工具结果，props 从 scope 传入 msg/sessionId/toolDisplayName。保留宿主 ToolRenderer 折叠行。
+- `chat.messages.tool`：按条件替换完整工具消息，props 为 msg/sessionId/toolDisplayName/hideCompletedStatus。
+- `chat.messages.round`：替换工作回合，传入 workMessages/startTime/roundElapsed/isComplete/roundStatus/roundType/artifactStats/sessionId/toolDisplayName 与 onCopy/onRegenerate/onFork/onApprovePlan/onRejectPlan。
+- `chat.input.command-palette.result.fallback`：按 scope.renderType 条件替换命令结果，scope 含 data/renderType/activeIndex/onSelect/onHover。
+- `app.root`、`app.titlebar`、`app.sidebar`、`app.left-dock`、`app.view`、`app.bottom-dock`、`app.right-dock`、`app.overlays` 是外壳节点。`app.controllers` 用于插入无视觉的生命周期控制器。
+
+规则示例：
+```js
+ctx.ui.registerRule({
+  op: 'replace', target: 'chat.messages.tool.result',
+  when: (_services, scope) => scope.msg?.name === 'exampleTool',
+  node: {
+    id: 'example.tool-result', type: 'component', component: Result,
+    props: (_services, scope) => ({ msg: scope.msg, sessionId: scope.sessionId, toolDisplayName: scope.toolDisplayName })
+  }
+})
+```
+
+清单 ui 仅允许 styles/navItems/routes/toolMeta/shortcuts/theme。routes 只携带 `{path,name}` 元数据，不包含 component；真实组件与路由由 registerRoute 注册，路径必须以 /plugin/ 开头。菜单通过 ui.navItems 显式声明，不会因注册页面而自动出现。
+禁止旧组件字段：view、panels、floatingPanels、toolbar、inputActions、inputFooter、statusBar、contextMenu、msgActions、sessionActions、toolRenderers、commandResults、messageRenderers、roundRenderers、components；禁止 ui.type/ui.entry/ui.panel、hasBackend、panelDefault/panelWidth。
+
+`ctx.ui.registerService(name, service, contract)` 发布共享状态，服务名格式为 domain@major；contract 可声明 fields/methods。职责分别由 ui.shell@1、ui.sessionNavigation@1、ui.sidebarLayout@1 和 ui.panelLayout@1 提供，禁止恢复已移除的 ui.shellState@1 大对象。不要导入其他插件内部组件。
+
+顶层 icon 和 ui.navItems[].icon 支持 Lucide 名称或已存在的资源 `{file:"assets/icon.svg"}`；不要声明不存在的资源。styles 是插件内 CSS 路径数组；theme 为 light/dark 的 cssVars/overrides；shortcuts 为 id/keys/label；toolMeta 为工具 ID 到 icon/summary/summaryExtra 的映射。这些均为纯数据。
 
 ## UI 与宿主通信
 
 Vue 组件 inject('artificer') 或 window.artificer；Web 入口 ctx.artificer 是同一对象：openSession(sessionId)、activatePanel(region, panelKey)、toast(content, type)、openModal({ title, component, props, width })、closeModal()。无需自己重复实现弹窗和面板激活。
 
-inputActions 可用 composeDraft({ references: [{ label, content }], text, send }) 或 addReference({ label, content })。独立窗口使用 BroadcastChannel('artificer-plugin-compose')，发送 { type: 'compose-plugin-draft', id, sessionId, references, text, send }，等待对应 id 的 compose-plugin-draft-result。label 上限 120 字，content 上限 12000 字，最多 20 条引用。其他已公开事件包括 artificer:new-session、artificer:context-menu、artificer:shortcut:<id>。卸载、启停、更新会经 /api/plugins/events 推送 plugins-changed 并同步前端。
+聊天输入提供 composeDraft({ references: [{ label, content }], text, send }) 或 addReference({ label, content })。独立窗口使用 BroadcastChannel('artificer-plugin-compose')，发送 { type: 'compose-plugin-draft', id, sessionId, references, text, send }，等待对应 id 的 compose-plugin-draft-result。label 上限 120 字，content 上限 12000 字，最多 20 条引用。其他已公开事件包括 artificer:new-session、artificer:context-menu、artificer:shortcut:<id>。卸载、启停、更新会经 /api/plugins/events 推送 plugins-changed 并同步前端。
 
 界面使用主题变量适配明暗；顶部工作区采用 --workspace-header-height、--workspace-header-control-size、--workspace-tab-indicator-width、--workspace-tab-font-size；标签直角、中性色下划线，保留编辑器已有交互。不要在插件里硬编码局部栏高或破坏宿主布局。
 

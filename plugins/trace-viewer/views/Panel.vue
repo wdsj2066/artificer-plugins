@@ -239,7 +239,7 @@ export default {
   border: 1px solid rgba(128, 128, 128, 0.3);
   background: transparent;
   color: inherit;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 2px 8px;
   font-size: 11px;
   cursor: pointer;
@@ -307,7 +307,7 @@ export default {
   font-size: 10px;
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.45);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0 4px;
 }
 .tvp-detail {
@@ -315,7 +315,7 @@ export default {
   margin: 4px 0 6px;
   padding: 8px 10px;
   background: rgba(128, 128, 128, 0.1);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   max-height: 240px;
   overflow: auto;
 }

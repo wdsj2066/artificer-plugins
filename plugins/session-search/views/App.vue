@@ -238,7 +238,7 @@ onBeforeUnmount(() => {
 }
 .ss-page::-webkit-scrollbar-thumb {
   background: rgba(128, 128, 128, 0.45);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 .ss-page::-webkit-scrollbar-track {
   background: transparent;
@@ -285,7 +285,7 @@ onBeforeUnmount(() => {
   gap: 2px;
   padding: 10px 12px;
   border: 1px solid rgba(128, 128, 128, 0.24);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 .ss-stat-v {
   font-size: 16px;
@@ -308,7 +308,7 @@ onBeforeUnmount(() => {
   color: inherit;
   background: transparent;
   border: 1px solid rgba(128, 128, 128, 0.32);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   outline: none;
 }
 .ss-input:focus {
@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
   color: #fff;
   background: #3b82f6;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .ss-btn:disabled {
@@ -363,7 +363,7 @@ onBeforeUnmount(() => {
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.45);
   background: rgba(239, 68, 68, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   white-space: pre-wrap;
 }
 .ss-empty {
@@ -387,7 +387,7 @@ onBeforeUnmount(() => {
   color: inherit;
   background: transparent;
   border: 1px solid rgba(128, 128, 128, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .ss-recent-row:hover {
@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
 .ss-row {
   padding: 10px 12px;
   border: 1px solid rgba(128, 128, 128, 0.2);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 .ss-row:hover {
@@ -428,7 +428,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   padding: 1px 6px;
   font-size: 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid rgba(128, 128, 128, 0.35);
   opacity: 0.85;
 }
@@ -465,7 +465,7 @@ onBeforeUnmount(() => {
   padding: 0 2px;
   color: #b45309;
   background: rgba(251, 191, 36, 0.3);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 @media (max-width: 720px) {
   .ss-page {
