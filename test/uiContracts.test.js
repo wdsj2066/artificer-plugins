@@ -17,6 +17,8 @@ vi.mock('../plugins/session-search/views/App.vue', () => ({ default: { name: 'Pl
 vi.mock('../plugins/statistics/view.vue', () => ({ default: { name: 'PluginPage' } }))
 vi.mock('../plugins/terminal/view.vue', () => ({ default: { name: 'PluginPage' } }))
 vi.mock('../plugins/token-usage/TokenUsageFooter.vue', () => ({ default: { name: 'TokenUsageFooter' } }))
+vi.mock('../plugins/skillhub-market/MarketDialog.vue', () => ({ default: { name: 'MarketDialog' } }))
+vi.mock('../plugins/skillhub-market/PageWrapper.vue', () => ({ default: { name: 'PageWrapper' } }))
 vi.mock('../plugins/trace-viewer/views/App.vue', () => ({ default: { name: 'PluginPage' } }))
 vi.mock('../plugins/trace-viewer/views/Panel.vue', () => ({ default: { name: 'TracePanel' } }))
 
