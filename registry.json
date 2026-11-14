@@ -157,7 +157,7 @@
       "id": "remote",
       "name": "Remote 远程连接",
       "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js",
@@ -173,8 +173,8 @@
         "artificer": ">=1.1.22"
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.14/remote-0.1.14.zip",
-      "sha256": "6d6986680125e3b4478ac0eeb884272a919ea86ce1d96ee8ba4953513acd0683"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.15/remote-0.1.15.zip",
+      "sha256": "86b1fc3eb76027c7facdbc275cd727d8505e0d92583e6cca6ade3c0bfe938ea0"
     },
     {
       "id": "scheduler",
