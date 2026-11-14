@@ -73,6 +73,7 @@ export function createBridge({
   now = Date.now,
   uploadRoot,
   lookupUpstream,
+  ensureUpstream,
 }) {
   let hostId = store.get("hostId");
   if (!hostId) {
@@ -243,6 +244,10 @@ export function createBridge({
       }
       if (!allowedPath(req.method, path)) throw fail(404, "接口未开放");
       const cfg = settings();
+      // 宿主可能先加载插件、后监听 API 端口，启动期探测会落空；
+      // 手机请求到来时若仍无上游，补一次探测，避免必须打开配置界面。
+      if (!String(cfg.upstream || "").trim() && !lookupUpstream?.() && ensureUpstream)
+        await ensureUpstream();
       const upstreamTarget = resolveUpstream();
       const target = new URL(upstreamTarget.origin);
       if (

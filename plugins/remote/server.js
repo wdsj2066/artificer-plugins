@@ -92,11 +92,38 @@ export async function register(ctx) {
       }
     }
   };
+  // 宿主可能先加载插件、后监听 API 端口，因此探测失败不算终态：
+  // 请求到来或启动后短周期内可重试，避免手机侧必须打开配置界面才恢复。
+  let probing = null;
+  let retryTimer = null;
+  const ensureUpstream = () => {
+    if (detectedUpstream) return Promise.resolve(detectedUpstream);
+    if (!probing)
+      probing = probeUpstream().finally(() => {
+        probing = null;
+      });
+    return probing.then(() => detectedUpstream);
+  };
+  const scheduleRetry = () => {
+    if (detectedUpstream || retryTimer) return;
+    retryTimer = setTimeout(async () => {
+      retryTimer = null;
+      await probeUpstream();
+      scheduleRetry();
+    }, 1500);
+    retryTimer.unref?.();
+  };
   await probeUpstream();
+  scheduleRetry();
+  ctx.disposeWithPlugin(() => {
+    if (retryTimer) clearTimeout(retryTimer);
+    retryTimer = null;
+  });
   const bridge = createBridge({
     store: ctx.getStore(),
     settings: () => ctx.getSettings(),
     lookupUpstream: () => detectedUpstream,
+    ensureUpstream,
     uploadRoot: join(
       process.env.APPDATA || homedir(),
       "Artificer",

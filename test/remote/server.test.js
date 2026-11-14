@@ -170,3 +170,64 @@ test("未打开配置界面时也能解析宿主地址，手机侧无需依赖�
   assert.equal((await response.json()).success, true);
   assert.equal(routes.length > 0, true);
 });
+
+
+test("宿主先加载插件、后监听 API 端口时，手机请求会自动补探测", async (t) => {
+  const data = new Map(),
+    routes = [],
+    disposers = [];
+  const previous = process.env.API_PORT;
+  delete process.env.API_PORT;
+  t.after(() => {
+    if (previous !== undefined) process.env.API_PORT = previous;
+  });
+
+  // 先注册插件，此时宿主 API 还没 listen，任何探测都会失败
+  await register({
+    getStore: () => ({
+      get: (k) => data.get(k),
+      set: (k, v) => data.set(k, v),
+    }),
+    getSettings: () => ({ port: 18093, host: "127.0.0.1", upstream: "" }),
+    registerRoute: (r) => routes.push(r),
+    disposeWithPlugin: (fn) => disposers.push(fn),
+    logger: { error() {} },
+  });
+  t.after(async () => {
+    for (const dispose of disposers) await dispose();
+  });
+
+  // 宿主稍后才开始监听 API 端口
+  const upstream = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: true, data: { sessions: [], total: 0 } }));
+  });
+  await new Promise((r) => upstream.listen(0, "::1", r));
+  t.after(
+    () =>
+      new Promise((r) => {
+        upstream.closeAllConnections();
+        upstream.close(r);
+      }),
+  );
+
+  const token = "late-host-token";
+  data.set("devices", [
+    {
+      id: "device-late",
+      name: "Android",
+      tokenHash: createHash("sha256").update(token).digest("hex"),
+      createdAt: Date.now(),
+    },
+  ]);
+
+  // 不调用任何管理路由，直接模拟手机请求
+  const response = await fetch("http://127.0.0.1:18093/api/sessions?remoteLimit=2", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Artificer-Host": data.get("hostId"),
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).success, true);
+});
