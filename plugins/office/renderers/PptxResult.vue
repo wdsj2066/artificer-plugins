@@ -14,7 +14,7 @@
 import { computed } from 'vue'
 import { Presentation } from 'lucide-vue-next'
 
-// 插件工具渲染器（声明式）：plugin.json 的 ui.toolRenderers 声明
+// 插件 Web 入口通过工具结果稳定节点注册此组件。
 //   "createPptx": "renderers/PptxResult.vue"   → 本组件渲染 createPptx 工具结果
 // 接收 { msg, toolDisplayName } 两个 props，msg 结构与内置渲染器一致（name / args / result / status）
 const props = defineProps({

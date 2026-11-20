@@ -21,13 +21,10 @@ function makeCtx() {
 }
 
 describe('trace-viewer 插件', () => {
-  it('清单声明 API、Web 树入口与树面板', () => {
+  it('清单声明 api 入口与 ui 视图', () => {
     expect(manifest.id).toBe('trace-viewer')
     expect(manifest.entrypoints.api).toBe('server.js')
     expect(manifest.entrypoints.web).toBe('web.js')
-    expect(manifest.ui.view).toBeUndefined()
-    expect(manifest.ui.routes[0]).toMatchObject({ path: '/plugin/trace-viewer' })
-    expect(manifest.ui.panels[0]).toMatchObject({ region: 'bottom', tree: true })
     expect(manifest.author).toBeTruthy()
   })
 

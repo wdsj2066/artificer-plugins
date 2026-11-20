@@ -50,7 +50,7 @@ describe('插件工坊', () => {
 
 const manifest = JSON.parse(readFileSync(new URL('../../plugins/plugin-builder/plugin.json', import.meta.url), 'utf8'))
 const knowledge = readFileSync(new URL('../../plugins/plugin-builder/skills/integration.md', import.meta.url), 'utf8')
-it('工坊可读取接入知识库，覆盖运行域、SDK 和统一 UI 树契约', () => {
+it('工坊可读取接入知识库，覆盖运行域、SDK 和全部 UI 声明', () => {
   expect(manifest.skills).toContainEqual({ file: 'skills/integration.md' })
   expect(manifest.scenario.access.skills).toContain('plugin-builder-integration')
   expect(manifest.scenario.access.tools).toContain('readContext')
@@ -59,11 +59,8 @@ it('工坊可读取接入知识库，覆盖运行域、SDK 和统一 UI 树契�
     'registerTool', 'registerCommand', 'registerRoute', 'registerWebSocket', 'registerChannel',
     'processChannelInbound', 'registerProviderAdapter', 'registerArtifactHandler', 'registerUiCompiler',
     'getStore', 'getSettings', 'importModule', 'modelRequestService', 'runtimePlugins',
-    'entrypoints', 'web', 'registerWeb', 'element', 'text', 'fragment', 'controller', 'route-switch',
-    'services.register', 'tree: true', 'panels', 'floatingPanels', 'navItems', 'routes', 'toolMeta',
-    'shortcuts', 'styles', 'theme', 'registerTree', 'registerRule', 'registerTransform', 'registerRoute',
-    'disposeWithPlugin', 'activatePanel', 'openModal'
+    'view', 'toolbar', 'inputActions', 'inputFooter', 'statusBar', 'contextMenu', 'msgActions', 'sessionActions',
+    'toolRenderers', 'commandResults', 'messageRenderers', 'roundRenderers', 'components', 'styles',
+    'panels', 'floatingPanels', 'navItems', 'routes', 'toolMeta', 'shortcuts', 'theme', 'composeDraft', 'activatePanel'
   ]) expect(knowledge, `知识库遗漏 ${name}`).toContain(name)
-  expect(knowledge).not.toContain('正式版 UI 可使用 `.vue`')
-  expect(knowledge).not.toContain('视图迁移桥接')
 })

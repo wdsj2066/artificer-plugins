@@ -585,7 +585,7 @@ onUnmounted(() => {
   padding: 11px 14px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
 }
 
 .stat-label {
@@ -618,7 +618,7 @@ onUnmounted(() => {
   font-size: 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
 }
 
 .upstream-main {
@@ -695,7 +695,7 @@ onUnmounted(() => {
   color: var(--text-primary);
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
   animation: toast-in 0.16s ease-out;
 }
@@ -735,7 +735,7 @@ onUnmounted(() => {
   padding: 16px 18px 18px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
 }
 
 .panel-head {
@@ -840,7 +840,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   background: #fff;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
 }
 
 .qr-frame img {
@@ -968,7 +968,7 @@ onUnmounted(() => {
   padding: 9px 11px;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   transition: border-color 0.15s, background 0.15s;
 }
 
@@ -993,7 +993,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   color: var(--text-secondary);
   background: var(--bg-tertiary);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
 }
 
 .row-meta {
@@ -1034,7 +1034,7 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--text-muted);
   border: 1px dashed var(--border-color);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
 }
 
 .divider {
@@ -1062,7 +1062,7 @@ onUnmounted(() => {
   font-size: 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--warning-color, #d29922);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
 }
 
 .error-icon {

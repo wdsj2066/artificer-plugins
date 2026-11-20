@@ -383,7 +383,7 @@ export default {
   min-width: 78px;
   padding: 8px 12px;
   border: 1px solid rgba(128, 128, 128, 0.24);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -413,7 +413,7 @@ export default {
   flex: 1;
   min-width: 180px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(128, 128, 128, 0.3);
   background: transparent;
   color: inherit;
@@ -447,7 +447,7 @@ export default {
 }
 .tv-select {
   padding: 5px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(128, 128, 128, 0.3);
   background: transparent;
   color: inherit;
@@ -468,7 +468,7 @@ export default {
   border: 1px solid rgba(128, 128, 128, 0.3);
   background: transparent;
   color: inherit;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 5px 10px;
   font-size: 12px;
   cursor: pointer;
@@ -482,7 +482,7 @@ export default {
 }
 .tv-alert {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(245, 158, 11, 0.5);
   background: rgba(245, 158, 11, 0.1);
   font-size: 12px;
@@ -503,7 +503,7 @@ export default {
   flex-direction: column;
   min-height: 0;
   border: 1px solid rgba(128, 128, 128, 0.24);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: auto;
 }
 .tv-list-head,
@@ -575,7 +575,7 @@ export default {
   flex-direction: column;
   min-height: 0;
   border: 1px solid rgba(128, 128, 128, 0.24);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px;
   overflow: auto;
   gap: 10px;
@@ -594,7 +594,7 @@ export default {
 .tv-side-tag {
   font-size: 10px;
   border: 1px solid rgba(128, 128, 128, 0.35);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0 5px;
   opacity: 0.75;
 }
@@ -614,7 +614,7 @@ export default {
 }
 .tv-side-err {
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(239, 68, 68, 0.45);
   background: rgba(239, 68, 68, 0.1);
   color: #f87171;
@@ -629,7 +629,7 @@ export default {
 .tv-json {
   margin: 0;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(128, 128, 128, 0.1);
   font-size: 11px;
   line-height: 1.55;

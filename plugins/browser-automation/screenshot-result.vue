@@ -61,7 +61,7 @@ watch(() => [result.value.sessionId, result.value.screenshotId], async ([session
 </script>
 
 <style scoped>
-.screenshot-result { overflow:hidden; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-primary); }
+.screenshot-result { overflow:hidden; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-primary); }
 .screenshot-result-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 10px; border-bottom:1px solid var(--border-color); }
 .screenshot-result-header strong { color:var(--text-primary); font-size:12px; font-weight:600; }
 .screenshot-result-header span,.screenshot-result-url { color:var(--text-muted); font:10px/1.45 Consolas,monospace; }
@@ -69,6 +69,6 @@ watch(() => [result.value.sessionId, result.value.screenshotId], async ([session
 .screenshot-result-error { color:#c62828; }
 .screenshot-result-image-wrap { position:relative; display:flex; max-height:360px; justify-content:center; overflow:auto; padding:8px; background:var(--bg-secondary); }
 .screenshot-result-image-wrap img { display:block; max-width:100%; height:auto; object-fit:contain; }
-.screenshot-result-download { position:sticky; right:0; bottom:0; align-self:flex-end; flex:none; margin:0 0 4px -78px; padding:5px 8px; border:1px solid var(--accent); border-radius:5px; color:#fff; background:var(--accent); font-size:10px; text-decoration:none; }
+.screenshot-result-download { position:sticky; right:0; bottom:0; align-self:flex-end; flex:none; margin:0 0 4px -78px; padding:5px 8px; border:1px solid var(--accent); border-radius:var(--radius-sm); color:#fff; background:var(--accent); font-size:10px; text-decoration:none; }
 .screenshot-result-url { overflow:hidden; margin:0; padding:6px 10px; text-overflow:ellipsis; white-space:nowrap; }
 </style>

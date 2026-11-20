@@ -1,13 +1,10 @@
 {
   "id": "remote",
   "name": "Remote 远程连接",
-  "version": "0.2.0",
+  "version": "0.1.15",
   "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
   "author": "Artificer",
   "icon": "smartphone",
-  "engines": {
-    "artificer": ">=1.1.6"
-  },
   "permissions": [
     "network",
     "routes",
@@ -19,8 +16,14 @@
     "web": "web.js"
   },
   "ui": {
-    "routes": [{ "name": "remote", "path": "/plugin/remote" }],
-    "navItems": [{ "id": "remote", "label": "Remote 远程连接", "icon": "smartphone", "route": "/plugin/remote" }]
+    "navItems": [
+      {
+        "id": "remote",
+        "label": "Remote 远程连接",
+        "icon": "smartphone",
+        "route": "/plugin/remote"
+      }
+    ]
   },
   "settings": {
     "title": "Remote 连接",
@@ -34,13 +37,13 @@
       {
         "key": "host",
         "label": "监听地址（重启插件生效）",
-        "type": "text",
+        "type": "string",
         "defaultValue": "0.0.0.0"
       },
       {
         "key": "upstream",
         "label": "本机 Artificer API（留空则自动获取）",
-        "type": "text",
+        "type": "string",
         "defaultValue": "",
         "description": "留空时自动使用当前 Artificer 的实际地址；仅在自动获取失败或需要指向其他实例时填写"
       },
@@ -51,5 +54,8 @@
         "defaultValue": ""
       }
     ]
+  },
+  "engines": {
+    "artificer": ">=1.1.22"
   }
 }

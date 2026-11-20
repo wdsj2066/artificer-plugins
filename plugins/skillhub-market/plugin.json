@@ -1,0 +1,32 @@
+{
+  "id": "skillhub-market",
+  "name": "Skill 市场",
+  "version": "1.2.0",
+  "description": "在技能管理页提供 Skill 市场入口：分页浏览、关键词搜索并整包安装 SkillHub 社区技能",
+  "author": "Artificer",
+  "icon": "store",
+  "entrypoints": {
+    "api": "server.js",
+    "web": "web.js"
+  },
+  "permissions": [
+    "filesystem",
+    "network",
+    "settings"
+  ],
+  "engines": {
+    "artificer": ">=1.1.22"
+  },
+  "settings": {
+    "title": "Skill 市场",
+    "fields": [
+      {
+        "key": "apiKey",
+        "label": "SkillHub API Key",
+        "type": "password",
+        "description": "在 skillhub.cn/dashboard/keys 创建，形如 skh_xxx；留空则使用匿名访问",
+        "defaultValue": ""
+      }
+    ]
+  }
+}

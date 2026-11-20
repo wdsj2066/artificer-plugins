@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
   msg: { type: Object, required: true },
@@ -21,6 +21,15 @@ const props = defineProps({
 const result = computed(() => props.msg.result || {})
 
 const PANEL_KEY = 'browser-automation/browser'
+let disposed = false
+const retryTimers = new Set()
+const pendingOpens = new Set()
+onBeforeUnmount(() => {
+  disposed = true
+  for (const timer of retryTimers) clearTimeout(timer)
+  retryTimers.clear()
+  for (const cancel of [...pendingOpens]) cancel()
+})
 
 /**
  * 直接请求宿主展开右侧信息面板。
@@ -46,9 +55,13 @@ function activatePanel() {
 function activatePanelWithRetry(attempts = 6, delayMs = 400) {
   let remaining = attempts
   const tick = () => {
+    if (disposed) return
     const viaHost = activatePanel()
     if (viaHost) return
-    if (--remaining > 0) setTimeout(tick, delayMs)
+    if (--remaining > 0) {
+      const timer = setTimeout(() => { retryTimers.delete(timer); tick() }, delayMs)
+      retryTimers.add(timer)
+    }
   }
   tick()
 }
@@ -64,7 +77,10 @@ const opening = ref(false)
 function waitForOpen(requestId) {
   return new Promise(resolve => {
     const timer = setTimeout(() => finish({ success: false, timedOut: true }), OPEN_ACK_TIMEOUT)
+    const cancel = () => finish({ success: false, cancelled: true })
+    pendingOpens.add(cancel)
     function finish(outcome) {
+      pendingOpens.delete(cancel)
       clearTimeout(timer)
       window.removeEventListener(OPEN_ACK_EVENT, onOpened)
       resolve(outcome)
@@ -97,6 +113,7 @@ async function openPreview() {
   try { await window.artificer?.openSession?.(activity.sessionId) } catch {}
   window.dispatchEvent(new CustomEvent('artificer:browser-preview-open', { detail: activity }))
   const outcome = await pending
+  if (disposed || outcome.cancelled) return
   opening.value = false
   if (outcome.timedOut) window.artificer?.toast?.('预览面板已展开，页面仍在加载', 'warning')
   else if (!outcome.success) window.artificer?.toast?.(outcome.error || '预览打开失败', 'error')
@@ -115,11 +132,11 @@ watch(() => [result.value.sessionId, result.value.previewUrl], ([sessionId, prev
 </script>
 
 <style scoped>
-.start-result { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border-color); border-radius:7px; background:var(--bg-primary); }
+.start-result { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-primary); }
 .result-copy { display:flex; min-width:0; flex:1; flex-direction:column; gap:3px; }
 .result-copy strong { color:var(--text-primary); font-size:11px; }
 .result-copy span { overflow:hidden; color:var(--text-muted); font:10px/1.4 Consolas,monospace; text-overflow:ellipsis; white-space:nowrap; }
 .start-result.error .result-copy strong,.start-result.error .result-copy span { color:#d84a4a; }
-.start-result button { flex:none; padding:5px 8px; border:1px solid var(--accent); border-radius:5px; color:#fff; background:var(--accent); font-size:10px; cursor:pointer; }
+.start-result button { flex:none; padding:5px 8px; border:1px solid var(--accent); border-radius:var(--radius-sm); color:#fff; background:var(--accent); font-size:10px; cursor:pointer; }
 .start-result button:disabled { opacity:.6; cursor:default; }
 </style>

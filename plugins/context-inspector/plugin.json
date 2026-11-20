@@ -1,19 +1,15 @@
 {
   "id": "context-inspector",
   "name": "上下文查看",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "description": "查看每次 AI 请求的上下文占用、分类构成与提示词缓存命中情况",
   "author": "Artificer",
   "icon": "gauge",
-  "engines": {
-    "artificer": ">=1.1.6"
-  },
   "entrypoints": {
     "api": "server.js",
     "web": "web.js"
   },
   "ui": {
-    "routes": [{ "name": "context-inspector", "path": "/plugin/context-inspector" }],
     "navItems": [
       {
         "id": "main",
@@ -53,5 +49,8 @@
     "routes",
     "settings",
     "storage"
-  ]
+  ],
+  "engines": {
+    "artificer": ">=1.1.22"
+  }
 }

@@ -1,8 +1,8 @@
 {
   "id": "plugin-builder",
   "name": "插件工坊",
-  "version": "1.1.0",
-  "description": "评估、设计并构建受信任运行时插件：统一 UI 树、版本化服务、显式菜单、Node.js 工具、命令、API、频道和持久化存储",
+  "version": "1.0.6",
+  "description": "评估、设计并构建受信任运行时插件：支持 Vue 页面与面板、显式扩展菜单、内置或资源图标，以及 Node.js 工具、命令、API、频道和持久化存储",
   "author": "Artificer",
   "icon": "puzzle",
   "entrypoints": {
@@ -15,7 +15,7 @@
   "scenario": {
     "id": "plugin-builder-assistant",
     "name": "插件工坊",
-    "description": "评估并创建运行时插件，使用统一 UI 树和版本化服务实现页面、面板与复杂状态",
+    "description": "评估并创建运行时插件，明确区分页面与菜单入口，配置图标资源，接入 Vue UI 与 Node.js 后端能力",
     "capabilities": [
       "plugin_feasibility",
       "plugin_design",
@@ -47,7 +47,7 @@
     }
   },
   "engines": {
-    "artificer": ">=1.1.6"
+    "artificer": ">=1.1.22"
   },
   "skills": [
     {

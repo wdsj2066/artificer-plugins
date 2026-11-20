@@ -52,6 +52,17 @@ $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("artificer-plugin-{0}" -f [Gui
 $stagedPluginDirectory = Join-Path $tempRoot $PluginId
 $archivePath = Join-Path $resolvedOutputDir ("{0}-{1}.zip" -f $PluginId, $manifest.version)
 
+function Assert-StagingPath([string]$Path) {
+    $rootPath = [IO.Path]::GetFullPath($tempRoot)
+    $targetPath = [IO.Path]::GetFullPath($Path)
+    $tempBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    if (-not $rootPath.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+        -not ([IO.Path]::GetFileName($rootPath)).StartsWith('artificer-plugin-') -or
+        ($targetPath -ne $rootPath -and -not $targetPath.StartsWith($rootPath + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase))) {
+        throw "Staging cleanup target is outside the temporary package directory: $Path"
+    }
+}
+
 try {
     New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
     New-Item -ItemType Directory -Force -Path $stagedPluginDirectory | Out-Null
@@ -61,7 +72,7 @@ try {
 
     Get-ChildItem -LiteralPath $stagedPluginDirectory -Recurse -Directory -Force |
         Where-Object { $_.Name -eq 'node_modules' } |
-        Remove-Item -Recurse -Force
+        ForEach-Object { Assert-StagingPath $_.FullName; Remove-Item -LiteralPath $_.FullName -Recurse -Force }
     Get-ChildItem -LiteralPath $stagedPluginDirectory -Recurse -File -Force |
         Where-Object { $_.Name -like '.artificer-runtime-entry*' } |
         Remove-Item -Force
@@ -84,7 +95,7 @@ try {
         }
     }
 
-    if ($manifest.ui -or $manifest.entrypoints.web) {
+    if ($manifest.entrypoints.web) {
         $compilerDirectory = Join-Path $repositoryRoot 'plugins/ui-compiler-vue'
         if (-not (Test-Path -LiteralPath (Join-Path $compilerDirectory 'node_modules/vite') -PathType Container)) {
             if ($IsWindows) {
@@ -94,7 +105,7 @@ try {
                 & npm ci --prefix $compilerDirectory --ignore-scripts --no-audit --no-fund
             }
             if ($LASTEXITCODE -ne 0) {
-                throw 'Failed to install publisher-side Web UI compiler dependencies.'
+                throw 'Failed to install publisher-side Vue compiler dependencies.'
             }
         }
     }
@@ -106,11 +117,9 @@ try {
         $stagedManifest | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath (Join-Path $stagedPluginDirectory 'plugin.json') -Encoding UTF8
     }
 
-    if ($manifest.ui -or $manifest.entrypoints.web) {
-        & node (Join-Path $PSScriptRoot 'build-plugin-ui.mjs') $stagedPluginDirectory
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to build Web UI for plugin '$PluginId'."
-        }
+    & node (Join-Path $PSScriptRoot 'build-plugin-ui.mjs') $stagedPluginDirectory
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to build UI for plugin '$PluginId'."
     }
 
     Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue
@@ -127,5 +136,6 @@ try {
     Write-Output "SHA256: $($hash.Hash)"
 }
 finally {
+    Assert-StagingPath $tempRoot
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

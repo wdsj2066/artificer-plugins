@@ -79,7 +79,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 
 // 支持两种挂载形态：
 // 1. 全页视图（/plugin/terminal?sessionId=...&cmd=...&terminalId=...）：参数来自地址栏 query
-// 2. 面板 dock（ui.panels 声明）：sessionId 由平台 props 传入
+// 2. 面板 dock（ctx.ui.registerPanel 注册）：sessionId 由平台 props 传入
 const props = defineProps({
   sessionId: { type: String, default: null }
 })

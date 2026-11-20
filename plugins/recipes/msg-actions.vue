@@ -226,7 +226,7 @@ async function saveSkill() {
 .skill-draft-form { display: grid; gap: 15px; max-height: calc(100vh - 220px); overflow: auto; padding: 2px 2px 8px; }
 .skill-hint, .skill-warning { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
 .skill-hint code { color: var(--text-primary); }
-.skill-warning { padding: 9px 11px; border-radius: 7px; background: var(--bg-tertiary); color: var(--warning-color, #b7791f); }
+.skill-warning { padding: 9px 11px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--warning-color, #b7791f); }
 .form-field { display: grid; gap: 7px; color: var(--text-secondary); font-size: 12px; }
 .form-field small { color: var(--text-muted); line-height: 1.5; }
 .form-section { display: grid; gap: 10px; }

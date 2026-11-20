@@ -586,7 +586,7 @@ onUnmounted(() => {
 
 .ci-page::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 .ci-page::-webkit-scrollbar-track {
@@ -664,7 +664,7 @@ onUnmounted(() => {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   padding: 5px 12px;
   font-size: 12px;
   font-family: inherit;
@@ -706,7 +706,7 @@ onUnmounted(() => {
 
 .ci-empty {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
   padding: 28px 24px;
   background: var(--panel-surface);
 }
@@ -730,7 +730,7 @@ onUnmounted(() => {
 
 .ci-card {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
   background: var(--panel-surface);
   padding: 18px 20px;
   margin-bottom: 18px;
@@ -827,7 +827,7 @@ onUnmounted(() => {
 
 .ci-cell {
   aspect-ratio: 1 / 1;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
@@ -846,7 +846,7 @@ onUnmounted(() => {
   min-width: 200px;
   max-width: 260px;
   padding: 8px 10px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
@@ -872,7 +872,7 @@ onUnmounted(() => {
   flex: none;
   width: 8px;
   height: 8px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .ci-tip-share {
@@ -919,7 +919,7 @@ onUnmounted(() => {
   gap: 6px;
   padding: 2px 8px;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
@@ -940,7 +940,7 @@ onUnmounted(() => {
 .ci-legend-item i {
   width: 8px;
   height: 8px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .ci-legend-item b {
@@ -973,7 +973,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   background: transparent;
   color: var(--text-secondary);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   font-size: 11px;
   padding: 3px 10px;
   font-family: inherit;
@@ -997,7 +997,7 @@ onUnmounted(() => {
   gap: 10px;
   margin: -2px 0 10px;
   padding: 6px 10px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--selected-border);
   background: var(--sidebar-active);
   font-size: 12px;
@@ -1041,7 +1041,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 5px 4px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -1052,7 +1052,7 @@ onUnmounted(() => {
 .ci-item-dot {
   width: 9px;
   height: 9px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .ci-item-label {
@@ -1117,7 +1117,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 6px 6px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 12px;
 }
@@ -1194,7 +1194,7 @@ onUnmounted(() => {
   max-height: min(680px, 86vh);
   overflow: hidden;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--radius-md);
   background: var(--bg-primary);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
 }
@@ -1260,7 +1260,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 12px;
   color: var(--text-secondary);
@@ -1278,7 +1278,7 @@ onUnmounted(() => {
 .ci-modal-item i {
   width: 8px;
   height: 8px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .ci-modal-item-label {
