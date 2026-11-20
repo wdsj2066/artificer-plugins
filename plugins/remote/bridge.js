@@ -10,7 +10,15 @@ import {
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const secret = () => randomBytes(32).toString("base64url");
-const fail = (status, message) => Object.assign(new Error(message), { status });
+// 配对码有效期与批准后凭据重领窗口：手机在弱网下可能收不到响应或重复轮询，
+// 客户端需要拿回同一份凭据而不是被迫重新配对。
+const PAIR_CODE_TTL = 300000;
+const PAIR_REQUEST_TTL = 300000;
+const TOKEN_PICKUP_TTL = 120000;
+const fail = (status, message, code, extra = {}) =>
+  Object.assign(new Error(message), { status, code }, extra);
+const isValidHash = (value) =>
+  typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 // 仅对显式请求分页的列表在桥接层分页，避免向手机传输完整资源。
 export function pageResource(payload, key, params) {
   const data = payload.data ?? payload;
@@ -114,13 +122,18 @@ export function createBridge({
   }
   function authenticate(req) {
     const token = req.headers.authorization?.replace(/^Bearer /, "") || "";
+    if (!token) throw fail(401, "设备未配对或已被撤销", "E_PAIR_REQUIRED");
     const digest = hash(token);
-    const device = devices().find((d) =>
-      timingSafeEqual(Buffer.from(d.tokenHash), Buffer.from(digest)),
+    // 摘要格式异常（存储损坏或旧数据）按无效设备处理，不能让它抛异常
+    // 冒泡成 502，把真实原因掩盖成"电脑端请求失败"。
+    const device = devices().find(
+      (d) =>
+        isValidHash(d?.tokenHash) &&
+        timingSafeEqual(Buffer.from(d.tokenHash, "hex"), Buffer.from(digest, "hex")),
     );
-    if (!token || !device) throw fail(401, "设备未配对或已被撤销");
+    if (!device) throw fail(401, "设备未配对或已被撤销", "E_PAIR_REQUIRED");
     if (req.headers["x-artificer-host"] !== hostId)
-      throw fail(409, "电脑身份不匹配");
+      throw fail(409, "电脑身份不匹配，请在手机端重新配对", "E_HOST_MISMATCH");
     return device;
   }
   const server = http.createServer(async (req, res) => {
@@ -164,48 +177,111 @@ export function createBridge({
         });
       if (req.method === "POST" && path === "/remote/pair") {
         for (const [id, item] of pending)
-          if (item.expiresAt < now()) pending.delete(id);
+          if (
+            (item.state === "pending" ? item.expiresAt : item.tokenExpiresAt) <
+            now()
+          )
+            pending.delete(id);
         for (const [ip, item] of attempts)
           if (item.until < now()) attempts.delete(ip);
-        const ip = req.socket.remoteAddress;
+        // 经由本机隧道（ngrok 等）转发时套接字来源恒为回环地址，
+        // 需按转发头区分设备，否则所有手机共用一份限流额度。
+        const socketIp = req.socket.remoteAddress || "";
+        const forwarded = req.headers["x-forwarded-for"];
+        const loopback = /^(::1|::ffff:127\.0\.0\.1|127\.0\.0\.1)$/.test(socketIp);
+        const ip =
+          loopback && forwarded
+            ? String(forwarded).split(",")[0].trim() || socketIp
+            : socketIp;
         const a = attempts.get(ip) || { count: 0, until: now() + 60000 };
         if (a.until < now()) {
           a.count = 0;
           a.until = now() + 60000;
         }
         attempts.set(ip, a);
-        if (++a.count > 8) throw fail(429, "尝试过多，请稍后重试");
+        if (++a.count > 8) {
+          const retryAfter = Math.max(1, Math.ceil((a.until - now()) / 1000));
+          throw fail(429, `尝试过多，请 ${retryAfter} 秒后重试`, "E_RATE_LIMITED", {
+            retryAfter,
+          });
+        }
         const input = JSON.parse((await body(req)).toString());
         if (
           !pairing ||
           pairing.expiresAt < now() ||
           input.code !== pairing.code
         )
-          throw fail(403, "配对码无效或已过期");
-        if (pending.size >= 32) throw fail(429, "待处理请求过多");
+          throw fail(
+            403,
+            "配对码无效或已过期，请在电脑端重新生成",
+            "E_PAIR_CODE_INVALID",
+          );
+        // 同一配对码重复提交视为同一次请求（手机超时重发或双击），
+        // 返回同一 requestId，而不是让手机撞上"配对码已过期"。
+        if (pairing.requestId) {
+          const existing = pending.get(pairing.requestId);
+          if (
+            existing &&
+            existing.state === "pending" &&
+            existing.expiresAt > now()
+          ) {
+            a.count = 0;
+            return json(res, 202, {
+              requestId: existing.id,
+              state: existing.state,
+            });
+          }
+        }
+        if (pending.size >= 32)
+          throw fail(429, "待处理请求过多", "E_RATE_LIMITED", {
+            retryAfter: 30,
+          });
         const id = secret();
         pending.set(id, {
           id,
           name: String(input.name || "Android 手机").slice(0, 80),
-          expiresAt: now() + 300000,
+          expiresAt: now() + PAIR_REQUEST_TTL,
           state: "pending",
         });
-        pairing = null;
+        pairing.requestId = id;
+        // 正常提交成功后清零该来源计数，避免用户重连被自己的成功尝试限流。
+        a.count = 0;
         return json(res, 202, { requestId: id });
       }
       if (req.method === "GET" && path?.startsWith("/remote/pair/")) {
         const id = path.slice("/remote/pair/".length);
         const item = pending.get(id);
-        if (!item || item.expiresAt < now()) {
+        const alive =
+          item &&
+          (item.state === "pending"
+            ? item.expiresAt > now()
+            : item.tokenExpiresAt > now());
+        if (!alive) {
+          if (item) pending.delete(id);
+          throw fail(
+            404,
+            "配对请求已过期，请在电脑端重新生成配对码",
+            "E_PAIR_REQUEST_GONE",
+          );
+        }
+        if (item.state === "rejected") {
           pending.delete(id);
-          throw fail(404, "配对请求已过期");
+          return json(res, 200, {
+            state: "rejected",
+            code: "E_PAIR_REJECTED",
+            error: "电脑拒绝了配对",
+          });
         }
         if (item.state === "approved") {
-          pending.delete(id);
+          // 保留到重领窗口结束：手机可能没收到这次响应，重复轮询必须拿到同一凭据。
           return json(res, 200, {
             state: item.state,
             token: item.token,
             hostId,
+            expiresIn: Math.max(
+              0,
+              Math.ceil((item.tokenExpiresAt - now()) / 1000),
+            ),
           });
         }
         return json(res, 200, { state: item.state });
@@ -313,14 +389,22 @@ export function createBridge({
         active.delete(key);
       }
     } catch (error) {
-      if (!res.headersSent && !res.destroyed)
-        json(res, error.status || 502, {
+      if (!res.headersSent && !res.destroyed) {
+        // 客户端需要区分"凭据失效要重新配对""电脑身份变了""限流等一会"
+        // 和"上游不可用"，因此错误必须带稳定错误码，而不是只有一句中文。
+        const payload = {
           success: false,
+          code: error.code || "E_UPSTREAM",
           error: error.status
             ? error.message
-            : "电脑端请求失败，请检查插件设置与 API 状态",
-        });
-      else res.end();
+            : "电脑端请求失败，请检查插件设置与本机 API 状态",
+        };
+        if (error.retryAfter) {
+          payload.retryAfter = error.retryAfter;
+          res.setHeader("Retry-After", String(error.retryAfter));
+        }
+        json(res, error.status || 502, payload);
+      } else res.end();
     }
   });
   return {
@@ -339,15 +423,17 @@ export function createBridge({
     createPairing() {
       pairing = {
         code: randomBytes(4).toString("hex").toUpperCase(),
-        expiresAt: now() + 300000,
+        expiresAt: now() + PAIR_CODE_TTL,
+        requestId: null,
       };
-      return pairing;
+      return { code: pairing.code, expiresAt: pairing.expiresAt };
     },
     approve(id, allow) {
       const item = pending.get(id);
       if (!item || item.state !== "pending" || item.expiresAt < now())
-        throw fail(404, "配对请求无效");
+        throw fail(404, "配对请求无效", "E_PAIR_REQUEST_GONE");
       item.state = allow ? "approved" : "rejected";
+      item.tokenExpiresAt = now() + TOKEN_PICKUP_TTL;
       if (allow) {
         item.token = secret();
         const all = devices();
@@ -359,6 +445,8 @@ export function createBridge({
         });
         store.set("devices", all);
       }
+      // 配对码只绑定这一次请求：批准或拒绝后立即失效，避免同码重复配对。
+      if (pairing?.requestId === id) pairing = null;
     },
     revoke(id) {
       store.set(

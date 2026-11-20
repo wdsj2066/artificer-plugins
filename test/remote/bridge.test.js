@@ -44,25 +44,36 @@ async function fixture(t, options = {}) {
   }
   return { bridge, base, call, pair, data };
 }
-test("设备必须经电脑确认，凭据只保存摘要，取走后不可重领，撤销立即生效", async (t) => {
+test("设备必须经电脑确认，凭据只保存摘要，批准后可重领，撤销立即生效", async (t) => {
   const f = await fixture(t, {
     fetchImpl: async () => new Response('{"success":true,"data":[]}'),
   });
-  assert.equal((await f.call("/api/sessions")).status, 401);
-  const headers = await f.pair();
+  const unpaired = await f.call("/api/sessions");
+  assert.equal(unpaired.status, 401);
+  assert.equal(unpaired.data.code, "E_PAIR_REQUIRED");
+  const request = await f.call("/remote/pair", "POST", {
+    code: f.bridge.createPairing().code,
+    name: "测试手机",
+  });
+  f.bridge.approve(request.data.requestId, true);
+  const first = await f.call(`/remote/pair/${request.data.requestId}`);
+  // 手机没收到首次响应时，重新轮询必须拿回同一份凭据。
+  const second = await f.call(`/remote/pair/${request.data.requestId}`);
+  assert.equal(second.data.token, first.data.token);
+  const headers = {
+    Authorization: `Bearer ${first.data.token}`,
+    "X-Artificer-Host": first.data.hostId,
+  };
   assert.equal(
     (await f.call("/api/sessions", "GET", null, headers)).status,
     200,
   );
-  assert.equal(
-    (
-      await f.call("/api/sessions", "GET", null, {
-        ...headers,
-        "X-Artificer-Host": "wrong",
-      })
-    ).status,
-    409,
-  );
+  const mismatch = await f.call("/api/sessions", "GET", null, {
+    ...headers,
+    "X-Artificer-Host": "wrong",
+  });
+  assert.equal(mismatch.status, 409);
+  assert.equal(mismatch.data.code, "E_HOST_MISMATCH");
   assert.ok(
     !JSON.stringify(f.data.get("devices")).includes(
       headers.Authorization.slice(7),
@@ -76,12 +87,16 @@ test("设备必须经电脑确认，凭据只保存摘要，取走后不可重�
     401,
   );
 });
-test("配对码一次性且会过期，恶意来源不允许访问", async (t) => {
+test("配对码重复提交幂等且会过期，批准后同码失效，恶意来源不允许访问", async (t) => {
   let time = 0;
   const f = await fixture(t, { now: () => time });
-  const code = f.bridge.createPairing().code;
+  const expired = f.bridge.createPairing().code;
   time = 300001;
-  assert.equal((await f.call("/remote/pair", "POST", { code })).status, 403);
+  const expiredResult = await f.call("/remote/pair", "POST", {
+    code: expired,
+  });
+  assert.equal(expiredResult.status, 403);
+  assert.equal(expiredResult.data.code, "E_PAIR_CODE_INVALID");
   assert.equal(
     (
       await f.call("/remote/info", "GET", null, {
@@ -90,11 +105,13 @@ test("配对码一次性且会过期，恶意来源不允许访问", async (t) =
     ).status,
     403,
   );
+  time = 0;
   const fresh = f.bridge.createPairing().code;
-  assert.equal(
-    (await f.call("/remote/pair", "POST", { code: fresh })).status,
-    202,
-  );
+  const first = await f.call("/remote/pair", "POST", { code: fresh });
+  const retry = await f.call("/remote/pair", "POST", { code: fresh });
+  assert.equal(retry.status, 202);
+  assert.equal(retry.data.requestId, first.data.requestId);
+  f.bridge.approve(first.data.requestId, true);
   assert.equal(
     (await f.call("/remote/pair", "POST", { code: fresh })).status,
     403,
@@ -319,4 +336,82 @@ test("资源分页保留响应结构并在分页前按项目和标题筛选", as
   const response = await f.call("/api/workspaces?remoteLimit=1&remoteOffset=0", "GET", null, headers);
   assert.equal(response.data.data.workspaces.length, 1);
   assert.equal(response.data.data.hasMore, true);
+});
+
+
+test("批准后凭据在重领窗口内可重复领取，窗口结束返回可识别错误码", async (t) => {
+  let time = 0;
+  const f = await fixture(t, {
+    now: () => time,
+    fetchImpl: async () => new Response('{"success":true,"data":[]}'),
+  });
+  const request = await f.call("/remote/pair", "POST", {
+    code: f.bridge.createPairing().code,
+    name: "重领手机",
+  });
+  f.bridge.approve(request.data.requestId, true);
+  const first = await f.call(`/remote/pair/${request.data.requestId}`);
+  time = 60000;
+  const retried = await f.call(`/remote/pair/${request.data.requestId}`);
+  assert.equal(retried.data.token, first.data.token);
+  time = 121000;
+  const gone = await f.call(`/remote/pair/${request.data.requestId}`);
+  assert.equal(gone.status, 404);
+  assert.equal(gone.data.code, "E_PAIR_REQUEST_GONE");
+});
+test("并发轮询同一配对请求都拿到同一份凭据", async (t) => {
+  const f = await fixture(t, {
+    fetchImpl: async () => new Response('{"success":true,"data":[]}'),
+  });
+  const request = await f.call("/remote/pair", "POST", {
+    code: f.bridge.createPairing().code,
+    name: "并发手机",
+  });
+  f.bridge.approve(request.data.requestId, true);
+  const [a, b] = await Promise.all([
+    f.call(`/remote/pair/${request.data.requestId}`),
+    f.call(`/remote/pair/${request.data.requestId}`),
+  ]);
+  assert.equal(a.status, 200);
+  assert.equal(b.status, 200);
+  assert.equal(a.data.token, b.data.token);
+});
+test("配对尝试限流返回 retryAfter，成功提交不占用额度且窗口到期自动恢复", async (t) => {
+  let time = 0;
+  const f = await fixture(t, { now: () => time });
+  for (let i = 0; i < 9; i++) {
+    const ok = await f.call("/remote/pair", "POST", {
+      code: f.bridge.createPairing().code,
+    });
+    assert.equal(ok.status, 202);
+  }
+  const statuses = [];
+  for (let i = 0; i < 9; i++)
+    statuses.push((await f.call("/remote/pair", "POST", { code: "BAD" })).status);
+  assert.equal(statuses[7], 403);
+  assert.equal(statuses[8], 429);
+  const limited = await f.call("/remote/pair", "POST", { code: "BAD" });
+  assert.equal(limited.data.code, "E_RATE_LIMITED");
+  assert.ok(limited.data.retryAfter >= 1);
+  time = 61000;
+  assert.equal((await f.call("/remote/pair", "POST", { code: "BAD" })).status, 403);
+});
+test("摘要损坏的设备记录按未配对处理，不掩盖成上游故障", async (t) => {
+  const f = await fixture(t, {
+    fetchImpl: async () => new Response('{"success":true,"data":[]}'),
+  });
+  f.data.set("devices", [
+    { id: "broken", name: "坏记录", tokenHash: "abc", createdAt: 0 },
+  ]);
+  const headers = await f.pair();
+  const invalid = await f.call("/api/sessions", "GET", null, {
+    Authorization: "Bearer unrelated-token",
+    "X-Artificer-Host": f.bridge.status().hostId,
+  });
+  assert.equal(invalid.status, 401);
+  assert.equal(invalid.data.code, "E_PAIR_REQUIRED");
+  assert.equal(
+    (await f.call("/api/sessions", "GET", null, headers)).status,
+    200,
+  );
 });

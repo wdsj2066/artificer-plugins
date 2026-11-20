@@ -10,7 +10,11 @@
 
 注意：手机侧数据同步不依赖配置界面是否打开。插件作为独立 HTTP 服务在后台运行，只要插件处于启用状态，即使从未打开过 Remote 页面也能正常代理业务请求。
 
-电脑端插件页面可选择局域网或自备外网地址，生成五分钟有效的二维码/一次性配对码。手机提交请求后，必须由电脑端确认，之后才能访问业务接口。设备可随时撤销。
+电脑端插件页面可选择局域网或自备外网地址，生成五分钟有效的二维码/配对码。手机提交请求后，必须由电脑端确认，之后才能访问业务接口。设备可随时撤销。
+
+同一配对码在有效期内重复提交（手机超时重发、双击）会复用同一个待确认请求，不会直接失效；电脑确认后，手机在两分钟内重新轮询仍可拿回同一份凭据。因此弱网下丢一次响应或重复轮询不需要重新配对。配对尝试按来源每分钟 8 次限流，超出时返回 `retryAfter` 秒数；成功提交不占用额度。
+
+认证与限流失败均返回稳定错误码，便于客户端区分处理：`E_PAIR_REQUIRED`（凭据失效，需重新配对）、`E_HOST_MISMATCH`（电脑身份变化，需重新配对）、`E_PAIR_CODE_INVALID`（配对码无效或过期）、`E_PAIR_REQUEST_GONE`（待确认请求已过期）、`E_RATE_LIMITED`（限流，按 `retryAfter` 重试）、`E_UPSTREAM`（本机 API 不可用）。
 
 ## 电脑端界面
 
@@ -37,7 +41,7 @@
 pwsh -NoProfile -File scripts/package-plugin.ps1 -PluginId remote
 ```
 
-生成 dist/remote-0.1.15.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.15，并自动登记到 registry.json。
+生成 dist/remote-0.1.16.zip，包含 .artificer-dist/index.js 预编译界面。推送 main 后由 Release Plugins 工作流发布 remote-v0.1.16，并自动登记到 registry.json。
 
 界面预编译使用 UI 编译器 1.0.2 或更新版本，优先解析 naive-ui 与图标库的 ESM 入口，保证 Vue 导入可被宿主运行时完整识别，避免加载时白屏。市场安装使用包内预编译产物；源码开发请更新编译器后重新构建。
 
