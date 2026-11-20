@@ -24,7 +24,7 @@
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.5.2/browser-automation-2.5.2.zip",
-      "sha256": "858f652d78e0e9718f979a76579f51af6e0186226aba758a1e1c0a5f91722f9e"
+      "sha256": "5e340949ece2614a4da569a8324a9ea5b5ab3e76da6d016dc09b7778259d78db"
     },
     {
       "id": "channel-feishu",
@@ -68,6 +68,29 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/channel-wecom",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/channel-wecom-v1.2.2/channel-wecom-1.2.2.zip",
       "sha256": "59bd0643330b6ad5bfeadaea607ab412a9eddf6481c9272d0305806da4453efd"
+    },
+    {
+      "id": "codex-import",
+      "name": "Codex 会话导入",
+      "description": "只读解析本地 Codex CLI 会话，转换为 Markdown 写入指定工作区，支持预览与去重",
+      "version": "0.1.0",
+      "author": "Artificer",
+      "entrypoints": {
+        "api": "server.js",
+        "web": "web.js"
+      },
+      "permissions": [
+        "读取本地 Codex 会话目录",
+        "写入指定工作区的 Markdown 文件",
+        "插件本地导入记录",
+        "本地 HTTP 路由"
+      ],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/codex-import",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/codex-import-v0.1.0/codex-import-0.1.0.zip",
+      "sha256": "44d3014efc7b29dfc5a6c3fbcefd65bf24ac437ad50b0bba4aef2bd2a8657847"
     },
     {
       "id": "context-inspector",
@@ -301,7 +324,7 @@
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.1/token-usage-1.1.1.zip",
-      "sha256": "db8e3f497396818bfd0da03bce923e5f9f9af2c6f537df31953ff7d22e5b977c"
+      "sha256": "1342eeb05127f487e14385da76e7b676d4405700e6340f2890a0c66da08be1d1"
     },
     {
       "id": "trace-viewer",
