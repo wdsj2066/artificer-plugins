@@ -1,0 +1,7 @@
+.codex-import .ci-row.active { box-shadow: none !important; }
+.codex-import .ci-message.user,
+.codex-import .ci-message.assistant { border-left: 0 !important; }
+.codex-import .ci-select option {
+  background: var(--panel-surface, #2b2b2b);
+  color: var(--text-primary, #e6e6e6);
+}

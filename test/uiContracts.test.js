@@ -6,6 +6,7 @@ vi.mock('../plugins/browser-automation/start-result.vue', () => ({ default: { na
 vi.mock('../plugins/browser-automation/screenshot-result.vue', () => ({ default: { name: 'ScreenshotResult' } }))
 vi.mock('../plugins/channel-feishu/view.vue', () => ({ default: { name: 'PluginPage' } }))
 vi.mock('../plugins/channel-wecom/view.vue', () => ({ default: { name: 'PluginPage' } }))
+vi.mock('../plugins/codex-import/views/App.vue', () => ({ default: { name: 'PluginPage' } }))
 vi.mock('../plugins/context-inspector/views/App.vue', () => ({ default: { name: 'PluginPage' } }))
 vi.mock('../plugins/office/renderers/PptxResult.vue', () => ({ default: { name: 'PptxResult' } }))
 vi.mock('../plugins/office/renderers/DocxResult.vue', () => ({ default: { name: 'DocxResult' } }))

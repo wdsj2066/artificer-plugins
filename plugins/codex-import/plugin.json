@@ -1,0 +1,48 @@
+{
+  "id": "codex-import",
+  "name": "Codex 会话导入",
+  "version": "0.1.0",
+  "description": "只读解析本地 Codex CLI 会话，转换为 Markdown 写入指定工作区，支持预览与去重",
+  "author": "Artificer",
+  "icon": "download",
+  "engines": { "artificer": ">=1.1.22" },
+  "entrypoints": { "api": "server.js", "web": "web.js" },
+  "permissions": [
+    "读取本地 Codex 会话目录",
+    "写入指定工作区的 Markdown 文件",
+    "插件本地导入记录",
+    "本地 HTTP 路由"
+  ],
+  "settings": {
+    "title": "Codex 导入设置",
+    "fields": [
+      {
+        "key": "codexHome",
+        "label": "Codex 数据目录",
+        "type": "text",
+        "defaultValue": "",
+        "placeholder": "留空则使用 ~/.codex 或环境变量 CODEX_HOME",
+        "description": "会话文件通常位于该目录下的 sessions 子目录"
+      },
+      {
+        "key": "includeOriginal",
+        "label": "同时保存原始 JSONL",
+        "type": "boolean",
+        "defaultValue": false,
+        "description": "导入时把原始会话文件复制到工作区，便于追溯"
+      },
+      {
+        "key": "maxSessions",
+        "label": "最多列出会话数",
+        "type": "number",
+        "defaultValue": 200,
+        "description": "扫描上限，范围 50-500"
+      }
+    ]
+  },
+  "ui": {
+    "navItems": [
+      { "id": "codex-import", "label": "Codex 会话导入", "icon": "download", "route": "/plugin/codex-import" }
+    ]
+  }
+}
