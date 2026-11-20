@@ -88,6 +88,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
+const props = defineProps({ artificer: { type: Object, default: null } })
+
 const API = '/api/plugins/session-search'
 
 const query = ref('')
@@ -200,7 +202,7 @@ async function reindex() {
 }
 
 function openSession(sessionId) {
-  const api = window.artificer
+  const api = props.artificer
   if (api?.openSession) api.openSession(sessionId)
 }
 

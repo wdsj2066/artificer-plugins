@@ -1,18 +1,15 @@
 {
   "id": "office",
   "name": "Office 办公",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
   "author": "Artificer",
   "icon": "document",
-  "permissions": ["filesystem"],
-  "entrypoints": { "api": "server.js" },
-  "ui": {
-    "toolRenderers": {
-      "createPptx": "renderers/PptxResult.vue",
-      "createDocx": "renderers/DocxResult.vue"
-    }
+  "engines": {
+    "artificer": ">=1.1.6"
   },
+  "permissions": ["filesystem"],
+  "entrypoints": { "api": "server.js", "web": "web.js" },
   "scenario": [
     {
       "id": "ppt-assistant",

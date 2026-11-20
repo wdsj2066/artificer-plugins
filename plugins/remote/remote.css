@@ -1,0 +1,51 @@
+.remote-page { height: 100%; overflow: auto; color: var(--text-primary); }
+.remote-inner { max-width: 960px; margin: 0 auto; padding: 24px 32px 44px; }
+.remote-header, .remote-header .remote-actions, .remote-actions, .remote-upstream, .remote-card header, .remote-row {
+  display: flex; align-items: center; gap: 9px;
+}
+.remote-header { justify-content: space-between; margin-bottom: 16px; }
+.remote-header h1 { margin: 0; font-size: 21px; }
+.remote-header p { margin: 4px 0 0; color: var(--text-muted); }
+.remote-status { padding: 3px 9px; color: var(--text-muted); background: var(--bg-secondary); border: 1px solid var(--panel-border); border-radius: 999px; font-size: 11px; }
+.remote-status.online { color: #22a877; }
+.remote-button, .remote-field select {
+  min-height: 29px; padding: 4px 9px; color: inherit; background: var(--bg-secondary); border: 1px solid var(--panel-border); border-radius: var(--radius-sm);
+}
+.remote-button { cursor: pointer; }
+.remote-button.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
+.remote-button.danger { color: var(--error-color); }
+.remote-button:disabled { opacity: .5; cursor: default; }
+.remote-link { padding: 0; color: var(--accent); background: none; border: 0; cursor: pointer; }
+.remote-error { margin-bottom: 12px; padding: 9px; color: var(--error-color); border: 1px solid color-mix(in srgb, var(--error-color) 45%, transparent); border-radius: var(--radius-sm); }
+.remote-loading, .remote-empty, .remote-muted { color: var(--text-muted); }
+.remote-content { display: flex; flex-direction: column; gap: 14px; }
+.remote-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.remote-stat { display: flex; flex-direction: column; gap: 2px; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--panel-border); border-radius: var(--radius-md); }
+.remote-stat strong { font-size: 18px; }
+.remote-stat span { color: var(--text-muted); font-size: 11px; }
+.remote-upstream { padding: 9px 12px; background: var(--bg-secondary); border: 1px solid var(--panel-border); border-radius: var(--radius-md); flex-wrap: wrap; }
+.remote-upstream code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.remote-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.remote-card { padding: 15px; background: var(--bg-secondary); border: 1px solid var(--panel-border); border-radius: var(--radius-md); }
+.remote-card h2 { margin: 0 0 12px; font-size: 14px; }
+.remote-card header { justify-content: space-between; }
+.remote-field { display: flex; flex-direction: column; gap: 5px; color: var(--text-muted); font-size: 11px; }
+.remote-field select { width: 100%; color: var(--text-primary); }
+.remote-card > .remote-button { width: 100%; margin-top: 10px; }
+.remote-pairing { display: flex; gap: 15px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--panel-border); }
+.remote-qr { display: grid; place-items: center; width: 126px; height: 126px; flex: none; padding: 7px; background: #fff; border-radius: var(--radius-sm); }
+.remote-qr img { width: 100%; height: 100%; }
+.remote-qr span { color: #aaa; text-align: center; font-size: 10px; }
+.remote-pairing.info, .remote-pairing > div:last-child { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.remote-code { padding: 0; color: var(--text-primary); background: none; border: 0; font: 600 22px var(--font-code, monospace); letter-spacing: 3px; cursor: pointer; }
+.remote-row { justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--panel-border); }
+.remote-row > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.remote-row strong, .remote-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.remote-devices { grid-column: 1 / -1; }
+.remote-footnote { color: var(--text-muted); font-size: 11px; }
+@media (max-width: 760px) {
+  .remote-inner { padding: 18px 16px 36px; }
+  .remote-grid { grid-template-columns: 1fr; }
+  .remote-devices { grid-column: auto; }
+  .remote-header { align-items: flex-start; flex-direction: column; }
+}

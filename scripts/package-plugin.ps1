@@ -84,7 +84,7 @@ try {
         }
     }
 
-    if ($manifest.ui) {
+    if ($manifest.ui -or $manifest.entrypoints.web) {
         $compilerDirectory = Join-Path $repositoryRoot 'plugins/ui-compiler-vue'
         if (-not (Test-Path -LiteralPath (Join-Path $compilerDirectory 'node_modules/vite') -PathType Container)) {
             if ($IsWindows) {
@@ -94,7 +94,7 @@ try {
                 & npm ci --prefix $compilerDirectory --ignore-scripts --no-audit --no-fund
             }
             if ($LASTEXITCODE -ne 0) {
-                throw 'Failed to install publisher-side Vue compiler dependencies.'
+                throw 'Failed to install publisher-side Web UI compiler dependencies.'
             }
         }
     }
@@ -106,9 +106,11 @@ try {
         $stagedManifest | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath (Join-Path $stagedPluginDirectory 'plugin.json') -Encoding UTF8
     }
 
-    & node (Join-Path $PSScriptRoot 'build-plugin-ui.mjs') $stagedPluginDirectory
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to build UI for plugin '$PluginId'."
+    if ($manifest.ui -or $manifest.entrypoints.web) {
+        & node (Join-Path $PSScriptRoot 'build-plugin-ui.mjs') $stagedPluginDirectory
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to build Web UI for plugin '$PluginId'."
+        }
     }
 
     Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue

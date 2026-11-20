@@ -7,7 +7,7 @@ export function createRuntimeUiPluginTools(runtimePlugins) {
     type: 'object',
     properties: {
       pluginId: { type: 'string', description: '插件 id，例如 my-dashboard' },
-      filePath: { type: 'string', description: '相对插件目录的文件路径，例如 plugin.json 或 views/Dashboard.vue' }
+      filePath: { type: 'string', description: '相对插件目录的文件路径，例如 plugin.json 或 web.js' }
     },
     required: ['pluginId', 'filePath']
   },
@@ -26,7 +26,7 @@ export function createRuntimeUiPluginTools(runtimePlugins) {
   const writeRuntimeUiPluginFilesTool = {
   id: 'writeRuntimeUiPluginFiles',
   name: '写入运行时插件源码',
-  description: '将 plugin.json、Vue/CSS 与受信任的 Node.js 后端源码写入运行时插件目录。允许 server.js 及本地 .js/.mjs 模块；不允许 package.json、node_modules 或安装依赖。',
+  description: '将 plugin.json、CSS、Markdown 与受信任的 JavaScript 源码写入运行时插件目录。界面使用 Vue 组件和 Web 入口；不允许 package.json、node_modules 或安装依赖。',
   parameters: {
     type: 'object',
     properties: {
@@ -121,3 +121,4 @@ export function createRuntimeUiPluginTools(runtimePlugins) {
   }
   return [readRuntimeUiPluginFileTool, writeRuntimeUiPluginFilesTool, buildRuntimeUiPluginTool, listTool, removeTool]
 }
+
