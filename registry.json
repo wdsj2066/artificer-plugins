@@ -24,7 +24,7 @@
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/browser-automation",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/browser-automation-v2.5.2/browser-automation-2.5.2.zip",
-      "sha256": "5c0c3a80794cc9d7d73ed13fc08b4a4df832ca55b0ae0e576c810cdadc15f495"
+      "sha256": "1cf05882d537ec3c8619ad1594fced97386c6a877ff9532620f7065754f857f1"
     },
     {
       "id": "channel-feishu",
@@ -180,7 +180,7 @@
       "id": "remote",
       "name": "Remote 远程连接",
       "description": "为 Android 客户端提供独立连接入口、设备配对与业务桥接",
-      "version": "0.1.16",
+      "version": "0.1.17",
       "author": "Artificer",
       "entrypoints": {
         "api": "server.js",
@@ -196,8 +196,8 @@
         "artificer": ">=1.1.22"
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/remote",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.16/remote-0.1.16.zip",
-      "sha256": "c118de81e50a73f458e341ef48f35ab3adb7cb3300774743fd139b38f8a8c7bb"
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/remote-v0.1.17/remote-0.1.17.zip",
+      "sha256": "705ca9a545c6cac3f5739c5c9bd13eb0d88eb09914acee86c213264d33a80720"
     },
     {
       "id": "scheduler",
@@ -324,7 +324,7 @@
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.1/token-usage-1.1.1.zip",
-      "sha256": "d6e353c764655cc22c950b61853ebf2c2c9b1c877174f9fbb4e00d50e2c0ccf2"
+      "sha256": "bfd295b47302070e0f3cf38271fab5c75679f3801a0cdc6ff07eccc737773af6"
     },
     {
       "id": "trace-viewer",
