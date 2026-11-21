@@ -124,8 +124,8 @@
               <span class="field-hint">
                 {{
                   addresses.length
-                    ? "手机需与电脑处于同一网络，或改用自备 HTTPS 隧道域名"
-                    : "未检测到局域网地址，请检查插件设置中的监听地址"
+                    ? "优先选择与手机同网段的 WLAN/以太网地址；标注虚拟网卡的地址手机通常无法访问"
+                    : "未检测到局域网地址，请确认插件已启用且电脑已连接网络"
                 }}
               </span>
             </label>
@@ -340,12 +340,18 @@ const sourceLabel = computed(
     "默认值",
 );
 
-const addressOptions = computed(() =>
-  addresses.value.map((address) => ({
+const addressOptions = computed(() => {
+  const items = status.value?.interfaces;
+  if (Array.isArray(items) && items.length)
+    return items.map((item) => ({
+      label: `${item.ip} · ${item.name}${item.virtual ? "（虚拟网卡，手机通常无法访问）" : ""}`,
+      value: item.address,
+    }));
+  return addresses.value.map((address) => ({
     label: address.replace(/^https?:\/\//, ""),
     value: address,
-  })),
-);
+  }));
+});
 
 const remainingMs = computed(() => {
   const expiresAt = pairing.value?.expiresAt;
@@ -383,7 +389,12 @@ async function loadStatus(manual = false) {
     error.value = "";
     // 新的配对码出现后，允许再次触发过期同步
     if (data.pairing && data.pairing.expiresAt > Date.now()) expirySynced = false;
-    if (!serviceAddress.value) serviceAddress.value = data.addresses?.[0] || "";
+    if (!serviceAddress.value) {
+      // 默认选中真实局域网网卡，避免把 Hyper-V / Mihomo 等
+      // 手机无法路由的虚拟网卡地址当成配对地址。
+      const preferred = (data.interfaces || []).find((item) => !item.virtual);
+      serviceAddress.value = preferred?.address || data.addresses?.[0] || "";
+    }
   } catch (e) {
     error.value = e?.message || "无法读取连接状态";
   } finally {

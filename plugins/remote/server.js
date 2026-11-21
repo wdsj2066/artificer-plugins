@@ -166,15 +166,41 @@ export async function register(ctx) {
         return handler(input);
       },
     });
-  const addresses = () =>
-    Object.values(networkInterfaces())
-      .flat()
-      .filter((i) => i.family === "IPv4" && !i.internal)
-      .map((i) => `http://${i.address}:${port}`);
+  // 真实局域网优先、虚拟网卡后置：Hyper-V / Mihomo / WSL 这类网卡的地址
+  // 手机根本路由不到，不能默认选中，否则用户会一直连不上。
+  const VIRTUAL_IFACE =
+    /vEthernet|VMware|VirtualBox|Hyper-V|WSL|Docker|Mihomo|Clash|TUN|Tailscale|ZeroTier|VPN|虚拟/i;
+  const PREFERRED_IFACE =
+    /WLAN|Wi-?Fi|Wireless|Ethernet|以太网|本地连接/i;
+  const interfaceAddresses = () =>
+    Object.entries(networkInterfaces())
+      .flatMap(([name, list]) =>
+        (list || [])
+          .filter((item) => item.family === "IPv4" && !item.internal)
+          .map((item) => ({
+            name,
+            ip: item.address,
+            address: `http://${item.address}:${port}`,
+            virtual:
+              VIRTUAL_IFACE.test(name) || /^198\.1[89]\./.test(item.address),
+            preferred: PREFERRED_IFACE.test(name),
+          })),
+      )
+      .sort(
+        (a, b) =>
+          Number(a.virtual) - Number(b.virtual) ||
+          Number(!a.preferred) - Number(!b.preferred),
+      );
+  const addresses = () => interfaceAddresses().map((item) => item.address);
   let qrDataUrl = "";
   route("GET", "status", () => ({
     success: true,
-    data: { ...bridge.status(), addresses: addresses(), qrDataUrl },
+    data: {
+      ...bridge.status(),
+      addresses: addresses(),
+      interfaces: interfaceAddresses(),
+      qrDataUrl,
+    },
   }));
   route("POST", "pairing", async ({ body }) => {
     const address = new URL(
@@ -190,12 +216,19 @@ export async function register(ctx) {
     )
       throw new Error("服务地址无效");
     const pairing = bridge.createPairing();
+    // 二维码带上全部候选地址：手机保存整组后重连可自动探测，
+    // 单个地址不可达时无需回电脑端重新配对。
+    const candidates = [...new Set([address.origin, ...addresses()])].slice(
+      0,
+      8,
+    );
     const svg = await QRCode.toString(
       JSON.stringify({
         type: "artificer-remote",
         protocol: 1,
         hostId: bridge.status().hostId,
         address: address.origin,
+        addresses: candidates,
         code: pairing.code,
       }),
       { type: "svg", margin: 2 },
