@@ -464,14 +464,36 @@ export class CdpAutomationRuntime {
     const cssWidth = isFullPage ? (metrics?.width || viewport?.width || 1280) : (metrics?.viewportWidth || viewport?.width || 1280)
     const cssHeight = isFullPage ? (metrics?.height || viewport?.height || 800) : (metrics?.viewportHeight || viewport?.height || 800)
     const ratio = Math.min(1, SCREENSHOT_MAX_DIMENSION / Math.max(cssWidth, cssHeight))
-    const buffer = await target.page.screenshot({
-      type: 'jpeg',
-      quality: 82,
-      fullPage: isFullPage,
-      captureBeyondViewport: isFullPage,
-      // 后台隐藏窗口没有可见视口尺寸，显式给出视口才能拿到稳定像素。
-      ...(target.mode === 'background' ? { clip: { x: 0, y: isFullPage ? 0 : (metrics?.scrollY || 0), width: cssWidth, height: cssHeight, scale: ratio } } : {})
-    })
+    let screenshotOptions
+    if (target.mode === 'background') {
+      // fullPage 与 clip 在 puppeteer-core 中互斥；全页截图不传 clip，视口截图才传 clip。
+      screenshotOptions = isFullPage
+        ? { type: 'jpeg', quality: 82, fullPage: true, captureBeyondViewport: true }
+        : {
+          type: 'jpeg',
+          quality: 82,
+          clip: { x: metrics?.scrollX || 0, y: metrics?.scrollY || 0, width: cssWidth, height: cssHeight, scale: ratio }
+        }
+    } else {
+      // panel 模式：target.page 是宿主窗口，视口截图需按预览 iframe 的包围盒裁剪。
+      const frameElement = await target.frame.frameElement?.().catch(() => null)
+      const box = frameElement ? await frameElement.boundingBox?.().catch(() => null) : null
+      if (!isFullPage && box && box.width > 0 && box.height > 0) {
+        screenshotOptions = {
+          type: 'jpeg',
+          quality: 82,
+          clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: ratio }
+        }
+      } else {
+        screenshotOptions = {
+          type: 'jpeg',
+          quality: 82,
+          fullPage: isFullPage,
+          captureBeyondViewport: isFullPage
+        }
+      }
+    }
+    const buffer = await target.page.screenshot(screenshotOptions)
     return {
       dataUrl: `data:image/jpeg;base64,${Buffer.from(buffer).toString('base64')}`,
       width: Math.round(cssWidth * ratio),

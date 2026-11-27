@@ -197,6 +197,7 @@ describe('CDP automation runtime', () => {
 
     const result = await runtime.screenshot('chat-1', { mode: 'fullPage' })
     expect(page.screenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'jpeg', fullPage: true }))
+    expect(page.screenshot.mock.calls[0][0].clip).toBeUndefined()
     expect(result).toMatchObject({
       source: 'cdp',
       mode: 'fullPage',
@@ -204,5 +205,22 @@ describe('CDP automation runtime', () => {
       cssHeight: 2400,
       dataUrl: `data:image/jpeg;base64,${Buffer.from('jpeg-bytes').toString('base64')}`
     })
+  })
+
+  it('clips viewport screenshot to the iframe boundingBox in panel mode', async () => {
+    const { runtime, page, frame } = fixture()
+    frame.frameElement = vi.fn(async () => ({
+      boundingBox: vi.fn(async () => ({ x: 100, y: 50, width: 640, height: 480 }))
+    }))
+    frame.evaluate.mockResolvedValue({
+      width: 640, height: 480, scrollX: 0, scrollY: 0,
+      viewportWidth: 640, viewportHeight: 480, title: 'Panel', url: 'http://127.0.0.1:41001/demo'
+    })
+
+    await runtime.screenshot('chat-1', { mode: 'viewport' })
+    expect(page.screenshot).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'jpeg',
+      clip: expect.objectContaining({ x: 100, y: 50, width: 640, height: 480 })
+    }))
   })
 })

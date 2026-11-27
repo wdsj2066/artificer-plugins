@@ -29,12 +29,4 @@ export function register(ctx) {
       props: (_services, scope) => ({ msg: scope.msg, sessionId: scope.sessionId, toolDisplayName: scope.toolDisplayName })
     }
   })
-  ctx.ui.registerRule({
-    op: 'replace', target: 'chat.messages.tool.result',
-    when: (_services, scope) => scope.msg?.name === 'browserDesktopScreenshot',
-    node: {
-      id: 'browser-automation.tool.browserDesktopScreenshot', type: 'component', component: ScreenshotResult,
-      props: (_services, scope) => ({ msg: scope.msg, sessionId: scope.sessionId, toolDisplayName: scope.toolDisplayName })
-    }
-  })
 }

@@ -155,50 +155,24 @@ export function register(ctx) {
         // 页面有跨域限制或 CDP 不可用时才回落到面板桥接的 html2canvas。
         const screenshot = await captureScreenshot(sessionId, mode)
         const screenshotId = runtime.storeScreenshot(sessionId, screenshot)
-        return {
+        const result = {
           success: true, sessionId, screenshotId, title: screenshot.title, url: screenshot.url,
           width: screenshot.width, height: screenshot.height, cssWidth: screenshot.cssWidth, cssHeight: screenshot.cssHeight,
           viewportWidth: screenshot.viewportWidth, viewportHeight: screenshot.viewportHeight,
           scrollX: screenshot.scrollX, scrollY: screenshot.scrollY, mode: screenshot.mode, source: screenshot.source || 'panel',
           imageAvailableToModel: executionContext?.runContext?.state?.modelCapabilities?.support_image === true
         }
-      } catch (error) { return failure(error, { sessionId }) }
-    }
-  })
-
-  ctx.registerTool({
-    id: 'browserDesktopScreenshot',
-    name: '截取整个屏幕',
-    description: '通过 Electron 桌面采集接口截取整个主显示器的真实屏幕画面，包含 Artificer 窗口及其他可见窗口。可先调用 browserListScreens 查看显示器并指定 displayId。',
-    parameters: {
-      type: 'object',
-      properties: { displayId: { type: 'string', description: '显示器 ID；不传时截取主显示器' } }
-    },
-    tags: ['browser', 'sensitive'],
-    async handler(args, executionContext) {
-      const sessionId = sessionIdOf(executionContext)
-      try {
-        const screenshot = await cdp.captureDesktop(args.displayId)
-        const screenshotId = runtime.storeScreenshot(sessionId, screenshot)
-        return {
-          success: true, sessionId, screenshotId, title: screenshot.title,
-          width: screenshot.width, height: screenshot.height, mode: screenshot.mode,
-          scope: screenshot.scope, displayId: screenshot.displayId
+        if (typeof ctx.attachToolModelImages === 'function' && screenshot?.dataUrl) {
+          ctx.attachToolModelImages(result, [{
+            dataUrl: screenshot.dataUrl,
+            caption: `browserScreenshot 网页截图（图片 ${screenshot.width}×${screenshot.height} 像素，网页 ${screenshot.cssWidth}×${screenshot.cssHeight} CSS 像素，模式 ${screenshot.mode}，滚动位置 ${screenshot.scrollX},${screenshot.scrollY}）`,
+            width: screenshot.width,
+            height: screenshot.height,
+            mimeType: 'image/jpeg'
+          }])
         }
+        return result
       } catch (error) { return failure(error, { sessionId }) }
-    }
-  })
-
-  ctx.registerTool({
-    id: 'browserListScreens',
-    name: '列出显示器',
-    description: '读取可用于整个屏幕截图的显示器名称、尺寸和 displayId。',
-    parameters: { type: 'object', properties: {} },
-    tags: ['browser', 'readonly'],
-    async handler(_args, executionContext) {
-      const sessionId = sessionIdOf(executionContext)
-      try { return { success: true, sessionId, screens: await cdp.listScreens() } }
-      catch (error) { return failure(error, { sessionId }) }
     }
   })
 
