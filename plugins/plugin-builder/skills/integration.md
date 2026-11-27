@@ -254,7 +254,7 @@ API 与 Electron 入口通过仅绑定 `127.0.0.1` 的本地 RPC 端点通信。
 
 ## API 与 Agent 上下文补充
 
-API/Agent 上下文支持 pluginId、pluginDir、logger、aiServiceManager、modelRequestService、modeRegistry；registerTool、registerCommand、registerRoute、registerWebSocket、registerChannel、processChannelInbound、registerProviderAdapter、registerArtifactHandler、registerUiCompiler、getStore、getSettings、importModule、host、worker、rpc、extensions、disposeWithPlugin、runtimePlugins。不能将这些 API 假定为其他运行域上下文也拥有。
+API/Agent 上下文支持 pluginId、pluginDir、logger、aiServiceManager、modelRequestService、attachToolModelImages、modeRegistry；registerTool、registerCommand、registerRoute、registerWebSocket、registerChannel、processChannelInbound、registerProviderAdapter、registerArtifactHandler、registerUiCompiler、getStore、getSettings、importModule、host、worker、rpc、extensions、disposeWithPlugin、runtimePlugins。不能将这些 API 假定为其他运行域上下文也拥有。
 - runtimePlugins.list/readSourceFile/writeSourceFiles/build/remove 用于开发维护外部插件。保持 id，修改后 build 热加载，remove 仅在用户明确要求删除时使用。
 - importModule 只支持在 runtimeDependencies 声明的 ws、jszip、pptxgenjs、docx。
 - 工具必须有 handler；security 可声明 safe/risky/file/command 与 targetArg。命令 handler(args, context) 可返回 { success: true, data: { renderType, ...payload } }，通过 chat.input.command-palette.result.fallback 的条件替换规则提供渲染器。
