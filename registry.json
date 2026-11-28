@@ -116,6 +116,24 @@
       "sha256": "fdd7b98ada38f90532fed576ef822e3ddb721e49c5bc8d17a50e134375696c8c"
     },
     {
+      "id": "mouse-control",
+      "name": "鼠标操控",
+      "description": "让 AI 直接控制真实鼠标：移动、点击、拖拽、滚轮。接管时屏幕四角显示接管标记，按 Esc 键即可随时停止。",
+      "version": "0.2.0",
+      "author": "Artificer",
+      "entrypoints": {
+        "web": "web.js",
+        "api": "server.js"
+      },
+      "permissions": [],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/mouse-control",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/mouse-control-v0.2.0/mouse-control-0.2.0.zip",
+      "sha256": "3a9b3aaa57f4a126f4261b38930e25a8c2ab354fcf6d8cb3373b9cf0cd39aa16"
+    },
+    {
       "id": "office",
       "name": "Office 办公",
       "description": "可读可写的专业 PPT/Word 办公插件：支持读取已有文件、原文替换、主题、表格、图片、富文本与页眉页脚",
@@ -324,7 +342,7 @@
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.1/token-usage-1.1.1.zip",
-      "sha256": "b8c2ba24f9b86b5677d7df15b9d7ac1c394923c70ee437dd20c5bed0c8532f71"
+      "sha256": "ad78249893c9f008faf9eaebd535d963cf2246fbe0b21fb6e5704aa5a34cd505"
     },
     {
       "id": "trace-viewer",
