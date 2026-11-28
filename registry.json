@@ -93,6 +93,23 @@
       "sha256": "44d3014efc7b29dfc5a6c3fbcefd65bf24ac437ad50b0bba4aef2bd2a8657847"
     },
     {
+      "id": "computer-use",
+      "name": "电脑操作",
+      "description": "让 AI 直接操作电脑：接管后移动、点击、拖拽、滚轮，屏幕四角显示蓝色渐变提示，按 Esc 随时停止。",
+      "version": "0.2.1",
+      "entrypoints": {
+        "web": "web.js",
+        "api": "server.js"
+      },
+      "permissions": [],
+      "engines": {
+        "artificer": ">=1.1.22"
+      },
+      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/computer-use",
+      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/computer-use-v0.2.1/computer-use-0.2.1.zip",
+      "sha256": "50e5b86900781aba47f925741d8de70f6c8119a89b2f028ba5f604aa063b3c19"
+    },
+    {
       "id": "context-inspector",
       "name": "上下文查看",
       "description": "查看每次 AI 请求的上下文占用、分类构成与提示词缓存命中情况",
@@ -114,24 +131,6 @@
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/context-inspector",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/context-inspector-v0.1.1/context-inspector-0.1.1.zip",
       "sha256": "fdd7b98ada38f90532fed576ef822e3ddb721e49c5bc8d17a50e134375696c8c"
-    },
-    {
-      "id": "mouse-control",
-      "name": "鼠标操控",
-      "description": "让 AI 直接控制真实鼠标：移动、点击、拖拽、滚轮。接管时屏幕四角显示接管标记，按 Esc 键即可随时停止。",
-      "version": "0.2.0",
-      "author": "Artificer",
-      "entrypoints": {
-        "web": "web.js",
-        "api": "server.js"
-      },
-      "permissions": [],
-      "engines": {
-        "artificer": ">=1.1.22"
-      },
-      "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/mouse-control",
-      "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/mouse-control-v0.2.0/mouse-control-0.2.0.zip",
-      "sha256": "3a9b3aaa57f4a126f4261b38930e25a8c2ab354fcf6d8cb3373b9cf0cd39aa16"
     },
     {
       "id": "office",
@@ -342,7 +341,7 @@
       },
       "repositoryUrl": "https://github.com/wdsj2066/artificer-plugins/tree/main/plugins/token-usage",
       "downloadUrl": "https://github.com/wdsj2066/artificer-plugins/releases/download/token-usage-v1.1.1/token-usage-1.1.1.zip",
-      "sha256": "ad78249893c9f008faf9eaebd535d963cf2246fbe0b21fb6e5704aa5a34cd505"
+      "sha256": "4801408b2e0d00a4fdb0b099c6e8aadc0732ac18b980d4e81f1c7d31c6dd6655"
     },
     {
       "id": "trace-viewer",
