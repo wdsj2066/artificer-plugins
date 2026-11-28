@@ -1,0 +1,84 @@
+{
+  "id": "mouse-control",
+  "name": "鼠标操控",
+  "version": "0.2.0",
+  "description": "让 AI 直接控制真实鼠标：移动、点击、拖拽、滚轮。接管时屏幕四角显示接管标记，按 Esc 键即可随时停止。",
+  "author": "Artificer",
+  "icon": "mouse-pointer-click",
+  "entrypoints": {
+    "web": "web.js",
+    "api": "server.js"
+  },
+  "engines": {
+    "artificer": ">=1.1.22"
+  },
+  "ui": {
+    "navItems": [
+      {
+        "id": "mouse-control.page",
+        "label": "鼠标操控",
+        "icon": "mouse-pointer-click",
+        "route": "/plugin/mouse-control"
+      }
+    ],
+    "routes": [
+      {
+        "path": "/plugin/mouse-control",
+        "name": "plugin-mouse-control"
+      }
+    ],
+    "toolMeta": {
+      "mouseBeginControl": {
+        "icon": "shield-check",
+        "summary": "开启接管并显示顶部提示条"
+      },
+      "mouseEndControl": {
+        "icon": "shield-off",
+        "summary": "结束接管并关闭提示条"
+      },
+      "mouseProbe": {
+        "icon": "crosshair",
+        "summary": "读取屏幕分辨率与当前光标坐标"
+      },
+      "mouseMove": {
+        "icon": "move",
+        "summary": "移动鼠标到指定坐标"
+      },
+      "mouseClick": {
+        "icon": "mouse-pointer-click",
+        "summary": "在指定坐标点击鼠标"
+      },
+      "mouseScroll": {
+        "icon": "mouse",
+        "summary": "滚动鼠标滚轮"
+      },
+      "mouseDrag": {
+        "icon": "hand",
+        "summary": "按住并拖拽到目标位置"
+      }
+    }
+  },
+  "settings": {
+    "title": "鼠标操控",
+    "fields": [
+      {
+        "key": "idleTimeoutSec",
+        "label": "接管最长持续(秒)，超时自动结束，界面不显示",
+        "type": "number",
+        "defaultValue": 600
+      },
+      {
+        "key": "moveDurationMs",
+        "label": "默认移动过渡时长(ms，0 为瞬移)",
+        "type": "number",
+        "defaultValue": 0
+      },
+      {
+        "key": "clickDelayMs",
+        "label": "按下与抬起间隔(ms)",
+        "type": "number",
+        "defaultValue": 30
+      }
+    ]
+  }
+}
