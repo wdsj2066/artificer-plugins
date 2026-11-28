@@ -19,7 +19,7 @@ A single repository can maintain multiple plugins, but each plugin is published,
 - `session-search`
 - `context-inspector`
 - `trace-viewer`
-- `mouse-control`
+- `computer-use`
 
 Backend plugins must be manually reviewed to confirm that their declared `permissions` match their actual capabilities before installation or release.
 

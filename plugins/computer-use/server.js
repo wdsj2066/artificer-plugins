@@ -23,7 +23,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$cacheDir = Join-Path $env:TEMP 'artificer-mouse-control'
+$cacheDir = Join-Path $env:TEMP 'artificer-computer-use'
 if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null }
 $cacheDll = Join-Path $cacheDir 'ArtificerMouse.dll'
 
@@ -178,8 +178,13 @@ public class MouseGuard {
   [DllImport("user32.dll", SetLastError = true)] public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
   [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
+  [DllImport("user32.dll")] public static extern uint GetDpiForSystem();
   public static bool TryRegister(IntPtr hwnd) { return RegisterHotKey(hwnd, 1, 0x4003u, 0x51u); }
   public static void WriteStop(string reason) { try { File.WriteAllText(StopFlag, reason); } catch { } }
+  public static uint Dpi() {
+    try { uint d = GetDpiForSystem(); if (d >= 72 && d <= 480) { return d; } } catch { }
+    return 96;
+  }
 }
 
 public class EscWatch {
@@ -212,7 +217,7 @@ public class EscWatch {
   }
 }
 
-public class GlowWindow : Form {
+public class CornerWindow : Form {
   [StructLayout(LayoutKind.Sequential)] private struct POINT { public int X; public int Y; }
   [StructLayout(LayoutKind.Sequential)] private struct SIZE { public int cx; public int cy; }
   [StructLayout(LayoutKind.Sequential, Pack = 1)] private struct BLENDFUNCTION { public byte BlendOp; public byte BlendFlags; public byte SourceConstantAlpha; public byte AlphaFormat; }
@@ -224,11 +229,12 @@ public class GlowWindow : Form {
   [DllImport("gdi32.dll")] private static extern bool DeleteDC(IntPtr hdc);
   [DllImport("user32.dll")] private static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref POINT pptDst, ref SIZE psize, IntPtr hdcSrc, ref POINT pptSrc, int crKey, ref BLENDFUNCTION pblend, int dwFlags);
 
-  public GlowWindow() {
+  public CornerWindow() {
     FormBorderStyle = FormBorderStyle.None;
     ShowInTaskbar = false;
     TopMost = true;
     StartPosition = FormStartPosition.Manual;
+    AutoScaleMode = AutoScaleMode.None;
   }
 
   protected override CreateParams CreateParams {
@@ -240,34 +246,51 @@ public class GlowWindow : Form {
     }
   }
 
-  public void PaintGlow(string mode, Color color) {
+  public void PaintCorner(string mode, Color color, int radius, float scale) {
     int s = Width;
     using (Bitmap bmp = new Bitmap(s, s, PixelFormat.Format32bppArgb)) {
       using (Graphics g = Graphics.FromImage(bmp)) {
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.Clear(Color.Transparent);
-        float cx = 0;
-        float cy = 0;
-        if (mode == "tr" || mode == "br") { cx = s; }
-        if (mode == "bl" || mode == "br") { cy = s; }
-        using (GraphicsPath outer = new GraphicsPath()) {
-          outer.AddEllipse(cx - s, cy - s, s * 2, s * 2);
-          using (PathGradientBrush b1 = new PathGradientBrush(outer)) {
-            b1.CenterPoint = new PointF(cx, cy);
-            b1.CenterColor = Color.FromArgb(120, color);
-            b1.SurroundColors = new Color[] { Color.FromArgb(0, color) };
-            g.FillPath(b1, outer);
+        if (mode == "tr") { g.TranslateTransform(s, 0); g.ScaleTransform(-1, 1); }
+        else if (mode == "bl") { g.TranslateTransform(0, s); g.ScaleTransform(1, -1); }
+        else if (mode == "br") { g.TranslateTransform(s, s); g.ScaleTransform(-1, -1); }
+
+        float d = radius * 2f;
+        using (GraphicsPath corner = new GraphicsPath()) {
+          corner.AddLine(0, 0, radius, 0);
+          corner.AddArc(0, 0, d, d, 270, -90);
+          corner.AddLine(0, radius, 0, 0);
+          corner.CloseFigure();
+          using (PathGradientBrush pg = new PathGradientBrush(corner)) {
+            pg.CenterPoint = new PointF(0, 0);
+            pg.CenterColor = Color.FromArgb(158, color);
+            pg.SurroundColors = new Color[] { Color.FromArgb(28, color) };
+            pg.FocusScales = new PointF(0.22f, 0.22f);
+            g.FillPath(pg, corner);
           }
         }
-        using (GraphicsPath inner = new GraphicsPath()) {
-          float r = s * 0.52f;
-          inner.AddEllipse(cx - r, cy - r, r * 2, r * 2);
-          using (PathGradientBrush b2 = new PathGradientBrush(inner)) {
-            b2.CenterPoint = new PointF(cx, cy);
-            b2.CenterColor = Color.FromArgb(185, color);
-            b2.SurroundColors = new Color[] { Color.FromArgb(0, color) };
-            g.FillPath(b2, inner);
+
+        using (GraphicsPath arc = new GraphicsPath()) {
+          arc.AddArc(0, 0, d, d, 270, -90);
+          using (Pen halo = new Pen(Color.FromArgb(34, color), 13f * scale))
+          using (Pen soft = new Pen(Color.FromArgb(78, color), 6f * scale))
+          using (Pen edge = new Pen(Color.FromArgb(196, color), 2.2f * scale)) {
+            g.DrawPath(halo, arc);
+            g.DrawPath(soft, arc);
+            g.DrawPath(edge, arc);
           }
+        }
+
+        float len = 150f * scale;
+        float thick = 2.2f * scale;
+        RectangleF top = new RectangleF(radius, 0, len, thick);
+        using (LinearGradientBrush lg = new LinearGradientBrush(top, Color.FromArgb(150, color), Color.FromArgb(0, color), LinearGradientMode.Horizontal)) {
+          g.FillRectangle(lg, top);
+        }
+        RectangleF left = new RectangleF(0, radius, thick, len);
+        using (LinearGradientBrush lg2 = new LinearGradientBrush(left, Color.FromArgb(150, color), Color.FromArgb(0, color), LinearGradientMode.Vertical)) {
+          g.FillRectangle(lg2, left);
         }
       }
       Apply(bmp);
@@ -310,19 +333,27 @@ if ($PidFile -ne '') {
   try { [System.IO.File]::WriteAllText($PidFile, [string]$PID) } catch { }
 }
 
-$amber = [System.Drawing.Color]::FromArgb(255, 178, 64)
-$amberDim = [System.Drawing.Color]::FromArgb(120, 84, 26)
-$textMain = [System.Drawing.Color]::FromArgb(255, 216, 150)
-$textSub = [System.Drawing.Color]::FromArgb(140, 149, 168)
+$dpi = [MouseGuard]::Dpi()
+$scale = [double]$dpi / 96.0
+
+$amber = [System.Drawing.Color]::FromArgb(255, 121, 167, 255)
+$amberDim = [System.Drawing.Color]::FromArgb(110, 58, 96, 168)
+$textMain = [System.Drawing.Color]::FromArgb(216, 231, 255)
+$textSub = [System.Drawing.Color]::FromArgb(146, 158, 182)
 $ink = [System.Drawing.Color]::FromArgb(18, 21, 27)
 $danger = [System.Drawing.Color]::FromArgb(198, 64, 64)
-$stroke = [System.Drawing.Color]::FromArgb(120, 255, 176, 60)
-$glowColor = [System.Drawing.Color]::FromArgb(255, 255, 150, 48)
+$stroke = [System.Drawing.Color]::FromArgb(120, 121, 167, 255)
 
 $area = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
 $work = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
 
-$forms = New-Object System.Collections.ArrayList
+function Px([double]$value) { return [int][Math]::Round($value * $scale) }
+
+function New-PxFont([double]$size, [bool]$bold) {
+  $style = [System.Drawing.FontStyle]::Regular
+  if ($bold) { $style = [System.Drawing.FontStyle]::Bold }
+  return New-Object System.Drawing.Font('Microsoft YaHei UI', [float]$size, $style, [System.Drawing.GraphicsUnit]::Pixel)
+}
 
 function New-RoundedRegion([int]$rw, [int]$rh, [int]$rr) {
   $path = New-Object System.Drawing.Drawing2D.GraphicsPath
@@ -335,26 +366,30 @@ function New-RoundedRegion([int]$rw, [int]$rh, [int]$rr) {
   return New-Object System.Drawing.Region($path)
 }
 
-function New-Glow([string]$mode, [int]$gx, [int]$gy, [int]$size) {
-  $w = New-Object GlowWindow
-  $w.Width = $size
-  $w.Height = $size
-  $w.Left = $gx
-  $w.Top = $gy
-  $w.PaintGlow($mode, $glowColor)
+$forms = New-Object System.Collections.ArrayList
+
+$cornerRadius = Px 26
+$cornerSize = Px 210
+function New-Corner([string]$mode, [int]$cx, [int]$cy) {
+  $w = New-Object CornerWindow
+  $w.Width = $cornerSize
+  $w.Height = $cornerSize
+  $w.Left = $cx
+  $w.Top = $cy
+  $w.PaintCorner($mode, $amber, $cornerRadius, [float]$scale)
   $w.Show()
   return $w
 }
 
-$gsize = 420
-[void]$forms.Add((New-Glow 'tl' $area.Left $area.Top $gsize))
-[void]$forms.Add((New-Glow 'tr' ($area.Right - $gsize) $area.Top $gsize))
-[void]$forms.Add((New-Glow 'bl' $area.Left ($work.Bottom - $gsize) $gsize))
-[void]$forms.Add((New-Glow 'br' ($area.Right - $gsize) ($work.Bottom - $gsize) $gsize))
+[void]$forms.Add((New-Corner 'tl' $area.Left ($area.Top - 0)))
+[void]$forms.Add((New-Corner 'tr' ($area.Right - $cornerSize) $area.Top))
+[void]$forms.Add((New-Corner 'bl' $area.Left ($work.Bottom - $cornerSize)))
+[void]$forms.Add((New-Corner 'br' ($area.Right - $cornerSize) ($work.Bottom - $cornerSize)))
 
-$pw = 448
-$ph = 44
+$pw = Px 452
+$ph = Px 48
 $pill = New-Object System.Windows.Forms.Form
+$pill.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::None
 $pill.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
 $pill.TopMost = $true
 $pill.ShowInTaskbar = $false
@@ -363,16 +398,16 @@ $pill.BackColor = $ink
 $pill.Width = $pw
 $pill.Height = $ph
 $pill.Left = $area.Left + [int](($area.Width - $pw) / 2)
-$pill.Top = $area.Top + 14
-$pill.Region = New-RoundedRegion $pw $ph 22
-$pill.Opacity = 0.93
+$pill.Top = $area.Top + (Px 16)
+$pill.Region = New-RoundedRegion $pw $ph ([int]($ph / 2))
+$pill.Opacity = 0.94
 
 $pill.Add_Paint({
   $g = $_.Graphics
   $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-  $pen = New-Object System.Drawing.Pen($stroke, 1.4)
+  $pen = New-Object System.Drawing.Pen($stroke, [float](1.4 * $scale))
   $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-  $d = 43
+  $d = $ph - 2
   $path.AddArc(0.7, 0.7, $d, $d, 180, 90)
   $path.AddArc($pw - $d - 0.7, 0.7, $d, $d, 270, 90)
   $path.AddArc($pw - $d - 0.7, $ph - $d - 0.7, $d, $d, 0, 90)
@@ -382,50 +417,54 @@ $pill.Add_Paint({
   $path.Dispose()
 })
 
+$dotSize = Px 9
 $dot = New-Object System.Windows.Forms.Panel
-$dot.Width = 8
-$dot.Height = 8
-$dot.Left = 20
-$dot.Top = 18
+$dot.Width = $dotSize
+$dot.Height = $dotSize
+$dot.Left = Px 22
+$dot.Top = [int](($ph - $dotSize) / 2)
 $dot.BackColor = $amber
-$dot.Region = New-RoundedRegion 8 8 4
+$dot.Region = New-RoundedRegion $dotSize $dotSize ([int]($dotSize / 2))
 $pill.Controls.Add($dot)
 
+$titleFontSize = 14.5
 $title = New-Object System.Windows.Forms.Label
 $title.AutoSize = $false
-$title.Left = 36
-$title.Top = 7
-$title.Width = 250
-$title.Height = 16
+$title.Left = Px 40
+$title.Top = Px 7
+$title.Width = Px 268
+$title.Height = Px 22
 $title.ForeColor = $textMain
-$title.Font = New-Object System.Drawing.Font('Microsoft YaHei UI', 9.5, [System.Drawing.FontStyle]::Bold)
+$title.Font = New-PxFont $titleFontSize $true
 $title.Text = 'AI 正在操控鼠标'
 $pill.Controls.Add($title)
 
 $sub = New-Object System.Windows.Forms.Label
 $sub.AutoSize = $false
-$sub.Left = 36
-$sub.Top = 24
-$sub.Width = 280
-$sub.Height = 14
+$sub.Left = Px 40
+$sub.Top = Px 27
+$sub.Width = Px 300
+$sub.Height = Px 18
 $sub.ForeColor = $textSub
-$sub.Font = New-Object System.Drawing.Font('Microsoft YaHei UI', 8)
+$sub.Font = New-PxFont 11.5 $false
 $sub.Text = '按 Esc 键停止'
 $pill.Controls.Add($sub)
 
+$btnW = Px 78
+$btnH = Px 30
 $btn = New-Object System.Windows.Forms.Label
 $btn.AutoSize = $false
-$btn.Left = 360
-$btn.Top = 9
-$btn.Width = 72
-$btn.Height = 26
+$btn.Width = $btnW
+$btn.Height = $btnH
+$btn.Left = $pw - $btnW - (Px 14)
+$btn.Top = [int](($ph - $btnH) / 2)
 $btn.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $btn.BackColor = $danger
 $btn.ForeColor = [System.Drawing.Color]::White
-$btn.Font = New-Object System.Drawing.Font('Microsoft YaHei UI', 8.5, [System.Drawing.FontStyle]::Bold)
+$btn.Font = New-PxFont 12.5 $true
 $btn.Text = '停止'
 $btn.Cursor = [System.Windows.Forms.Cursors]::Hand
-$btn.Region = New-RoundedRegion 72 26 13
+$btn.Region = New-RoundedRegion $btnW $btnH ([int]($btnH / 2))
 $pill.Controls.Add($btn)
 
 $stopAction = {
@@ -434,8 +473,6 @@ $stopAction = {
 }
 $btn.Add_Click($stopAction)
 $pill.Add_Click($stopAction)
-$title.Add_Click($stopAction)
-$sub.Add_Click($stopAction)
 
 $pill.Show()
 [void]$forms.Add($pill)
@@ -498,7 +535,7 @@ if ($PidFile -ne '') {
 }
 `
 
-const GUARD_DIR = path.join(os.tmpdir(), 'artificer-mouse-control')
+const GUARD_DIR = path.join(os.tmpdir(), 'artificer-computer-use')
 const STOP_FLAG = path.join(GUARD_DIR, 'guard.stop')
 const HEARTBEAT = path.join(GUARD_DIR, 'guard.heartbeat')
 const GUARD_PID = path.join(GUARD_DIR, 'guard.pid')
@@ -914,7 +951,7 @@ export function register(ctx) {
 
   ctx.registerRoute({
     method: 'POST',
-    path: '/api/plugins/mouse-control/action',
+    path: '/api/plugins/computer-use/action',
     handler: async (req) => {
       let body = req?.body ?? {}
       if (typeof body === 'string') {

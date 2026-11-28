@@ -1,10 +1,8 @@
 {
-  "id": "mouse-control",
-  "name": "鼠标操控",
-  "version": "0.2.0",
-  "description": "让 AI 直接控制真实鼠标：移动、点击、拖拽、滚轮。接管时屏幕四角显示接管标记，按 Esc 键即可随时停止。",
-  "author": "Artificer",
-  "icon": "mouse-pointer-click",
+  "id": "computer-use",
+  "name": "电脑操作",
+  "version": "0.2.1",
+  "description": "让 AI 直接操作电脑：接管后移动、点击、拖拽、滚轮，屏幕四角显示蓝色渐变提示，按 Esc 随时停止。",
   "entrypoints": {
     "web": "web.js",
     "api": "server.js"
@@ -15,16 +13,16 @@
   "ui": {
     "navItems": [
       {
-        "id": "mouse-control.page",
-        "label": "鼠标操控",
+        "id": "computer-use.page",
+        "label": "电脑操作",
         "icon": "mouse-pointer-click",
-        "route": "/plugin/mouse-control"
+        "route": "/plugin/computer-use"
       }
     ],
     "routes": [
       {
-        "path": "/plugin/mouse-control",
-        "name": "plugin-mouse-control"
+        "path": "/plugin/computer-use",
+        "name": "plugin-computer-use"
       }
     ],
     "toolMeta": {
@@ -59,7 +57,7 @@
     }
   },
   "settings": {
-    "title": "鼠标操控",
+    "title": "电脑操作",
     "fields": [
       {
         "key": "idleTimeoutSec",
@@ -80,5 +78,6 @@
         "defaultValue": 30
       }
     ]
-  }
+  },
+  "icon": "monitor-mouse"
 }

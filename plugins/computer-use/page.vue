@@ -2,8 +2,8 @@
   <div class="mc-page">
     <header class="mc-head">
       <div class="mc-title">
-        <h2>鼠标操控</h2>
-        <p>直接控制真实光标。开始接管后屏幕四角出现接管标记，随时可按 Esc 键夺回控制。</p>
+        <h2>电脑操作</h2>
+        <p>让 AI 直接操作这台电脑。开始接管后屏幕四角显示蓝色渐变提示，随时可按 Esc 键夺回控制。</p>
       </div>
       <button class="mc-btn ghost" :disabled="busy" @click="refresh">刷新状态</button>
     </header>
@@ -92,7 +92,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 
-const ENDPOINT = '/api/plugins/mouse-control/action'
+const ENDPOINT = '/api/plugins/computer-use/action'
 
 const busy = ref(false)
 const controlling = ref(false)
